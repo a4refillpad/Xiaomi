@@ -19,6 +19,8 @@
  * Motion background colours consistent with latest DH
  * Fixed max battery percentage to be 100%
  * Added Last update to main tile
+ * Added last motion tile
+ *
  */
 
 metadata {
@@ -29,9 +31,8 @@ metadata {
 		capability "Sensor"
         
         attribute "lastCheckin", "String"
+        attribute "lastMotion", "String"
 
-		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0005, 0006"
-    	fingerprint profileId: "0104", inClusters: "0000, 0003, 0006", outClusters: "0003, 0006, 0019, 0406", manufacturer: "Leviton", model: "ZSS-10", deviceJoinName: "Leviton Switch"
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
         command "reset"
@@ -52,7 +53,7 @@ metadata {
 				attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#79b821"
 			}
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Electronics.electronics13")
+    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -62,16 +63,22 @@ metadata {
 	    standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-       standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
+        standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
 			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
-	  }       
+	    }       
         
-		standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+		standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", action:"reset", label: "Reset Motion"
 		}
+		standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", label:'Last Motion:'
+        }
+        valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "default", label:'${currentValue}'
+        }
 
 		main(["motion"])
-		details(["motion", "reset", "battery", "refresh", "configure"])
+		details(["motion", "battery", "configure", "refresh","icon", "lastmotion", "reset" ])
 	}
 }
 
@@ -213,12 +220,14 @@ private Map parseReportAttributeMessage(String description) {
 	//log.debug "Desc Map: $descMap"
  
 	Map resultMap = [:]
+    def now = new Date()
 
 	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
 		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
 	}
     else if (descMap.cluster == "0406" && descMap.attrId == "0000") {
     	def value = descMap.value.endsWith("01") ? "active" : "inactive"
+	    sendEvent(name: "lastMotion", value: now)
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 120
         if (value == "active") runIn(settings.motionReset, stopMotion)
     	resultMap = getMotionResult(value)
