@@ -21,15 +21,15 @@
  */
 metadata {
 	definition (name: "Xiaomi Zigbee Button", namespace: "a4refillpad", author: "a4refillpad") {
-		capability "Battery"
-		capability "Button"
-		capability "Holdable Button"
-		capability "Actuator"
-		capability "Switch"
-		capability "Momentary"
-		capability "Configuration"
+	capability "Battery"
+	capability "Button"
+	capability "Holdable Button"
+	capability "Actuator"
+	capability "Switch"
+	capability "Momentary"
+	capability "Configuration"
         capability "Sensor"
-		capability "Refresh"
+	capability "Refresh"
         
         attribute "lastPress", "string"
         attribute "batterylevel", "string"
@@ -40,8 +40,8 @@ metadata {
 	}
     
     simulator {
-   	  status "button 1 pressed": "on/off: 0"
-      status "button 1 released": "on/off: 1"
+  	status "button 1 pressed": "on/off: 0"
+      	status "button 1 released": "on/off: 1"
     }
     
     preferences{
