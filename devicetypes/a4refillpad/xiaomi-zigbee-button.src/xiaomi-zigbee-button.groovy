@@ -20,20 +20,20 @@
  *
  */
 metadata {
-	definition (name: "Xiaomi Zigbee Button", namespace: "a4refillpad", author: "a4refillpad") {
-	capability "Battery"
-	capability "Button"
-	capability "Holdable Button"
-	capability "Actuator"
-	capability "Switch"
-	capability "Momentary"
-	capability "Configuration"
-        capability "Sensor"
-	capability "Refresh"
+	definition (name: "Xiaomi Zigbee Button", namespace: "a4refillpad", author: "a4refillpad") {	
+    	capability "Battery"
+		capability "Button"
+		capability "Holdable Button"
+		capability "Actuator"
+		capability "Switch"
+		capability "Momentary"
+		capability "Configuration"
+		capability "Sensor"
+		capability "Refresh"
         
-        attribute "lastPress", "string"
-        attribute "batterylevel", "string"
-        attribute "lastCheckin", "string"
+		attribute "lastPress", "string"
+		attribute "batterylevel", "string"
+		attribute "lastCheckin", "string"
         
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004, 0003, 0006, 0008, 0005", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Xiaomi Button"
 
