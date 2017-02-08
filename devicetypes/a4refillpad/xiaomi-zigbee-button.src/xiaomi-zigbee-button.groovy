@@ -79,7 +79,7 @@ metadata {
 def parse(String description) {
   log.debug "Parsing '${description}'"
 //  send event for heartbeat    
-  def now = new Date()
+  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
   sendEvent(name: "lastCheckin", value: now)
   
   def results = []
@@ -154,7 +154,7 @@ private Map getBatteryResult(rawValue) {
 		value: battValue,
         unit: "%",
         isStateChange:true,
-        descriptionText : "${linkText} battery was ${rawValue}%${battValue}%"
+        descriptionText : "${linkText} battery was ${battValue}%"
 	]
     
     log.debug result.descriptionText

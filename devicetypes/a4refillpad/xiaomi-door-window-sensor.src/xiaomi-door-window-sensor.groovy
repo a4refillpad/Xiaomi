@@ -49,7 +49,7 @@ metadata {
             attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#79b821"
          }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Electronics.electronics13")
+    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
       }
       standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
@@ -77,7 +77,7 @@ def parse(String description) {
    log.debug "Parsing '${description}'"
    
 //  send event for heartbeat    
-   def now = new Date()
+   def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
    sendEvent(name: "lastCheckin", value: now)
     
    Map map = [:]
