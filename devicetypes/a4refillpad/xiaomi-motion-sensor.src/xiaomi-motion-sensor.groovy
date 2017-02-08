@@ -20,6 +20,7 @@
  * Fixed max battery percentage to be 100%
  * Added Last update to main tile
  * Added last motion tile
+ * Heartdeat icon plus improved localisation of date
  *
  */
 
@@ -97,7 +98,7 @@ def parse(String description) {
 	log.debug "Parse returned $map"
 	def result = map ? createEvent(map) : null
 //  send event for heartbeat    
-    def now = new Date()
+    def now = new Date().format("MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     
     if (description?.startsWith('enroll request')) {
@@ -220,8 +221,8 @@ private Map parseReportAttributeMessage(String description) {
 	//log.debug "Desc Map: $descMap"
  
 	Map resultMap = [:]
-    def now = new Date()
-
+    def now = new Date().format("MMM dd EEE h:mm:ss a", location.timeZone)
+   
 	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
 		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
 	}
