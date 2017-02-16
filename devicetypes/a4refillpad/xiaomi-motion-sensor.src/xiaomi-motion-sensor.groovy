@@ -30,6 +30,7 @@ metadata {
 		capability "Configuration"
 		capability "Battery"
 		capability "Sensor"
+		capability "Refresh"
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
