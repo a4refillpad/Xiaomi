@@ -126,7 +126,7 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			resultMap = getBatteryResult(cluster.data.last())
+			resultMap = getBatteryResult(cluster.data.get(23))
 			break
 
 			case 0xFC02:
@@ -188,6 +188,7 @@ def enrollResponse() {
 	]
 }
 
+/*
 def refresh() {
 	log.debug "Refreshing Battery"
     def endpointId = 0x01
@@ -196,6 +197,16 @@ def refresh() {
 
 	] //+ enrollResponse()
 }
+*/
+
+def refresh() {
+	log.debug "refreshing"
+    [
+        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 500",
+        "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
+    ]
+}
+
 
 private Map parseCustomMessage(String description) {
    def result
