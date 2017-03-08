@@ -14,6 +14,7 @@
  *  2017-03 Includes battery level (hope it works, I've only had access to a device for a limited period, time will tell!)
  *  2017-03 Last checkin activity to help monitor health of device and multiattribute tile
  *  2017-03 Changed temperature to update on .1° changes - much more useful
+ *  2017-03-08 Changed the way the battery level is being measured. Very different to other Xiaomi sensors.
  *
  *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
  *	known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
@@ -143,8 +144,9 @@ private String parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			result = getBatteryResult(cluster.data.get(23))
-			break
+//			result = getBatteryResult(cluster.data.get(23))
+			result = getBatteryResult(cluster.data.get(6)) 
+ 			break
 		}
 	}
 
@@ -159,8 +161,8 @@ private String getBatteryResult(rawValue) {
 
 	def result =  '--'
     def maxBatt = 100
-    def battLevel = rawValue
-
+    def battLevel = Math.round(rawValue * 100 / 255)
+	
 	if (battLevel > maxBatt) {
 				battLevel = maxBatt
     }
