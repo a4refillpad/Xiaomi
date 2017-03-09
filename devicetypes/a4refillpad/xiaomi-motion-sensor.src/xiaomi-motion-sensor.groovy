@@ -73,7 +73,7 @@ metadata {
 			state "default", action:"reset", label: "Reset Motion"
 		}
 		standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'Last Motion:'
+            state "default", label:'Last Motion:', icon:"st.Entertainment.entertainment15"
         }
         valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
