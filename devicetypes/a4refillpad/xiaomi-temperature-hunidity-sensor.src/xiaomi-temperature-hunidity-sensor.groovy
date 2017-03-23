@@ -15,6 +15,7 @@
  *  2017-03 Last checkin activity to help monitor health of device and multiattribute tile
  *  2017-03 Changed temperature to update on .1° changes - much more useful
  *  2017-03-08 Changed the way the battery level is being measured. Very different to other Xiaomi sensors.
+ *  2017-03-23 Added Fahrenheit support
  *
  *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
  *	known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
@@ -120,7 +121,12 @@ private String parseValue(String description) {
 
 	if (description?.startsWith("temperature: ")) {
 		def value = ((description - "temperature: ").trim()) as Float 
-        return (Math.round(value * 10))/ 10 as Float
+        
+        if (getTemperatureScale() == "C") {
+			return (Math.round(value * 10))/ 10 as Float
+		} else {
+			return (Math.round((celsiusToFahrenheit(value)) * 10))/ 10 as Float
+		}        
         
 	} else if (description?.startsWith("humidity: ")) {
 		def pct = (description - "humidity: " - "%").trim()
