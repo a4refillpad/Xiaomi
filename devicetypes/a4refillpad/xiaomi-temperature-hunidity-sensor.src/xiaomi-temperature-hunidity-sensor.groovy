@@ -125,7 +125,8 @@ private String parseValue(String description) {
         if (getTemperatureScale() == "C") {
 			return (Math.round(value * 10))/ 10 as Float
 		} else {
-			return (Math.round((celsiusToFahrenheit(value)) * 10))/ 10 as Float
+			return (Math.round(value * 90/5))/10 + 32 as Float
+//			return (Math.round(celsiusToFahrenheit(value * 10)) )/ 10 as Float
 		}        
         
 	} else if (description?.startsWith("humidity: ")) {
