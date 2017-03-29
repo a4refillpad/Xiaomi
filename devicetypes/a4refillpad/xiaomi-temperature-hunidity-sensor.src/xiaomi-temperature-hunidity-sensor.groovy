@@ -17,6 +17,7 @@
  *  2017-03-08 Changed the way the battery level is being measured. Very different to other Xiaomi sensors.
  *  2017-03-23 Added Fahrenheit support
  *  2017-03-25 Minor update to display unknown battery as "--", added fahrenheit colours to main and device tiles
+ *  2017-03-29 Temperature offset preference added to handler
  *
  *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
  *	known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
@@ -46,7 +47,14 @@ metadata {
 			status "${i}%": "humidity: ${i}%"
 		}
 	}
-
+    
+	preferences {
+		section {
+			input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
+			input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
+		}
+    }
+    
 	// UI tile definitions
 	tiles(scale: 2) {
 		multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
@@ -145,10 +153,17 @@ private String parseValue(String description) {
 		def value = ((description - "temperature: ").trim()) as Float 
         
         if (getTemperatureScale() == "C") {
-			return (Math.round(value * 10))/ 10 as Float
+        	if (tempOffset) {
+				return (Math.round(value * 10))/ 10 + tempOffset as Float
+            } else {
+				return (Math.round(value * 10))/ 10 as Float
+			}            	
 		} else {
-			return (Math.round(value * 90/5))/10 + 32 as Float
-//			return (Math.round(celsiusToFahrenheit(value * 10)) )/ 10 as Float
+        	if (tempOffset) {
+				return (Math.round(value * 90/5))/10 + 32 + offset as Float
+            } else {
+				return (Math.round(value * 90/5))/10 + 32 as Float
+			}            	
 		}        
         
 	} else if (description?.startsWith("humidity: ")) {
@@ -173,7 +188,6 @@ private String parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-//			result = getBatteryResult(cluster.data.get(23))
 			result = getBatteryResult(cluster.data.get(6)) 
  			break
 		}
