@@ -186,6 +186,9 @@ def configure() {
 			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
 			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
+			// motion reporting
+			"zcl global send-me-a-report 0x406 0x0000 0x18 0 3600 {01}", "delay 200",
+			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
 			// Writes CIE attribute on end device to direct reports to the hub's EUID
 			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
