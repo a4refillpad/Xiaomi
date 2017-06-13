@@ -31,7 +31,8 @@ metadata {
 		capability "Battery"
 		capability "Sensor"
 		capability "Refresh"
-        
+        capability "Health Check"
+   
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
 
@@ -82,6 +83,32 @@ metadata {
 		main(["motion"])
 		details(["motion", "battery", "configure", "refresh","icon", "lastmotion", "reset" ])
 	}
+}
+
+def installed() {
+// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when installed()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def updated() {
+// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when updated()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+/**
+ * PING is used by Device-Watch in attempt to reach the Device
+ * */
+def ping() {
+	return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) // Read the Battery Level
+}
+
+def poll() 
+{
+  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+  def timeelapse = device.lastCheckin - now;
+  log.debug "Time Since Last Checking: $timeelapse"
 }
 
 def parse(String description) {
