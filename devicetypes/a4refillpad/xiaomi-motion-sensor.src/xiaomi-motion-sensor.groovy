@@ -21,6 +21,8 @@
  * Added Last update to main tile
  * Added last motion tile
  * Heartdeat icon plus improved localisation of date
+ * removed non working tiles and changed layout and incorporated latest colours
+ * added experimental health check as worked out by rolled54.Why
  *
  */
 
@@ -31,6 +33,7 @@ metadata {
 		capability "Battery"
 		capability "Sensor"
 		capability "Refresh"
+        capability "Health Check" 
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
@@ -45,14 +48,14 @@ metadata {
 	}
 
 	preferences {
-		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds).", description: "", value:120, displayDuringSetup: false
+		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: false
 	}
 
 	tiles(scale: 2) {
 		multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4){
 			tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
-				attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#ffa81e"
-				attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#79b821"
+				attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+				attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
 			}
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
     			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
@@ -72,7 +75,7 @@ metadata {
 		standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", action:"reset", label: "Reset Motion"
 		}
-		standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+		standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             state "default", label:'Last Motion:', icon:"st.Entertainment.entertainment15"
         }
         valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
@@ -80,7 +83,7 @@ metadata {
         }
 
 		main(["motion"])
-		details(["motion", "battery", "configure", "refresh","icon", "lastmotion", "reset" ])
+		details(["motion", "battery", "icon", "lastmotion", "reset" ])
 	}
 }
 
@@ -314,4 +317,16 @@ def stopMotion() {
 
 def reset() {
 	sendEvent(name:"motion", value:"inactive")
+}
+
+def installed() {
+// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when installed()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def updated() {
+// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when updated()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }

@@ -18,6 +18,9 @@
  *  fixed battery parsing problem
  *  added lastcheckin attribute and tile
  *  added extra tile to show when last opened
+ *  colours to confirm to new smartthings standards
+ *  added ability to force override current state to Open or Closed.
+ *  added experimental health check as worked out by rolled54.Why
  *
  */
 metadata {
@@ -27,6 +30,7 @@ metadata {
    capability "Contact Sensor"
    capability "Refresh"
    capability "Battery"
+   capability "Health Check"
    
    attribute "lastCheckin", "String"
    attribute "lastOpened", "String"
@@ -34,6 +38,8 @@ metadata {
    fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004, 0003, 0006, 0008, 0005", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
+   command "resetClosed"
+   command "resetOpen"
  
    }
     
@@ -45,31 +51,32 @@ metadata {
    tiles(scale: 2) {
       multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
          tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-            attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#ffa81e"
-            attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#79b821"
+            attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
+            attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
          }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
     			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
       }
-      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'Last Opened:'
+      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
       }
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
-		}
+	  }
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label:'${currentValue}% battery', unit:""
-		}
-      standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-      }
-      standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
-			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
+	  }  	
+      standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
+			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
 	  }
+	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
+			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
+	  }
+      
 
       main (["contact"])
-      details(["contact","battery","configure","refresh","icon","lastopened"])
+      details(["contact","battery","icon","lastopened","resetClosed","resetOpen"])
    }
 }
 
@@ -254,4 +261,24 @@ private byte[] reverseArray(byte[] array) {
 	}
 
 	return array
+}
+
+def resetClosed() {
+	sendEvent(name:"contact", value:"closed")
+} 
+
+def resetOpen() {
+	sendEvent(name:"contact", value:"open")
+}
+
+def installed() {
+// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when installed()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def updated() {
+// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when updated()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
