@@ -31,6 +31,7 @@ metadata {
 		capability "Sensor"
         capability "Battery"
         capability "Refresh"
+        capability "Health Check"
         
         attribute "lastCheckin", "String"
         
@@ -85,6 +86,10 @@ metadata {
 			state "default", label:'${currentValue}%', icon:"st.Weather.weather12"
 		}
         
+        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+			state "default", label:'${currentValue} kPa', icon:"st.Weather.weather1"
+		}
+        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "default", label:'${currentValue}% battery', unit:""
 		}
@@ -113,8 +118,34 @@ metadata {
         }
             
 		main(["temperature2"])
-		details(["temperature", "battery", "humidity","refresh"])
+		details(["temperature", "battery", "humidity","pressure","refresh"])
 	}
+}
+
+def installed() {
+// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when installed()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def updated() {
+// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+	log.debug "Configured health checkInterval when updated()"
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+/**
+ * PING is used by Device-Watch in attempt to reach the Device
+ * */
+def ping() {
+	return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) // Read the Battery Level
+}
+
+def poll() 
+{
+  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+  def timeelapse = device.lastCheckin - now;
+  log.debug "Time Since Last Checking: $timeelapse"
 }
 
 // Parse incoming device messages to generate events
@@ -124,7 +155,7 @@ def parse(String description) {
     log.debug "Parsename: $name"
 	def value = parseValue(description)
     log.debug "Parsevalue: $value"
-	def unit = name == "temperature" ? getTemperatureScale() : (name == "humidity" ? "%" : null)
+	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? "kpa": null))
 	def result = createEvent(name: name, value: value, unit: unit)
     log.debug "Evencreated: $name, $value, $unit"
 	log.debug "Parse returned ${result?.descriptionText}"
@@ -142,8 +173,12 @@ private String parseName(String description) {
 		return "humidity"
         
 	} else if (description?.startsWith("catchall: ")) {
-		return "battery"
-	}
+        return "battery"
+        
+	} else if (description?.startsWith("read attr - raw: ")){
+        return "pressure"
+        
+    }
 	null
 }
 
@@ -174,11 +209,34 @@ private String parseValue(String description) {
 		}
 	} else if (description?.startsWith("catchall: ")) {
 		return parseCatchAllMessage(description)
-	} else {
+        
+	}  else if (description?.startsWith("read attr - raw: ")){
+        return parseReadAttrMessage(description)
+        
+    }else {
     log.debug "unknown: $description"
     sendEvent(name: "unknown", value: description)
     }
 	null
+}
+
+private String parseReadAttrMessage(String description) {
+    def result = '--'
+    def cluster
+    def attrId
+    def value
+        
+    cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+    
+    if (cluster == "0403" && attrId == "0000") {
+         result = value[0..3]
+         int pressureval = Integer.parseInt(result, 16)
+         result = (pressureval/100 as Float)
+    }
+    return result
 }
 
 private String parseCatchAllMessage(String description) {
@@ -198,9 +256,9 @@ private String parseCatchAllMessage(String description) {
 
 
 private String getBatteryResult(rawValue) {
-	log.debug 'Battery'
+	//log.debug 'Battery'
 	def linkText = getLinkText(device)
-	log.debug rawValue
+	//log.debug rawValue
 
 	def result =  '--'
     def maxBatt = 100

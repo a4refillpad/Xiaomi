@@ -80,6 +80,20 @@ metadata {
    }
 }
 
+/**
+ * PING is used by Device-Watch in attempt to reach the Device
+ * */
+def ping() {
+	return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) // Read the Battery Level
+}
+
+def poll() 
+{
+  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+  def timeelapse = device.lastCheckin - now;
+  log.debug "Time Since Last Checking: $timeelapse"
+}
+
 def parse(String description) {
    log.debug "Parsing '${description}'"
    
