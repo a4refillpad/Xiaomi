@@ -134,31 +134,18 @@ def updated() {
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
-/**
- * PING is used by Device-Watch in attempt to reach the Device
- * */
-def ping() {
-	return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) // Read the Battery Level
-}
-
-def poll() 
-{
-  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-  def timeelapse = device.lastCheckin - now;
-  log.debug "Time Since Last Checking: $timeelapse"
-}
-
 // Parse incoming device messages to generate events
 def parse(String description) {
-	log.debug "RAW: $description"
+	def linkText = getLinkText(device)
+    log.debug "${linkText} Parsing: $description"
 	def name = parseName(description)
-    log.debug "Parsename: $name"
+    log.debug "${linkText} Parsename: $name"
 	def value = parseValue(description)
-    log.debug "Parsevalue: $value"
+    log.debug "${linkText} Parsevalue: $value"
 	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? "kpa": null))
 	def result = createEvent(name: name, value: value, unit: unit)
-    log.debug "Evencreated: $name, $value, $unit"
-	log.debug "Parse returned ${result?.descriptionText}"
+    log.debug "${linkText} Evencreated: $name, $value, $unit"
+	log.debug "${linkText} Parse returned: ${result?.descriptionText}"
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
 	return result
@@ -179,11 +166,12 @@ private String parseName(String description) {
         return "pressure"
         
     }
-	null
+	return null
 }
 
 private String parseValue(String description) {
-
+    def linkText = getLinkText(device)
+    
 	if (description?.startsWith("temperature: ")) {
 		def value = ((description - "temperature: ").trim()) as Float 
         
@@ -214,7 +202,7 @@ private String parseValue(String description) {
         return parseReadAttrMessage(description)
         
     }else {
-    log.debug "unknown: $description"
+    log.debug "${linkText} unknown: $description"
     sendEvent(name: "unknown", value: description)
     }
 	null
@@ -257,7 +245,7 @@ private String parseCatchAllMessage(String description) {
 
 private String getBatteryResult(rawValue) {
 	//log.debug 'Battery'
-	def linkText = getLinkText(device)
+	//def linkText = getLinkText(device)
 	//log.debug rawValue
 
 	def result =  '--'
@@ -272,7 +260,8 @@ private String getBatteryResult(rawValue) {
 }
 
 def refresh() {
-	log.debug "refresh called"
+	def linkText = getLinkText(device)
+    log.debug "${linkText}: refresh called"
 	def refreshCmds = [
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
@@ -292,7 +281,8 @@ def configure() {
 }
 
 def enrollResponse() {
-	log.debug "Sending enroll response"
+	def linkText = getLinkText(device)
+    log.debug "${linkText}: Sending enroll response"
 	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
 	[
 		//Resending the CIE in case the enroll request is sent before CIE is written
