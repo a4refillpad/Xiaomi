@@ -53,6 +53,10 @@ metadata {
 		section {
 			input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
 			input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
+        }
+        section {
+            input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 kPa too high, you'd enter '-5'. If 3 kPa too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
+            input "pressOffset", "number", title: "kPa", description: "Adjust prssure by this many kPa", range: "*..*", displayDuringSetup: false
 		}
     }
     
@@ -222,7 +226,14 @@ private String parseReadAttrMessage(String description) {
     if (cluster == "0403" && attrId == "0000") {
          result = value[0..3]
          int pressureval = Integer.parseInt(result, 16)
-         result = (pressureval/100 as Float)
+         if (pressOffset)
+         {
+           result = ((pressureval/100) as Float) + pressOffset
+         }
+         else
+         {
+           result = (pressureval/100 as Float)
+         }
     }
     return result
 }
