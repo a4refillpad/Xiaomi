@@ -21,7 +21,7 @@
  *  colours to confirm to new smartthings standards
  *  added ability to force override current state to Open or Closed.
  *  added experimental health check as worked out by rolled54.Why
- *
+ *  Bspranger - Adding Aqara Support
  */
 metadata {
    definition (name: "Xiaomi Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
