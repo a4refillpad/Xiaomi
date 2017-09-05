@@ -40,7 +40,7 @@ metadata {
    command "enrollResponse"
    command "resetClosed"
    command "resetOpen"
- 
+   command "Refresh"
    }
     
    simulator {
@@ -73,10 +73,12 @@ metadata {
 	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
 	  }
-      
+      standardTile("refresh", "command.refresh", inactiveLabel: false) {
+			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+	  }      
 
       main (["contact"])
-      details(["contact","battery","icon","lastopened","resetClosed","resetOpen"])
+      details(["contact","battery","icon","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
@@ -131,11 +133,11 @@ private Map parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
 	Map resultMap = [:]
 	def cluster = zigbee.parse(description)
-	log.debug cluster
+	log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			resultMap = getBatteryResult(cluster.data.get(30))
+            resultMap = getBatteryResult(cluster.data.get(30))
 			break
 
 			case 0xFC02:
@@ -215,10 +217,11 @@ def refresh() {
 def refresh() {
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    [
-        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 500",
-        "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
-    ]
+//    [
+//        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 500",
+//        "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
+//    ]
+    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
 }
 
 

@@ -41,6 +41,7 @@ metadata {
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
         command "reset"
+        command "Refresh"
         
 	}
 
@@ -81,9 +82,12 @@ metadata {
         valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
         }
+        standardTile("refresh", "command.refresh", inactiveLabel: false) {
+			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+	   }
 
 		main(["motion"])
-		details(["motion", "battery", "icon", "lastmotion", "reset" ])
+		details(["motion", "battery", "icon", "lastmotion", "reset", "refresh"])
 	}
 }
 
@@ -215,11 +219,13 @@ def enrollResponse() {
 def refresh() {
 	def linkText = getLinkText(device)
     log.debug "${linkText}: Refreshing Battery"
-    def endpointId = 0x01
-	[
-	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
+//    def endpointId = 0x01
+//	[
+//	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
 //	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000", "delay 200"
-	] //+ enrollResponse()
+//	] //+ enrollResponse()
+
+    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
 }
 
 private Map parseReportAttributeMessage(String description) {
@@ -242,6 +248,20 @@ private Map parseReportAttributeMessage(String description) {
         if (value == "active") runIn(settings.motionReset, stopMotion)
     	resultMap = getMotionResult(value)
     } 
+    else if (descMap.cluster == "0000" && descMap.attrId == "0005") 
+    {
+        def result = [
+			name: 'Model',
+			value: ''
+		]
+        for (int i = 0; i < descMap.value.length(); i+=2) 
+        {
+            def str = descMap.value.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            result.value = result.value + NextChar
+        }
+        resultMap = result
+    }
 	return resultMap
 }
  

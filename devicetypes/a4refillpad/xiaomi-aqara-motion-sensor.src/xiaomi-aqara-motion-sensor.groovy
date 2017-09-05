@@ -37,6 +37,7 @@ metadata {
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
+        attribute "Light", "number"
 
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
@@ -61,6 +62,9 @@ metadata {
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
     			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
+		}
+		valueTile("Light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2){
+			state "Light", label:'${currentValue}% \nLight', unit: ""
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label:'${currentValue}% battery', unit:""
@@ -87,7 +91,7 @@ metadata {
 	   }
 
 		main(["motion"])
-		details(["motion", "battery", "icon", "lastmotion", "reset", "refresh"])
+		details(["motion", "Light", "battery", "icon", "lastmotion", "reset", "refresh"])
 	}
 }
 
@@ -101,6 +105,9 @@ def parse(String description) {
 	}
 	else if (description?.startsWith('read attr -')) {
 		map = parseReportAttributeMessage(description)
+	}
+    else if (description?.startsWith('illuminance:')) {
+		map = parseIlluminanceMessage(description)
 	}
  
 	log.debug "${linkText} Parse returned: $map"
@@ -117,6 +124,21 @@ def parse(String description) {
 
        return result
 }
+
+private String parseIlluminanceMessage(String description) 
+{
+	def linkText = getLinkText(device)
+    
+	def result = [
+		name: 'Light',
+		value: '--'
+	]
+	def value = ((description - "illuminance: ").trim()) as Float
+    
+    result.value = value
+	result.descriptionText = "${linkText} Light was ${result.value}"
+}
+
 
 private Map getBatteryResult(rawValue) {
 	//log.debug 'Battery'

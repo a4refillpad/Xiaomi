@@ -35,12 +35,12 @@ metadata {
    attribute "lastCheckin", "String"
    attribute "lastOpened", "String"
    
-   fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004, 0003, 0006, 0008, 0005", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
+   fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
    command "resetClosed"
    command "resetOpen"
- 
+   command "Refresh"
    }
     
    simulator {
@@ -73,10 +73,12 @@ metadata {
 	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
 	  }
-      
+      standardTile("refresh", "command.refresh", inactiveLabel: false) {
+			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+	  }
 
       main (["contact"])
-      details(["contact","battery","icon","lastopened","resetClosed","resetOpen"])
+      details(["contact","battery","icon","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
@@ -90,17 +92,50 @@ def parse(String description) {
     
    Map map = [:]
 
-   if (description?.startsWith('on/off: ')) {
+   if (description?.startsWith('on/off: ')) 
+    {
       map = parseCustomMessage(description) 
       sendEvent(name: "lastOpened", value: now)
-	}
-   if (description?.startsWith('catchall:')) {
+	} 
+    else if (description?.startsWith('catchall:')) 
+    {
       map = parseCatchAllMessage(description)
+    } 
+    else if (description?.startsWith("read attr - raw: "))
+    {
+      map = parseReadAttrMessage(description)  
     }
    log.debug "${linkText}: Parse returned $map"
    def results = map ? createEvent(map) : null
 
    return results;
+}
+
+private Map parseReadAttrMessage(String description) {
+    	def result = [
+		name: 'Model',
+		value: ''
+	]
+    def cluster
+    def attrId
+    def value
+        
+    cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+    
+    if (cluster == "0000" && attrId == "0005") 
+    {
+        for (int i = 0; i < value.length(); i+=2) 
+        {
+            def str = value.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            result.value = result.value + NextChar
+        }
+    }
+    //log.debug "Result: ${result}"
+    return result
 }
 
 private Map getBatteryResult(rawValue) {
@@ -213,12 +248,16 @@ def refresh() {
 */
 
 def refresh() {
+    def result
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
     [
-        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 500",
-        "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
-    ]
+        "st rattr 0x${device.deviceNetworkId} 1 0 5", "delay 5",
+    //    "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
+    ] + enrollResponse()
+    //zigbee.readAttribute(0x0000, 0x05)
+    
+    //zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
 }
 
 
