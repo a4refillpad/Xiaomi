@@ -157,6 +157,7 @@ def parse(String description) {
 
 private String parseName(String description) {
 
+
 	if (description?.startsWith("temperature: ")) {
 		return "temperature"
         
@@ -166,9 +167,20 @@ private String parseName(String description) {
 	} else if (description?.startsWith("catchall: ")) {
         return "battery"
         
-	} else if (description?.startsWith("read attr - raw: ")){
-        return "pressure"
+	} else if (description?.startsWith("read attr - raw: "))
+    {
+ 	   def attrId        
+ 	   attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+
+		if(attrId == "0000")
+        {
+        	return "pressure"
         
+    	} else if (attrId == "0005")
+        {
+        	return "model"
+        
+    	}
     }
 	return null
 }
@@ -239,6 +251,15 @@ private String parseReadAttrMessage(String description) {
          {
            result = (pressureval/100 as Float)
          }
+    } 
+    else if (cluster == "0000" && attrId == "0005") 
+    {
+        for (int i = 0; i < value.length(); i+=2) 
+        {
+            def str = value.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            result = result + NextChar
+        }
     }
     return result
 }
