@@ -125,7 +125,7 @@ def parse(String description) {
        return result
 }
 
-private String parseIlluminanceMessage(String description) 
+private Map parseIlluminanceMessage(String description)
 {
 	def linkText = getLinkText(device)
     
@@ -135,8 +135,10 @@ private String parseIlluminanceMessage(String description)
 	]
 	def value = ((description - "illuminance: ").trim()) as Float
     
-    result.value = value
+	result.value = value
 	result.descriptionText = "${linkText} Light was ${result.value}"
+
+	return result;
 }
 
 
