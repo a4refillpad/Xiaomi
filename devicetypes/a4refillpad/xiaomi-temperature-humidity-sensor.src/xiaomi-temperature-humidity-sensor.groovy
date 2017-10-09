@@ -160,7 +160,7 @@ private String parseValue(String description) {
 			}            	
 		} else {
         	if (tempOffset) {
-				return (Math.round(value * 90/5))/10 + 32 + offset as Float
+				return (Math.round(value * 90/5))/10 + 32 + tempOffset as Float
             } else {
 				return (Math.round(value * 90/5))/10 + 32 as Float
 			}            	
