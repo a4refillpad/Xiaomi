@@ -191,7 +191,7 @@ private String parseValue(String description) {
 			}            	
 		} else {
         	if (tempOffset) {
-				return (Math.round((value * 90.0)/5.0))/10.0 + 32.0 + offset as Float
+				return (Math.round((value * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
             } else {
 				return (Math.round((value * 90.0)/5.0))/10.0 + 32.0 as Float
 			}            	
