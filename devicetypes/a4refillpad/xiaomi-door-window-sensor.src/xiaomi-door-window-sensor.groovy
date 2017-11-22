@@ -21,6 +21,8 @@
  *  colours to confirm to new smartthings standards
  *  added ability to force override current state to Open or Closed.
  *  added experimental health check as worked out by rolled54.Why
+ *  Rinkelk - added date-attribute support for Webcore
+ *  Rinkelk - Changed battery icon according to Mobile785
  *
  */
 metadata {
@@ -34,7 +36,9 @@ metadata {
    
    attribute "lastCheckin", "String"
    attribute "lastOpened", "String"
-   
+   attribute "lastOpenedDate", "Date" 
+   attribute "lastCheckinDate", "Date"
+
    fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
@@ -65,8 +69,13 @@ metadata {
 			state "default", label:'${currentValue}'
 	  }
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:""
-	  }  	
+		state "default", label:'${currentValue}%', unit:"",
+		backgroundColors: [
+		[value: 10, color: "#bc2323"],
+		[value: 26, color: "#f1d801"],
+		[value: 51, color: "#44b621"] ]
+      }
+	   
       standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
 	  }
@@ -88,15 +97,18 @@ def parse(String description) {
    
 //  send event for heartbeat    
    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+   def nowDate = new Date(now).getTime()
    sendEvent(name: "lastCheckin", value: now)
-    
+   sendEvent(name: "lastCheckinDate", value: nowDate) 
+ 
    Map map = [:]
 
    if (description?.startsWith('on/off: ')) 
     {
       map = parseCustomMessage(description) 
       sendEvent(name: "lastOpened", value: now)
-	} 
+      sendEvent(name: "lastOpenedDate", value: nowDate) 
+    } 
     else if (description?.startsWith('catchall:')) 
     {
       map = parseCatchAllMessage(description)
