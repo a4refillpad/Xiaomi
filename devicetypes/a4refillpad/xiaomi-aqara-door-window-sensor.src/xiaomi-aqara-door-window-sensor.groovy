@@ -92,16 +92,16 @@ def parse(String description) {
    
 //  send event for heartbeat    
    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-   def timeDate = new Date(now).getTime()
+   def nowDate = new Date(now).getTime()
    sendEvent(name: "lastCheckin", value: now)
-   sendEvent(name: "lastCheckinDate", value: timeDate) 
+   sendEvent(name: "lastCheckinDate", value: nowDate) 
     
    Map map = [:]
 
    if (description?.startsWith('on/off: ')) {
       map = parseCustomMessage(description) 
       sendEvent(name: "lastOpened", value: now)
-      sendEvent(name: "lastOpenedDate", value: timeDate) 
+      sendEvent(name: "lastOpenedDate", value: nowDate) 
    }
    if (description?.startsWith('catchall:')) {
       map = parseCatchAllMessage(description)
