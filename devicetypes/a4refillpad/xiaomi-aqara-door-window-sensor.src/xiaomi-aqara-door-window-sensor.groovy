@@ -24,6 +24,7 @@
  *  Bspranger - Adding Aqara Support
  *  Rinkelk - added date-attribute support for Webcore
  *  Rinkelk - Changed battery percentage with code from cancrusher
+ *  Rinkelk - Changed battery icon according to Mobile785
  */
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
@@ -68,9 +69,19 @@ metadata {
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
 	  }
+/*
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label:'${currentValue}% battery', unit:""
 	  }  	
+*/
+	  valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+		state "default", label:'${currentValue}%', unit:"",
+		backgroundColors: [
+		[value: 10, color: "#bc2323"],
+		[value: 26, color: "#f1d801"],
+		[value: 51, color: "#44b621"] ]
+	}
+
       standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
 	  }
