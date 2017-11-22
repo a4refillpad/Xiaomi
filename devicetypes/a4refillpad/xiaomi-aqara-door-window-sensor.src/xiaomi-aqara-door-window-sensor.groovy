@@ -22,6 +22,8 @@
  *  added ability to force override current state to Open or Closed.
  *  added experimental health check as worked out by rolled54.Why
  *  Bspranger - Adding Aqara Support
+ *  Rinkelk - added date-attribute support for Webcore
+ *  Rinkelk - Changed battery percentage with code from cancrusher
  */
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
@@ -34,7 +36,9 @@ metadata {
    
    attribute "lastCheckin", "String"
    attribute "lastOpened", "String"
-   
+   attribute "lastOpenedDate", "Date" 
+   attribute "lastCheckinDate", "Date"
+
    fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
    
    command "enrollResponse"
@@ -88,17 +92,20 @@ def parse(String description) {
    
 //  send event for heartbeat    
    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+   def timeDate = new Date(now).getTime()
    sendEvent(name: "lastCheckin", value: now)
+   sendEvent(name: "lastCheckinDate", value: timeDate) 
     
    Map map = [:]
 
    if (description?.startsWith('on/off: ')) {
       map = parseCustomMessage(description) 
       sendEvent(name: "lastOpened", value: now)
-	}
+      sendEvent(name: "lastOpenedDate", value: timeDate) 
+   }
    if (description?.startsWith('catchall:')) {
       map = parseCatchAllMessage(description)
-    }
+   }
    log.debug "${linkText}: Parse returned $map"
    def results = map ? createEvent(map) : null
 
@@ -111,22 +118,22 @@ private Map getBatteryResult(rawValue) {
 
 	//log.debug rawValue
 
-	def result = [
+    def result = [
 		name: 'battery',
 		value: '--'
-	]
+    ]
     
-	def volts = rawValue / 1
-    def maxVolts = 100
+    def volts = rawValue / 1000
+    def minVolts = 2.5
+    def maxVolts = 3.0
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    log.debug "Battery mV is ${rawValue}"
+    result.value = Math.min(100, roundedPct)
+    result.translatable = true
+    result.descriptionText = "${device.displayName} battery was ${roundedPct}%"
 
-	if (volts > maxVolts) {
-				volts = maxVolts
-    }
-   
-    result.value = volts
-	result.descriptionText = "${linkText} battery was ${result.value}%"
-
-	return result
+    return result
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -137,7 +144,7 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-            resultMap = getBatteryResult(cluster.data.get(30))
+            resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
 
 			case 0xFC02:
