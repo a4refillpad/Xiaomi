@@ -69,12 +69,8 @@ metadata {
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
 	  }
-/*
+
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:""
-	  }  	
-*/
-	  valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 		state "default", label:'${currentValue}%', unit:"",
 		backgroundColors: [
 		[value: 10, color: "#bc2323"],
