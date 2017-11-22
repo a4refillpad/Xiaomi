@@ -22,6 +22,9 @@
  *  added ability to force override current state to Open or Closed.
  *  added experimental health check as worked out by rolled54.Why
  *  Bspranger - Adding Aqara Support
+ *  Rinkelk - added date-attribute support for Webcore
+ *  Rinkelk - Changed battery percentage with code from cancrusher
+ *  Rinkelk - Changed battery icon according to Mobile785
  */
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
@@ -34,7 +37,9 @@ metadata {
    
    attribute "lastCheckin", "String"
    attribute "lastOpened", "String"
-   
+   attribute "lastOpenedDate", "Date" 
+   attribute "lastCheckinDate", "Date"
+
    fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
    
    command "enrollResponse"
@@ -64,9 +69,15 @@ metadata {
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
 	  }
+
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:""
-	  }  	
+		state "default", label:'${currentValue}%', unit:"",
+		backgroundColors: [
+		[value: 10, color: "#bc2323"],
+		[value: 26, color: "#f1d801"],
+		[value: 51, color: "#44b621"] ]
+	}
+
       standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
 	  }
@@ -88,17 +99,20 @@ def parse(String description) {
    
 //  send event for heartbeat    
    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+   def nowDate = new Date(now).getTime()
    sendEvent(name: "lastCheckin", value: now)
+   sendEvent(name: "lastCheckinDate", value: nowDate) 
     
    Map map = [:]
 
    if (description?.startsWith('on/off: ')) {
       map = parseCustomMessage(description) 
       sendEvent(name: "lastOpened", value: now)
-	}
+      sendEvent(name: "lastOpenedDate", value: nowDate) 
+   }
    if (description?.startsWith('catchall:')) {
       map = parseCatchAllMessage(description)
-    }
+   }
    log.debug "${linkText}: Parse returned $map"
    def results = map ? createEvent(map) : null
 
@@ -111,22 +125,22 @@ private Map getBatteryResult(rawValue) {
 
 	//log.debug rawValue
 
-	def result = [
+    def result = [
 		name: 'battery',
 		value: '--'
-	]
+    ]
     
-	def volts = rawValue / 1
-    def maxVolts = 100
+    def volts = rawValue / 1000
+    def minVolts = 2.5
+    def maxVolts = 3.0
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    log.debug "Battery mV is ${rawValue}"
+    result.value = Math.min(100, roundedPct)
+    result.translatable = true
+    result.descriptionText = "${device.displayName} battery was ${roundedPct}%"
 
-	if (volts > maxVolts) {
-				volts = maxVolts
-    }
-   
-    result.value = volts
-	result.descriptionText = "${linkText} battery was ${result.value}%"
-
-	return result
+    return result
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -137,7 +151,7 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-            resultMap = getBatteryResult(cluster.data.get(30))
+            resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
 
 			case 0xFC02:
