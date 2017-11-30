@@ -143,28 +143,26 @@ private Map parseIlluminanceMessage(String description)
 
 
 private Map getBatteryResult(rawValue) {
-	//log.debug 'Battery'
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
+    //log.debug '${linkText} Battery'
 
 	//log.debug rawValue
 
-	def result = [
+    def result = [
 		name: 'battery',
 		value: '--'
-	]
+    ]
     
-	def volts = rawValue / 1
-    
-    def maxVolts = 100
+    def volts = rawValue / 1000
+    def minVolts = 2.0
+    def maxVolts = 3.04
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    result.value = Math.min(100, roundedPct)
+    result.translatable = true
+    result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts"
 
-	if (volts > maxVolts) {
-				volts = maxVolts
-    }
-   
-    result.value = volts
-	result.descriptionText = "${linkText} battery was ${result.value}%"
-
-	return result
+    return result
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -176,7 +174,10 @@ private Map parseCatchAllMessage(String description) {
 	if (shouldProcessMessage(cluster)) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			resultMap = getBatteryResult(cluster.data.get(30))
+			if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21))  // Check CMD and Data Type
+            {
+              resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            }
 			break
 
 			case 0xFC02:

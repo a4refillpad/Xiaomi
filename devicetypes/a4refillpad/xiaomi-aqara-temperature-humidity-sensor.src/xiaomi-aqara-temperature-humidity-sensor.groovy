@@ -271,7 +271,10 @@ private String parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			result = getBatteryResult(cluster.data.get(6)) 
+			if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21))  // Check CMD and Data Type
+            {
+              resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            }
  			break
 		}
 	}
@@ -280,20 +283,27 @@ private String parseCatchAllMessage(String description) {
 }
 
 
-private String getBatteryResult(rawValue) {
-	//log.debug 'Battery'
-	//def linkText = getLinkText(device)
+private Map getBatteryResult(rawValue) {
+    def linkText = getLinkText(device)
+    //log.debug '${linkText} Battery'
+
 	//log.debug rawValue
 
-	def result =  '--'
-    def maxBatt = 100
-    def battLevel = Math.round(rawValue * 100 / 255)
-	
-	if (battLevel > maxBatt) {
-				battLevel = maxBatt
-    }
+    def result = [
+		name: 'battery',
+		value: '--'
+    ]
+    
+    def volts = rawValue / 1000
+    def minVolts = 2.0
+    def maxVolts = 3.04
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    result.value = Math.min(100, roundedPct)
+    result.translatable = true
+    result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts"
 
-	return battLevel
+    return result
 }
 
 def refresh() {
