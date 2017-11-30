@@ -161,15 +161,14 @@ private Map getBatteryResult(rawValue) {
 		value: '--'
 	]
     
-	def volts = rawValue / 1
-    def maxVolts = 100
-
-	if (volts > maxVolts) {
-				volts = maxVolts
-    }
-   
-    result.value = volts
-	result.descriptionText = "${linkText} battery was ${result.value}%"
+    def volts = rawValue / 1000
+    def minVolts = 2.0
+    def maxVolts = 3.04
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    result.value = Math.min(100, roundedPct)
+    
+	result.descriptionText = "${linkText} battery was ${result.value}%, ${volts} volts."
 
 	return result
 }
@@ -182,7 +181,11 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			resultMap = getBatteryResult(cluster.data.get(23))
+            if (cluster.data.get(7) == 0x21)  // check the data type at minimum
+            {
+				// bytes 8 and 9 are the battery voltage.
+                resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
+            }
 			break
 
 			case 0xFC02:

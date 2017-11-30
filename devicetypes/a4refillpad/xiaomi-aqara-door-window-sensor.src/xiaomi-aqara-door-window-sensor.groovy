@@ -131,14 +131,13 @@ private Map getBatteryResult(rawValue) {
     ]
     
     def volts = rawValue / 1000
-    def minVolts = 2.5
-    def maxVolts = 3.0
+    def minVolts = 2.0
+    def maxVolts = 3.04
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
-    log.debug "Battery mV is ${rawValue}"
     result.value = Math.min(100, roundedPct)
     result.translatable = true
-    result.descriptionText = "${device.displayName} battery was ${roundedPct}%"
+    result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts"
 
     return result
 }
@@ -151,7 +150,10 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-            resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21))  // Check CMD and Data Type
+            {
+              resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            }
 			break
 
 			case 0xFC02:
