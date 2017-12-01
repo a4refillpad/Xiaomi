@@ -99,7 +99,7 @@ metadata {
 		}
         
 		valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
-			state "default", label:'${currentValue}°', icon: "st.Weather.weather2",
+			state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
                 backgroundColors:[
 					[value: 0, color: "#153591"],
 					[value: 5, color: "#1e9cbb"],
