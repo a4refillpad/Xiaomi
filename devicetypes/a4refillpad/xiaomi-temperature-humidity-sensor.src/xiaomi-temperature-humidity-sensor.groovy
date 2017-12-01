@@ -54,10 +54,6 @@ metadata {
 			input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
 			input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
         }
-        section {
-            input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 kPa too high, you'd enter '-5'. If 3 kPa too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "pressOffset", "number", title: "kPa", description: "Adjust prssure by this many kPa", range: "*..*", displayDuringSetup: false
-		}
     }
     
 	// UI tile definitions
@@ -90,10 +86,6 @@ metadata {
 			state "default", label:'${currentValue}%', icon:"st.Weather.weather12"
 		}
         
-        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "default", label:'${currentValue} kPa', icon:"st.Weather.weather1"
-		}
-        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "default", label:'${currentValue}% battery', unit:""
 		}
@@ -122,7 +114,7 @@ metadata {
         }
             
 		main(["temperature2"])
-		details(["temperature", "battery", "humidity","pressure","refresh"])
+		details(["temperature", "battery", "humidity","refresh"])
 	}
 }
 
@@ -146,7 +138,7 @@ def parse(String description) {
     log.debug "${linkText} Parsename: $name"
 	def value = parseValue(description)
     log.debug "${linkText} Parsevalue: $value"
-	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? "kpa": null))
+	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : null)
 	def result = createEvent(name: name, value: value, unit: unit)
     log.debug "${linkText} Evencreated: $name, $value, $unit"
 	log.debug "${linkText} Parse returned: ${result?.descriptionText}"
@@ -164,11 +156,7 @@ private String parseName(String description) {
 		return "humidity"
         
 	} else if (description?.startsWith("catchall: ")) {
-        return "battery"
-        
-	} else if (description?.startsWith("read attr - raw: ")){
-        return "pressure"
-        
+        return "battery"   
     }
 	return null
 }
@@ -228,16 +216,6 @@ private String parseReadAttrMessage(String description) {
     //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
     
     if (cluster == "0403" && attrId == "0000") {
-         result = value[0..3]
-         int pressureval = Integer.parseInt(result, 16)
-         if (pressOffset)
-         {
-           result = ((pressureval/100) as Float) + pressOffset
-         }
-         else
-         {
-           result = (pressureval/100 as Float)
-         }
     }
     return result
 }
