@@ -11,6 +11,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
+ *
  * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
  *	added DH Colours
@@ -25,27 +26,31 @@
  *  Rinkelk - added date-attribute support for Webcore
  *  Rinkelk - Changed battery percentage with code from cancrusher
  *  Rinkelk - Changed battery icon according to Mobile785
+ *  snalee - Added endpointId copied from GvnCampbell's DH - pairs new sensor when adding
+ *  snalee - Battery percentage as average of min and max over time
  */
+
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
-   capability "Configuration"
-   capability "Sensor"
-   capability "Contact Sensor"
-   capability "Refresh"
-   capability "Battery"
-   capability "Health Check"
-   
-   attribute "lastCheckin", "String"
-   attribute "lastOpened", "String"
-   attribute "lastOpenedDate", "Date" 
-   attribute "lastCheckinDate", "Date"
+      capability "Configuration"
+      capability "Sensor"
+      capability "Contact Sensor"
+      capability "Refresh"
+      capability "Battery"
+      capability "Health Check"
 
-   fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0006", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
-   
-   command "enrollResponse"
-   command "resetClosed"
-   command "resetOpen"
-   command "Refresh"
+      attribute "lastCheckin", "String"
+      attribute "lastOpened", "String"
+      attribute "lastOpenedDate", "Date" 
+      attribute "lastCheckinDate", "Date"
+
+      fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
+      fingerprint endpointId: "01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
+
+      command "enrollResponse"
+      command "resetClosed"
+      command "resetOpen"
+      command "Refresh"
    }
     
    simulator {
@@ -121,24 +126,32 @@ def parse(String description) {
 
 private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
-
-	//log.debug rawValue
-
     def result = [
 		name: 'battery',
 		value: '--'
     ]
     
-    def volts = rawValue / 1000
-    def minVolts = 2.0
+    def rawVolts = rawValue / 1000
+
+	def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+	if (maxBattery == 0 || rawVolts > minBattery)
+    	state.maxBattery = maxBattery = rawVolts
+        
+    if (minBattery == 0 || rawVolts < minBattery)
+    	state.minBattery = minBattery = rawVolts
+    
+    def volts = (maxBattery + minBattery) / 2
+
+	def minVolts = 2.0
     def maxVolts = 3.04
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     result.translatable = true
-    result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts"
-
+    result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    
     return result
 }
 
@@ -150,18 +163,16 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-            if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21))  // Check CMD and Data Type
-            {
-              resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
-            }
+            	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
+            		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
 
 			case 0xFC02:
-			log.debug '${linkText}: ACCELERATION'
+				log.debug '${linkText}: ACCELERATION'
 			break
 
 			case 0x0402:
-			log.debug '${linkText}: TEMP'
+				log.debug '${linkText}: TEMP'
 				// temp is last 2 data values. reverse to swap endian
 				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
 				def value = getTemperature(temp)
@@ -298,15 +309,16 @@ def resetOpen() {
 }
 
 def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when installed()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	checkIntervalEvent("installed");
 }
 
 def updated() {
+	checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
 // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when updated()"
+    log.debug "${linkText}: Configured health checkInterval when ${text}()"
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
