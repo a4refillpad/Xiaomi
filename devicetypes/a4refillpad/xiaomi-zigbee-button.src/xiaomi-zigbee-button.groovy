@@ -174,7 +174,7 @@ private Map parseCustomMessage(String description) {
 //this method determines if a press should count as a push or a hold and returns the relevant event type
 private createButtonEvent(button) {
 	def currentTime = now()
-    def startOfPress = device.latestState('lastPress').date.getTime()
+    def startOfPress = Long.parseLong(device.latestState('lastPress').value)
     def timeDif = currentTime - startOfPress
     def holdTimeMillisec = (settings.holdTime?:3).toInteger() * 1000
     
