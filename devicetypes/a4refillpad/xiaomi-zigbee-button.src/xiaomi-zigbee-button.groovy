@@ -17,17 +17,18 @@
  *  added lastcheckin attribute and tile
  *  added a means to also push button in as tile on smartthings app
  *  fixed ios tile label problem and battery bug 
+ *  sulee: change battery calculation
+ *  sulee: changed to work as a push button
+ *  sulee: added endpoint for Smartthings to detect properly
  *
  */
 metadata {
-	definition (name: "Xiaomi Zigbee Button", namespace: "a4refillpad", author: "a4refillpad") {	
+	definition (name: "Original Xiaomi Aqara Button", namespace: "a4refillpad", author: "a4refillpad") {	
     	capability "Battery"
 		capability "Button"
-		capability "Holdable Button"
 		capability "Actuator"
 		capability "Switch"
 		capability "Momentary"
-		capability "Configuration"
 		capability "Sensor"
 		capability "Refresh"
         
@@ -35,20 +36,15 @@ metadata {
 		attribute "batterylevel", "string"
 		attribute "lastCheckin", "string"
         
-    	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004, 0003, 0006, 0008, 0005", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Xiaomi Button"
-
+		fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
+		fingerprint endpointId: "01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
 	}
     
     simulator {
-  	status "button 1 pressed": "on/off: 0"
+  		status "button 1 pressed": "on/off: 0"
       	status "button 1 released": "on/off: 1"
     }
     
-    preferences{
-    	input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"",
-        		defaultValue: 4, displayDuringSetup: false)
-    }
-
 	tiles(scale: 2) {
 
 		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
@@ -62,16 +58,18 @@ metadata {
 		}        
        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:""
-		}
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"",
+                backgroundColors: [
+                    [value: 10, color: "#bc2323"],
+                    [value: 26, color: "#f1d801"],
+                    [value: 51, color: "#44b621"] ]
+        }
+
+		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
-		}
         
-		main (["switch"])
+		main "switch"
 		details(["switch", "battery", "refresh", "configure"])
 	}
 }
@@ -103,7 +101,7 @@ def refresh(){
 	"st rattr 0x${device.deviceNetworkId} 1 2 0"
     "st rattr 0x${device.deviceNetworkId} 1 0 0"
 	log.debug "refreshing"
-    
+    sendEvent(name: 'numberOfButtons', value: 1)
     createEvent([name: 'batterylevel', value: '100', data:[buttonNumber: 1], displayed: false])
 }
 
@@ -114,7 +112,7 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-			resultMap = getBatteryResult(cluster.data.last())
+                resultMap = getBatteryResult(cluster.data.get(6))
 			break
 
 			case 0xFC02:
@@ -137,24 +135,31 @@ private Map parseCatchAllMessage(String description) {
 private Map getBatteryResult(rawValue) {
 	log.debug 'Battery'
 	def linkText = getLinkText(device)
-
-	log.debug rawValue
     
-    int battValue = rawValue
-     
-    def maxbatt = 100
+    def rawVolts = rawValue / 1000
 
-	if (battValue > maxbatt) {
-				battValue = maxbatt
-    }
-   
+	def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+	if (maxBattery == 0 || rawVolts > minBattery)
+    	state.maxBattery = maxBattery = rawVolts
+        
+    if (minBattery == 0 || rawVolts < minBattery)
+    	state.minBattery = minBattery = rawVolts
+    
+    def volts = (maxBattery + minBattery) / 2
+
+	def minVolts = 2.0
+    def maxVolts = 3.04
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.min(100, Math.round(pct * 100))
 
 	def result = [
 		name: 'battery',
-		value: battValue,
+		value: roundedPct,
         unit: "%",
         isStateChange:true,
-        descriptionText : "${linkText} battery was ${battValue}%"
+        descriptionText : "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
 	]
     
     log.debug result.descriptionText
@@ -164,9 +169,9 @@ private Map getBatteryResult(rawValue) {
 
 private Map parseCustomMessage(String description) {
 	if (description?.startsWith('on/off: ')) {
-    	if (description == 'on/off: 0') 		//button pressed
+    	if (description == 'on/off: 1') 		//button pressed
     		return createPressEvent(1)
-    	else if (description == 'on/off: 1') 	//button released
+    	else if (description == 'on/off: 0') 	//button released
     		return createButtonEvent(1)
 	}
 }
@@ -174,16 +179,8 @@ private Map parseCustomMessage(String description) {
 //this method determines if a press should count as a push or a hold and returns the relevant event type
 private createButtonEvent(button) {
 	def currentTime = now()
-    def startOfPress = device.latestState('lastPress').date.getTime()
-    def timeDif = currentTime - startOfPress
-    def holdTimeMillisec = (settings.holdTime?:3).toInteger() * 1000
-    
-    if (timeDif < 0) 
-    	return []	//likely a message sequence issue. Drop this press and wait for another. Probably won't happen...
-    else if (timeDif < holdTimeMillisec) 
-    	return createEvent(name: "button", value: "pushed", data: [buttonNumber: button], descriptionText: "$device.displayName button $button was pushed", isStateChange: true)
-    else 
-    	return createEvent(name: "button", value: "held", data: [buttonNumber: button], descriptionText: "$device.displayName button $button was held", isStateChange: true)
+    log.debug "Button Pressed"
+    return createEvent(name: "button", value: "pushed", data: [buttonNumber: button], descriptionText: "$device.displayName button $button was pushed", isStateChange: true)
 }
 
 private createPressEvent(button) {
@@ -204,10 +201,11 @@ private String swapEndianHex(String hex) {
 }
 
 def push() {
+	log.debug "App Button Pressed"
 	sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
 	sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
 	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
-    sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName button 1 was pushed", isStateChange: true)
+	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName button 1 was pushed", isStateChange: true)
 }
 
 def on() {
