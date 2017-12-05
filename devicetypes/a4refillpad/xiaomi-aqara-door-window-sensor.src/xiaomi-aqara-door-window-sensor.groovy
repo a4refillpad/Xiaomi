@@ -11,6 +11,8 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
+ *  https://github.com/bspranger/Xiaomi/tree/master/devicetypes/a4refillpad/xiaomi-aqara-door-window-sensor.src
+ *  https://github.com/GvnCampbell/SmartThings-Xiaomi
  *
  * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
@@ -26,10 +28,9 @@
  *  Rinkelk - added date-attribute support for Webcore
  *  Rinkelk - Changed battery percentage with code from cancrusher
  *  Rinkelk - Changed battery icon according to Mobile785
- *  snalee - Added endpointId copied from GvnCampbell's DH - pairs new sensor when adding
- *  snalee - Battery percentage as average of min and max over time
+ *  sulee - Added endpointId copied from GvnCampbell's DH - Detects sensor when adding
+ *  sulee - Track battery as average of min and max over time
  */
-
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
       capability "Configuration"
@@ -81,7 +82,7 @@ metadata {
 		[value: 10, color: "#bc2323"],
 		[value: 26, color: "#f1d801"],
 		[value: 51, color: "#44b621"] ]
-	}
+      }
 
       standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
@@ -128,7 +129,9 @@ private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
     def result = [
 		name: 'battery',
-		value: '--'
+		value: '--',
+		unit: "%",
+		translatable: true
     ]
     
     def rawVolts = rawValue / 1000
@@ -149,7 +152,6 @@ private Map getBatteryResult(rawValue) {
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.translatable = true
     result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     
     return result
