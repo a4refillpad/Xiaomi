@@ -30,6 +30,22 @@
  *  Rinkelk - Changed battery icon according to Mobile785
  *  sulee - Added endpointId copied from GvnCampbell's DH - Detects sensor when adding
  *  sulee - Track battery as average of min and max over time
+ *
+ *  Fingerprint Endpoint data:
+ *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
+ *     endpoints data
+ *        01 - endpoint
+ *        0104 - profile id
+ *        5F01 - device id
+ *        01 - version
+ *        03 - # of inClusters
+ *        0000 ffff 0006 - inClusters
+ *        03 - # of outClusters
+ *        0000 0004 ffff 0 outClusters
+ *        manufacturer "LUMI" - must match manufacturer field in fingerprint
+ *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
+ *        deviceJoinName: whatever you want it to show in the app as a Thing
+ *
  */
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
@@ -147,8 +163,8 @@ private Map getBatteryResult(rawValue) {
     
     def volts = (maxBattery + minBattery) / 2
 
-	def minVolts = 2.0
-    def maxVolts = 3.04
+	def minVolts = 2.7
+    def maxVolts = 3.3
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
@@ -207,8 +223,9 @@ def configure() {
     log.debug "${linkText}: ${zigbeeEui}"
 	def configCmds = [
 			//battery reporting and heartbeat
+			// send-me-a-report 3600 43200 is min and max reporting time range
 			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
+			"zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
 			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
 
@@ -246,11 +263,7 @@ def refresh() {
 def refresh() {
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-//    [
-//        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 500",
-//        "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
-//    ]
-    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
+    zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
 }
 
 
