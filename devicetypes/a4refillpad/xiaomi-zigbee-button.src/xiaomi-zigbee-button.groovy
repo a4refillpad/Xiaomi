@@ -21,6 +21,20 @@
  *  sulee: changed to work as a push button
  *  sulee: added endpoint for Smartthings to detect properly
  *
+ *  Fingerprint Endpoint data found by looking at Hub event list after pairing device:
+ *  zbjoin: {"dni":"xxxx","d":"xxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
+ *     endpoints data, data size: short
+ *        01 - size of device/profile id in short
+ *        0104 - device/profile id
+ *        5F01 01 - Unknown
+ *        03 - size of inClusters in short
+ *        0000 ffff 0006 - inClusters
+ *        03 - size of outClusters in short
+ *        0000 0004 ffff - outClusters
+ *        manufacturer "LUMI" - must match manufacturer field in fingerprint
+ *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
+ *        deviceJoinName: whatever you want it to show in the app as a Thing
+ *
  */
 metadata {
 	definition (name: "Original Xiaomi Aqara Button", namespace: "a4refillpad", author: "a4refillpad") {	
