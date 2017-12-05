@@ -133,17 +133,16 @@ def configure(){
 }
 
 def refresh(){
-	"st rattr 0x${device.deviceNetworkId} 1 2 0"
-    "st rattr 0x${device.deviceNetworkId} 1 0 0"
-	log.debug "refreshing"
-    sendEvent(name: 'numberOfButtons', value: 1)
-    createEvent([name: 'batterylevel', value: '100', data:[buttonNumber: 1], displayed: false])
+	def linkText = getLinkText(device)
+    log.debug "${linkText}: refreshing"
+    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
 }
 
 private Map parseCatchAllMessage(String description) {
+	def linkText = getLinkText(device)
 	Map resultMap = [:]
 	def cluster = zigbee.parse(description)
-	log.debug cluster
+	log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
