@@ -21,8 +21,8 @@
  *  sulee: changed to work as a push button
  *  sulee: added endpoint for Smartthings to detect properly
  *
- *  Fingerprint Endpoint data found by looking at Hub event list after pairing device:
- *  zbjoin: {"dni":"xxxx","d":"xxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
+ *  Fingerprint Endpoint data:
+ *  zbjoin: {"dni":"A223","d":"00158D0001B767E0","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
  *     endpoints data, data size: short
  *        01 - size of device/profile id in short
  *        0104 - device/profile id
@@ -30,7 +30,7 @@
  *        03 - size of inClusters in short
  *        0000 ffff 0006 - inClusters
  *        03 - size of outClusters in short
- *        0000 0004 ffff - outClusters
+ *        0000 0004 ffff 0 outClusters
  *        manufacturer "LUMI" - must match manufacturer field in fingerprint
  *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
  *        deviceJoinName: whatever you want it to show in the app as a Thing
@@ -50,7 +50,7 @@ metadata {
 		attribute "batterylevel", "string"
 		attribute "lastCheckin", "string"
         
-		fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
+    	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
 		fingerprint endpointId: "01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
 	}
     
@@ -104,11 +104,32 @@ def parse(String description) {
 }
 
 def configure(){
-    [
-    "zdo bind 0x${device.deviceNetworkId} 1 2 0 {${device.zigbeeId}} {}", "delay 5000",
-    "zcl global send-me-a-report 2 0 0x10 1 0 {01}", "delay 500",
-    "send 0x${device.deviceNetworkId} 1 2"
-    ]
+    def linkText = getLinkText(device)
+
+	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
+	log.debug "${linkText}: ${device.deviceNetworkId}"
+    def endpointId = 1
+    log.debug "${linkText}: ${device.zigbeeId}"
+    log.debug "${linkText}: ${zigbeeEui}"
+	def configCmds = [
+			//battery reporting and heartbeat
+			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
+			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
+			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
+
+
+			// Writes CIE attribute on end device to direct reports to the hub's EUID
+			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
+			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
+	]
+
+	log.debug "${linkText}: configure: Write IAS CIE"
+	return configCmds
+//    [
+//    "zdo bind 0x${device.deviceNetworkId} 1 2 0 {${device.zigbeeId}} {}", "delay 5000",
+//    "zcl global send-me-a-report 2 0 0x10 1 0 {01}", "delay 500",
+//    "send 0x${device.deviceNetworkId} 1 2"
+//    ]
 }
 
 def refresh(){
@@ -126,7 +147,8 @@ private Map parseCatchAllMessage(String description) {
 	if (cluster) {
 		switch(cluster.clusterId) {
 			case 0x0000:
-                resultMap = getBatteryResult(cluster.data.get(6))
+            	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
+            		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
 
 			case 0xFC02:
