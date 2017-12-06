@@ -20,17 +20,17 @@
  *  sulee: change battery calculation
  *  sulee: changed to work as a push button
  *  sulee: added endpoint for Smartthings to detect properly
+ *  sulee: cleaned everything up
  *
  *  Fingerprint Endpoint data:
- *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
- *     endpoints data
- *        01 - endpoint
- *        0104 - profile id
- *        5F01 - device id
- *        01 - version
- *        03 - # of inClusters
+ *  zbjoin: {"dni":"A223","d":"00158D0001B767E0","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
+ *     endpoints data, data size: short
+ *        01 - size of device/profile id in short
+ *        0104 - device/profile id
+ *        5F01 01 - Unknown
+ *        03 - size of inClusters in short
  *        0000 ffff 0006 - inClusters
- *        03 - # of outClusters
+ *        03 - size of outClusters in short
  *        0000 0004 ffff 0 outClusters
  *        manufacturer "LUMI" - must match manufacturer field in fingerprint
  *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
@@ -50,14 +50,13 @@ metadata {
 		attribute "lastPress", "string"
 		attribute "batterylevel", "string"
 		attribute "lastCheckin", "string"
+        attribute "lastCheckinDate", "Date"
         
-    	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
-		fingerprint endpointId: "01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
+    	fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
 	}
     
     simulator {
   		status "button 1 pressed": "on/off: 0"
-      	status "button 1 released": "on/off: 1"
     }
     
 	tiles(scale: 2) {
@@ -65,7 +64,7 @@ metadata {
 		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
            		attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#53a7c0")
-            	attributeState("off", label:' push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "on")   
+                attributeState("off", label:' push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "on")
  			}
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
     			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
@@ -90,49 +89,31 @@ metadata {
 }
 
 def parse(String description) {
-  log.debug "Parsing '${description}'"
-//  send event for heartbeat    
-  def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-  sendEvent(name: "lastCheckin", value: now)
-  
-  def results = []
-  if (description?.startsWith('on/off: '))
-		results = parseCustomMessage(description)
-  if (description?.startsWith('catchall:')) 
-		results = parseCatchAllMessage(description)
-        
-  return results;
+	def result = zigbee.getEvent(description)
+
+	//  send event for heartbeat    
+	def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+	def nowDate = new Date(now).getTime()
+	sendEvent(name: "lastCheckin", value: now)
+	sendEvent(name: "lastCheckinDate", value: nowDate)
+
+    if (description?.startsWith('catchall:')) {
+		return parseCatchAllMessage(description)
+	} else if (result) {
+        push()
+    }
 }
 
 def configure(){
-    def linkText = getLinkText(device)
-
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${linkText}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${linkText}: ${device.zigbeeId}"
-    log.debug "${linkText}: ${zigbeeEui}"
-	def configCmds = [
-			//battery reporting and heartbeat
-			// send-me-a-report 3600 43200 is min and max reporting time range
-			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
-
-
-			// Writes CIE attribute on end device to direct reports to the hub's EUID
-			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
-	]
-
-	log.debug "${linkText}: configure: Write IAS CIE"
-	return configCmds
+	def linkText = getLinkText(device)
+    log.debug "${linkText}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh(){
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -146,18 +127,6 @@ private Map parseCatchAllMessage(String description) {
             	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
             		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
-
-			case 0xFC02:
-			log.debug 'ACCELERATION'
-			break
-
-			case 0x0402:
-			log.debug 'TEMP'
-				// temp is last 2 data values. reverse to swap endian
-				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
-				def value = getTemperature(temp)
-				resultMap = getTemperatureResult(value)
-				break
 		}
 	}
 
@@ -165,9 +134,7 @@ private Map parseCatchAllMessage(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-	log.debug 'Battery'
 	def linkText = getLinkText(device)
-    
     def rawVolts = rawValue / 1000
 
 	def maxBattery = state.maxBattery ?: 0
@@ -194,56 +161,15 @@ private Map getBatteryResult(rawValue) {
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
 	]
     
-    log.debug result.descriptionText
+    log.debug "${linkText}: ${result}"
     state.lastbatt = new Date().time
     return createEvent(result)
 }
 
-private Map parseCustomMessage(String description) {
-	if (description?.startsWith('on/off: ')) {
-    	if (description == 'on/off: 1') 		//button pressed
-    		return createPressEvent(1)
-    	else if (description == 'on/off: 0') 	//button released
-    		return createButtonEvent(1)
-	}
-}
-
-//this method determines if a press should count as a push or a hold and returns the relevant event type
-private createButtonEvent(button) {
-	def currentTime = now()
-    log.debug "Button Pressed"
-    return createEvent(name: "button", value: "pushed", data: [buttonNumber: button], descriptionText: "$device.displayName button $button was pushed", isStateChange: true)
-}
-
-private createPressEvent(button) {
-	return createEvent([name: 'lastPress', value: now(), data:[buttonNumber: button], displayed: false])
-}
-
-//Need to reverse array of size 2
-private byte[] reverseArray(byte[] array) {
-    byte tmp;
-    tmp = array[1];
-    array[1] = array[0];
-    array[0] = tmp;
-    return array
-}
-
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
-}
-
 def push() {
-	log.debug "App Button Pressed"
+	def linkText = getLinkText(device)
+	log.debug "${linkText}: Button Pressed"
 	sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
 	sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
-	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
-	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName button 1 was pushed", isStateChange: true)
-}
-
-def on() {
-	push()
-}
-
-def off() {
-	push()
+    sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "Button pushed", isStateChange: true)
 }
