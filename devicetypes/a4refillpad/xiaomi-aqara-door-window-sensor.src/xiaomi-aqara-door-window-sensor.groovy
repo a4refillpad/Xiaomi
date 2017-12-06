@@ -30,21 +30,7 @@
  *  Rinkelk - Changed battery icon according to Mobile785
  *  sulee - Added endpointId copied from GvnCampbell's DH - Detects sensor when adding
  *  sulee - Track battery as average of min and max over time
- *
- *  Fingerprint Endpoint data:
- *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
- *     endpoints data
- *        01 - endpoint
- *        0104 - profile id
- *        5F01 - device id
- *        01 - version
- *        03 - # of inClusters
- *        0000 ffff 0006 - inClusters
- *        03 - # of outClusters
- *        0000 0004 ffff 0 outClusters
- *        manufacturer "LUMI" - must match manufacturer field in fingerprint
- *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
- *        deviceJoinName: whatever you want it to show in the app as a Thing
+ *  sulee - Clean up some of the code
  *
  */
 metadata {
@@ -61,12 +47,8 @@ metadata {
       attribute "lastOpenedDate", "Date" 
       attribute "lastCheckinDate", "Date"
 
-      fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003", outClusters: "0000, 0004", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
-      fingerprint endpointId: "01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
+      fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
-      command "enrollResponse"
-      command "resetClosed"
-      command "resetOpen"
       command "Refresh"
    }
     
@@ -99,25 +81,18 @@ metadata {
 		[value: 26, color: "#f1d801"],
 		[value: 51, color: "#44b621"] ]
       }
-
-      standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
-			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
-	  }
-	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
-			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
-	  }
       standardTile("refresh", "command.refresh", inactiveLabel: false) {
 			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
 	  }      
 
       main (["contact"])
-      details(["contact","battery","icon","lastopened","resetClosed","resetOpen","refresh"])
+      details(["contact","battery","icon","lastopened","refresh"])
    }
 }
 
 def parse(String description) {
    def linkText = getLinkText(device)
-   log.debug "${linkText}: Parsing '${description}'"
+   def result = zigbee.getEvent(description)
    
 //  send event for heartbeat    
    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
@@ -127,15 +102,15 @@ def parse(String description) {
     
    Map map = [:]
 
-   if (description?.startsWith('on/off: ')) {
-      map = parseCustomMessage(description) 
-      sendEvent(name: "lastOpened", value: now)
-      sendEvent(name: "lastOpenedDate", value: nowDate) 
+   if (result) {
+   	   log.debug "${linkText} Event: ${result}"
+       map = getContactResult(result);
+       sendEvent(name: "lastOpened", value: now)
+       sendEvent(name: "lastOpenedDate", value: nowDate)
+   } else if (description?.startsWith('catchall:')) {
+       map = parseCatchAllMessage(description)
    }
-   if (description?.startsWith('catchall:')) {
-      map = parseCatchAllMessage(description)
-   }
-   log.debug "${linkText}: Parse returned $map"
+   log.debug "${linkText}: Parse returned ${map}"
    def results = map ? createEvent(map) : null
 
    return results;
@@ -146,8 +121,8 @@ private Map getBatteryResult(rawValue) {
     def result = [
 		name: 'battery',
 		value: '--',
-		unit: "%",
-		translatable: true
+        unit: "%",
+        translatable: true
     ]
     
     def rawVolts = rawValue / 1000
@@ -168,7 +143,7 @@ private Map getBatteryResult(rawValue) {
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     
     return result
 }
@@ -184,143 +159,33 @@ private Map parseCatchAllMessage(String description) {
             	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
             		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
-
-			case 0xFC02:
-				log.debug '${linkText}: ACCELERATION'
-			break
-
-			case 0x0402:
-				log.debug '${linkText}: TEMP'
-				// temp is last 2 data values. reverse to swap endian
-				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
-				def value = getTemperature(temp)
-				resultMap = getTemperatureResult(value)
-				break
 		}
 	}
 
 	return resultMap
 }
 
-private boolean shouldProcessMessage(cluster) {
-	// 0x0B is default response indicating message got through
-	// 0x07 is bind message
-	boolean ignoredMessage = cluster.profileId != 0x0104 ||
-	cluster.command == 0x0B ||
-	cluster.command == 0x07 ||
-	(cluster.data.size() > 0 && cluster.data.first() == 0x3e)
-	return !ignoredMessage
-}
-
-
 def configure() {
-    def linkText = getLinkText(device)
-
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${linkText}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${linkText}: ${device.zigbeeId}"
-    log.debug "${linkText}: ${zigbeeEui}"
-	def configCmds = [
-			//battery reporting and heartbeat
-			// send-me-a-report 3600 43200 is min and max reporting time range
-			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
-
-
-			// Writes CIE attribute on end device to direct reports to the hub's EUID
-			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
-	]
-
-	log.debug "${linkText}: configure: Write IAS CIE"
-	return configCmds
-}
-
-def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Enrolling device into the IAS Zone"
-	[
-			// Enrolling device into the IAS Zone
-			"raw 0x500 {01 23 00 00 00}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1"
-	]
-}
-
-/*
-def refresh() {
 	def linkText = getLinkText(device)
-    log.debug "${linkText}: Refreshing Battery"
-    def endpointId = 0x01
-	[
-	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
-
-	] //+ enrollResponse()
+    log.debug "${linkText}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
-*/
 
 def refresh() {
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
-
-private Map parseCustomMessage(String description) {
-   def result
-   if (description?.startsWith('on/off: ')) {
-      if (description == 'on/off: 0') 		//contact closed
-         result = getContactResult("closed")
-      else if (description == 'on/off: 1') 	//contact opened
-         result = getContactResult("open")
-      return result
-   }
-}
-
-private Map getContactResult(value) {
+private Map getContactResult(result) {
    def linkText = getLinkText(device)
-   def descriptionText = "${linkText} was ${value == 'open' ? 'opened' : 'closed'}"
+   def value = result.value == "on" ? "open" : "closed"
+   def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
    return [
       name: 'contact',
       value: value,
       descriptionText: descriptionText
 	]
-}
-
-private String swapEndianHex(String hex) {
-	reverseArray(hex.decodeHex()).encodeHex()
-}
-private getEndpointId() {
-	new BigInteger(device.endpointId, 16).toString()
-}
-
-Integer convertHexToInt(hex) {
-	Integer.parseInt(hex,16)
-}
-
-private byte[] reverseArray(byte[] array) {
-	int i = 0;
-	int j = array.length - 1;
-	byte tmp;
-
-	while (j > i) {
-		tmp = array[j];
-		array[j] = array[i];
-		array[i] = tmp;
-		j--;
-		i++;
-	}
-
-	return array
-}
-
-def resetClosed() {
-	sendEvent(name:"contact", value:"closed")
-} 
-
-def resetOpen() {
-	sendEvent(name:"contact", value:"open")
 }
 
 def installed() {
