@@ -41,8 +41,7 @@ metadata {
 
    // Not getting a zbjoin for this device, so it can't determine the endpoint
 
-   fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
-   fingerprint endpointId: "01", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
+   fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
    command "resetClosed"
@@ -177,7 +176,7 @@ private Map getBatteryResult(rawValue) {
     
     def volts = (maxBattery + minBattery) / 2
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
