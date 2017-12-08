@@ -27,7 +27,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Aqara Motion Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+	definition (name: "Xiaomi Motion Sensor", namespace: "a4refillpad", author: "a4refillpad") {
 		capability "Motion Sensor"
 		capability "Configuration"
 		capability "Battery"
@@ -39,7 +39,8 @@ metadata {
         attribute "lastMotion", "String"
         attribute "Light", "number"
 
-    	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
+		fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "0107", inClusters: "0000,FFFF,0406,0400,0500,0001,0003", outClusters: "0000,0019", manufacturer: "LUMI", model: "lumi.sensor_motion.aq2", deviceJoinName: "Xiaomi Aqara Motion Sensor"
         
         command "reset"
         command "Refresh"
@@ -144,24 +145,33 @@ private Map parseIlluminanceMessage(String description)
 
 private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
-
-	//log.debug rawValue
-
     def result = [
 		name: 'battery',
-		value: '--'
+		value: '--',
+        unit: "%",
+        translatable: true
     ]
     
-    def volts = rawValue / 1000
-    def minVolts = 2.0
-    def maxVolts = 3.04
+    def rawVolts = rawValue / 1000
+
+	def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+	if (maxBattery == 0 || rawVolts > minBattery)
+    	state.maxBattery = maxBattery = rawVolts
+        
+    if (minBattery == 0 || rawVolts < minBattery)
+    	state.minBattery = minBattery = rawVolts
+    
+    def volts = (maxBattery + minBattery) / 2
+
+	def minVolts = 2.7
+    def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.translatable = true
-    result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts"
-
+    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    
     return result
 }
 
@@ -179,18 +189,6 @@ private Map parseCatchAllMessage(String description) {
               resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
             }
 			break
-
-			case 0xFC02:
-			log.debug '${linkText}: ACCELERATION'
-			break
-
-			case 0x0402:
-			log.debug '${linkText}: TEMP'
-				// temp is last 2 data values. reverse to swap endian
-				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
-				def value = getTemperature(temp)
-				resultMap = getTemperatureResult(value)
-				break
 		}
 	}
 
@@ -210,25 +208,14 @@ private boolean shouldProcessMessage(cluster) {
 
 def configure() {
 	def linkText = getLinkText(device)
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${linkText}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${linkText}: ${device.zigbeeId}"
-    log.debug "${linkText}: ${zigbeeEui}"
-	def configCmds = [
-			//battery reporting and heartbeat
-			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
+    log.debug "${linkText}: configuring"
+    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+}
 
-
-			// Writes CIE attribute on end device to direct reports to the hub's EUID
-			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
-	]
-
-	log.debug "${linkText} configure: Write IAS CIE"
-	return configCmds
+def refresh() {
+	def linkText = getLinkText(device)
+    log.debug "${linkText}: refreshing"
+    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def enrollResponse() {
@@ -239,18 +226,6 @@ def enrollResponse() {
 			"raw 0x500 {01 23 00 00 00}", "delay 200",
 			"send 0x${device.deviceNetworkId} 1 1"
 	]
-}
-
-def refresh() {
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Refreshing Battery"
-//    def endpointId = 0x01
-//	[
-//	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
-//	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000", "delay 200"
-//	] //+ enrollResponse()
-
-    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
 }
 
 private Map parseReportAttributeMessage(String description) {
@@ -357,15 +332,16 @@ def reset() {
 }
 
 def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when installed()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	checkIntervalEvent("installed");
 }
 
 def updated() {
+	checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
 // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when updated()"
+    def linkText = getLinkText(device)
+    log.debug "${linkText}: Configured health checkInterval when ${text}()"
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
