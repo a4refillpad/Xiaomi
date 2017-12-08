@@ -23,15 +23,16 @@
  *  sulee: cleaned everything up
  *
  *  Fingerprint Endpoint data:
- *  zbjoin: {"dni":"A223","d":"00158D0001B767E0","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
- *     endpoints data, data size: short
- *        01 - size of device/profile id in short
- *        0104 - device/profile id
- *        5F01 01 - Unknown
- *        03 - size of inClusters in short
+ *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
+ *     endpoints data
+ *        01 - endpoint id
+ *        0104 - profile id
+ *        5F01 - device id
+ *        01 - ignored
+ *        03 - number of in clusters
  *        0000 ffff 0006 - inClusters
- *        03 - size of outClusters in short
- *        0000 0004 ffff 0 outClusters
+ *        03 - number of out clusters
+ *        0000 0004 ffff - outClusters
  *        manufacturer "LUMI" - must match manufacturer field in fingerprint
  *        model "lumi.sensor_switch.aq2" - must match model in fingerprint
  *        deviceJoinName: whatever you want it to show in the app as a Thing
@@ -41,10 +42,7 @@ metadata {
 	definition (name: "Original Xiaomi Aqara Button", namespace: "a4refillpad", author: "a4refillpad") {	
     	capability "Battery"
 		capability "Button"
-		capability "Actuator"
-		capability "Switch"
 		capability "Momentary"
-		capability "Sensor"
 		capability "Refresh"
         
 		attribute "lastPress", "string"
@@ -52,7 +50,8 @@ metadata {
 		attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
         
-    	fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Xiaomi Aqara Switch"
 	}
     
     simulator {
@@ -62,7 +61,7 @@ metadata {
 	tiles(scale: 2) {
 
 		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
            		attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#53a7c0")
                 attributeState("off", label:' push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "on")
  			}
@@ -84,7 +83,7 @@ metadata {
         }
         
 		main "switch"
-		details(["switch", "battery", "refresh", "configure"])
+		details(["switch", "battery", "refresh"])
 	}
 }
 
@@ -107,13 +106,13 @@ def parse(String description) {
 def configure(){
 	def linkText = getLinkText(device)
     log.debug "${linkText}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh(){
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -169,7 +168,5 @@ private Map getBatteryResult(rawValue) {
 def push() {
 	def linkText = getLinkText(device)
 	log.debug "${linkText}: Button Pressed"
-	sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
-	sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
     sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "Button pushed", isStateChange: true)
 }
