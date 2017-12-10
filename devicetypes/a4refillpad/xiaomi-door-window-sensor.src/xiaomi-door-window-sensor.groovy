@@ -39,7 +39,9 @@ metadata {
    attribute "lastOpenedDate", "Date" 
    attribute "lastCheckinDate", "Date"
 
-   fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
+   // Not getting a zbjoin for this device, so it can't determine the endpoint
+
+   fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
    command "resetClosed"
@@ -161,14 +163,25 @@ private Map getBatteryResult(rawValue) {
 		value: '--'
 	]
     
-    def volts = rawValue / 1000
-    def minVolts = 2.0
-    def maxVolts = 3.04
+    def rawVolts = rawValue / 1000
+
+	def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+	if (maxBattery == 0 || rawVolts > minBattery)
+    	state.maxBattery = maxBattery = rawVolts
+        
+    if (minBattery == 0 || rawVolts < minBattery)
+    	state.minBattery = minBattery = rawVolts
+    
+    def volts = (maxBattery + minBattery) / 2
+    def minVolts = 2.7
+    def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     
-	result.descriptionText = "${linkText} battery was ${result.value}%, ${volts} volts."
+	result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
 
 	return result
 }
@@ -226,8 +239,9 @@ def configure() {
     log.debug "${linkText}: ${zigbeeEui}"
 	def configCmds = [
 			//battery reporting and heartbeat
+			// send-me-a-report 3600 43200 is min and max reporting time range
 			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
+			"zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
 			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
 
@@ -263,16 +277,9 @@ def refresh() {
 */
 
 def refresh() {
-    def result
 	def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    [
-        "st rattr 0x${device.deviceNetworkId} 1 0 5", "delay 5",
-    //    "st rattr 0x${device.deviceNetworkId} 1 0", "delay 250",
-    ] + enrollResponse()
-    //zigbee.readAttribute(0x0000, 0x05)
-    
-    //zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
+    zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
 }
 
 
