@@ -55,8 +55,11 @@ metadata {
 			input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
         }
         section {
-            input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 mbar too high, you'd enter '-5'. If 3 mbar too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "pressOffset", "number", title: "", description: "Adjust prssure by this many mbar", range: "*..*", displayDuringSetup: false
+            input name: "PressureUnits", type: "enum", title: "Pressure Units", options: ["mbar", "kPa", "inHg", "mmHg"], description: "Sets the unit in which pressure will be reported", defaultValue: "mbar", displayDuringSetup: true, required: true
+		} 
+		section {
+            input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
+            input "pressOffset", "number", title: "Pressure", description: "Adjust prssure by this many units", range: "*..*", displayDuringSetup: false
 		}
     }
     
@@ -91,7 +94,7 @@ metadata {
 		}
         
         standardTile("pressure", "device.pressure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "default", label:'${currentValue} mbar', icon:"st.Weather.weather1"
+			state "default", label:'${currentValue}', icon:"st.Weather.weather1"
 		}
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -146,7 +149,7 @@ def parse(String description) {
     log.debug "${linkText} Parsename: $name"
 	def value = parseValue(description)
     log.debug "${linkText} Parsevalue: $value"
-	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? "mbar": null))
+	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? PressureUnits: null))
 	def result = createEvent(name: name, value: value, unit: unit)
     log.debug "${linkText} Evencreated: $name, $value, $unit"
 	log.debug "${linkText} Parse returned: ${result?.descriptionText}"
@@ -234,23 +237,47 @@ private String parseReadAttrMessage(String description) {
     def cluster
     def attrId
     def value
-        
+    def linkText = getLinkText(device)
     cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
     attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
     value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+    
     
     if (cluster == "0403" && attrId == "0000") {
          result = value[0..3]
-         int pressureval = Integer.parseInt(result, 16)
+         float pressureval = Integer.parseInt(result, 16)
+         
+         log.debug "${linkText}: Converting ${pressureval} to ${PressureUnits}"
+         
+         switch (PressureUnits)
+         {
+         case "mbar":
+         	pressureval = (pressureval/10) as Float
+            pressureval = pressureval.round(1);
+         	break;
+         case "kPa":
+         	pressureval = (pressureval/100) as Float
+            pressureval = pressureval.round(2);
+            break;
+         case "inHg":
+         	pressureval = (((pressureval/10) as Float) * 0.0295300)
+            pressureval = pressureval.round(2);
+            break;
+         case "mmHg":
+         	pressureval = (((pressureval/10) as Float) * 0.750062)
+            pressureval = pressureval.round(2);
+            break;
+         }
+         
+         log.debug "${linkText}: ${pressureval} ${PressureUnits} before applying the pressure offset."
+         
          if (pressOffset)
          {
-           result = Math.round(((pressureval/10) as Float) + pressOffset)
+           pressureval = (pressureval + pressOffset)
+           pressureval = pressureval.round(2);
          }
-         else
-         {
-           result = Math.round(pressureval/10 as Float)
-         }
+         
+         result = pressureval
     } 
     else if (cluster == "0000" && attrId == "0005") 
     {
