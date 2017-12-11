@@ -153,7 +153,6 @@ def parse(String description) {
     log.debug "${linkText} Parse returned: ${result?.descriptionText}"
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
-
     return result
 }
 
@@ -174,7 +173,6 @@ private String parseName(String description) {
             return "model"
         }
     }
-
     return null
 }
 
@@ -216,7 +214,6 @@ private String parseValue(String description) {
         log.debug "${linkText} unknown: $description"
         sendEvent(name: "unknown", value: description)
     }
-
     null
 }
 
@@ -233,7 +230,6 @@ private String parseReadAttrMessage(String description) {
     if (cluster == "0403" && attrId == "0000") {
         result = value[0..3]
         float pressureval = Integer.parseInt(result, 16)
-
         log.debug "${linkText}: Converting ${pressureval} to ${PressureUnits}"
 
         switch (PressureUnits) {
@@ -274,7 +270,6 @@ private String parseReadAttrMessage(String description) {
             result = result + NextChar
         }
     }
-
     return result
 }
 
@@ -294,7 +289,6 @@ private String parseCatchAllMessage(String description) {
             break
         }
     }
-
     return result
 }
 
@@ -321,7 +315,6 @@ def refresh() {
         "st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
         "st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
     ]
-
     return refreshCmds + enrollResponse()
 }
 

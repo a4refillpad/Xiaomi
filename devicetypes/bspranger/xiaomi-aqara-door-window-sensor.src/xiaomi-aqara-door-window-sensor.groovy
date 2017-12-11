@@ -88,7 +88,7 @@ metadata {
 
         main (["contact"])
         details(["contact","battery","icon","lastopened","refresh"])
-   }
+    }
 }
 
 def parse(String description) {
@@ -111,9 +111,9 @@ def parse(String description) {
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     }
+
     log.debug "${linkText}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
-
     return results
 }
 
@@ -144,7 +144,6 @@ private Map getBatteryResult(rawValue) {
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
-
     return result
 }
 
@@ -163,7 +162,6 @@ private Map parseCatchAllMessage(String description) {
             break
         }
     }
-
     return resultMap
 }
 

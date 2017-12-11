@@ -45,52 +45,52 @@ metadata {
 
     command "reset"
     command "Refresh"
-}
 
-simulator {
-}
+    simulator {
+    }
 
-preferences {
-    input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: false
-}
+    preferences {
+        input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: false
+    }
 
-tiles(scale: 2) {
-    multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4) {
-        tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
-            attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-            attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
+    tiles(scale: 2) {
+        multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4) {
+            tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
+                attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+                attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
+            }
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+            }
         }
-        tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-            attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+        valueTile("Light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2){
+            state "Light", label:'${currentValue}% \nLight', unit: ""
         }
-    }
-    valueTile("Light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2){
-        state "Light", label:'${currentValue}% \nLight', unit: ""
-    }
-    valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-        state "battery", label:'${currentValue}% battery', unit:""
-    }
-    standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-        state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-    }
-    standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
-        state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
-    }
-    standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-        state "default", action:"reset", label: "Reset Motion"
-    }
-    standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-        state "default", label:'Last Motion:', icon:"st.Entertainment.entertainment15"
-    }
-    valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-        state "default", label:'${currentValue}'
-    }
-    standardTile("refresh", "command.refresh", inactiveLabel: false) {
-        state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-    }
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            state "battery", label:'${currentValue}% battery', unit:""
+        }
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
+        }
+        standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
+            state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
+        }
+        standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", action:"reset", label: "Reset Motion"
+        }
+        standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "default", label:'Last Motion:', icon:"st.Entertainment.entertainment15"
+        }
+        valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'${currentValue}'
+        }
+        standardTile("refresh", "command.refresh", inactiveLabel: false) {
+            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        }
 
-    main(["motion"])
+        main(["motion"])
         details(["motion", "Light", "battery", "icon", "lastmotion", "reset", "refresh"])
+        }
     }
 }
 
@@ -120,7 +120,6 @@ def parse(String description) {
         log.debug "${linkText} enroll response: ${cmds}"
         result = cmds?.collect { new physicalgraph.device.HubAction(it) }
     }
-
     return result
 }
 
@@ -131,10 +130,8 @@ private Map parseIlluminanceMessage(String description) {
         value: '--'
     ]
     def value = ((description - "illuminance: ").trim()) as Float
-
     result.value = value
     result.descriptionText = "${linkText} Light was ${result.value}"
-
     return result;
 }
 
@@ -166,7 +163,6 @@ private Map getBatteryResult(rawValue) {
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
-
     return result
 }
 
@@ -187,7 +183,6 @@ private Map parseCatchAllMessage(String description) {
             break
         }
     }
-
     return resultMap
 }
 
@@ -244,7 +239,6 @@ private Map parseReportAttributeMessage(String description) {
         if (value == "active") runIn(settings.motionReset, stopMotion)
         resultMap = getMotionResult(value)
     }
-
     return resultMap
 }
 
@@ -292,7 +286,6 @@ private Map parseIasMessage(String description) {
         case '0x0028': // Test Mode
             break
     }
-
     return resultMap
 }
 
@@ -306,7 +299,6 @@ private Map getMotionResult(value) {
         value: value,
         descriptionText: descriptionText
     ]
-
     return commands
 }
 
