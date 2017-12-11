@@ -33,172 +33,174 @@
  *  sulee - Clean up some of the code
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  */
+
 metadata {
-   definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
-      capability "Configuration"
-      capability "Sensor"
-      capability "Contact Sensor"
-      capability "Refresh"
-      capability "Battery"
-      capability "Health Check"
+    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
+        capability "Configuration"
+        capability "Sensor"
+        capability "Contact Sensor"
+        capability "Refresh"
+        capability "Battery"
+        capability "Health Check"
 
-      attribute "lastCheckin", "String"
-      attribute "lastOpened", "String"
-      attribute "lastOpenedDate", "Date" 
-      attribute "lastCheckinDate", "Date"
+        attribute "lastCheckin", "String"
+        attribute "lastOpened", "String"
+        attribute "lastOpenedDate", "Date"
+        attribute "lastCheckinDate", "Date"
 
-      fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
+        fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
-      command "Refresh"
-   }
-    
-   simulator {
-      status "closed": "on/off: 0"
-      status "open": "on/off: 1"
-   }
-    
-   tiles(scale: 2) {
-      multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
-         tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-            attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
-            attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
-         }
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+        command "Refresh"
+    }
+
+    simulator {
+        status "closed": "on/off: 0"
+        status "open": "on/off: 1"
+    }
+
+    tiles(scale: 2) {
+        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4) {
+            tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
+                attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
+                attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
-      }
-      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+            }
+        }
+        standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
-      }
-      valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'${currentValue}'
-	  }
+        }
+        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'${currentValue}'
+        }
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"",
+            backgroundColors: [
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
+            ]
+        }
+        standardTile("refresh", "command.refresh", inactiveLabel: false) {
+            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        }
 
-      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-		state "default", label:'${currentValue}%', unit:"",
-		backgroundColors: [
-		[value: 10, color: "#bc2323"],
-		[value: 26, color: "#f1d801"],
-		[value: 51, color: "#44b621"] ]
-      }
-      standardTile("refresh", "command.refresh", inactiveLabel: false) {
-			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-	  }      
-
-      main (["contact"])
-      details(["contact","battery","icon","lastopened","refresh"])
+        main (["contact"])
+        details(["contact","battery","icon","lastopened","refresh"])
    }
 }
 
 def parse(String description) {
-   def linkText = getLinkText(device)
-   def result = zigbee.getEvent(description)
-   
-//  send event for heartbeat    
-   def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-   def nowDate = new Date(now).getTime()
-   sendEvent(name: "lastCheckin", value: now)
-   sendEvent(name: "lastCheckinDate", value: nowDate) 
-    
-   Map map = [:]
+    def linkText = getLinkText(device)
+    def result = zigbee.getEvent(description)
 
-   if (result) {
-   	   log.debug "${linkText} Event: ${result}"
-       map = getContactResult(result);
-       sendEvent(name: "lastOpened", value: now)
-       sendEvent(name: "lastOpenedDate", value: nowDate)
-   } else if (description?.startsWith('catchall:')) {
-       map = parseCatchAllMessage(description)
-   }
-   log.debug "${linkText}: Parse returned ${map}"
-   def results = map ? createEvent(map) : null
+    // send event for heartbeat
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def nowDate = new Date(now).getTime()
+    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckinDate", value: nowDate)
 
-   return results;
+    Map map = [:]
+
+    if (result) {
+        log.debug "${linkText} Event: ${result}"
+        map = getContactResult(result);
+        sendEvent(name: "lastOpened", value: now)
+        sendEvent(name: "lastOpenedDate", value: nowDate)
+    } else if (description?.startsWith('catchall:')) {
+        map = parseCatchAllMessage(description)
+    }
+    log.debug "${linkText}: Parse returned ${map}"
+    def results = map ? createEvent(map) : null
+
+    return results
 }
 
 private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
     def result = [
-		name: 'battery',
-		value: '--',
+        name: 'battery',
+        value: '--',
         unit: "%",
         translatable: true
     ]
-    
-    def rawVolts = rawValue / 1000
 
-	def maxBattery = state.maxBattery ?: 0
+    def rawVolts = rawValue / 1000
+    def maxBattery = state.maxBattery ?: 0
     def minBattery = state.minBattery ?: 0
 
-	if (maxBattery == 0 || rawVolts > minBattery)
-    	state.maxBattery = maxBattery = rawVolts
-        
+    if (maxBattery == 0 || rawVolts > minBattery)
+        state.maxBattery = maxBattery = rawVolts
+
     if (minBattery == 0 || rawVolts < minBattery)
-    	state.minBattery = minBattery = rawVolts
-    
+        state.minBattery = minBattery = rawVolts
+
     def volts = (maxBattery + minBattery) / 2
 
-	def minVolts = 2.7
+    def minVolts = 2.7
     def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
-    
+
     return result
 }
 
 private Map parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
-	Map resultMap = [:]
-	def cluster = zigbee.parse(description)
-	log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
-	if (cluster) {
-		switch(cluster.clusterId) {
-			case 0x0000:
-            	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
-            		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
-			break
-		}
-	}
+    Map resultMap = [:]
+    def cluster = zigbee.parse(description)
+    log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
 
-	return resultMap
+    if (cluster) {
+        switch(cluster.clusterId) {
+            case 0x0000:
+
+            if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
+            resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            break
+        }
+    }
+
+    return resultMap
 }
 
 def configure() {
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     log.debug "${linkText}: configuring"
     return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh() {
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
     return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map getContactResult(result) {
-   def linkText = getLinkText(device)
-   def value = result.value == "on" ? "open" : "closed"
-   def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
-   return [
-      name: 'contact',
-      value: value,
-      descriptionText: descriptionText
-	]
+    def linkText = getLinkText(device)
+    def value = result.value == "on" ? "open" : "closed"
+    def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
+    return [
+        name: 'contact',
+        value: value,
+        descriptionText: descriptionText
+    ]
 }
 
 def installed() {
-	checkIntervalEvent("installed");
+    checkIntervalEvent("installed");
 }
 
 def updated() {
-	checkIntervalEvent("updated");
+    checkIntervalEvent("updated");
 }
 
 private checkIntervalEvent(text) {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     def linkText = getLinkText(device)
     log.debug "${linkText}: Configured health checkInterval when ${text}()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
