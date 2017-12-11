@@ -80,7 +80,7 @@ metadata {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
-            state "default", label:'Last Update: ${currentValue}'
+            state "default", label:'Last Update:\n ${currentValue}'
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"

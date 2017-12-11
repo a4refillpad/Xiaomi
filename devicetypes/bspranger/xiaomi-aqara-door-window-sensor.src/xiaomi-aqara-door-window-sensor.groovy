@@ -75,8 +75,8 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
-        valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
-            state "default", label:'Last Update: ${currentValue}'
+        valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Update:\n ${currentValue}'
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
@@ -85,7 +85,7 @@ metadata {
            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
         main (["contact"])
-        details(["contact","lastCheckin","refresh","battery"])
+        details(["contact","battery","lastCheckin","refresh"])
     }
 }
 
