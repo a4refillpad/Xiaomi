@@ -29,22 +29,23 @@
 
 metadata {
     definition (name: "Xiaomi Aqara Motion Sensor", namespace: "bspranger", author: "bspranger") {
-    capability "Motion Sensor"
-    capability "Configuration"
-    capability "Battery"
-    capability "Sensor"
-    capability "Refresh"
-    capability "Health Check"
+        capability "Motion Sensor"
+        capability "Configuration"
+        capability "Battery"
+        capability "Sensor"
+        capability "Refresh"
+        capability "Health Check"
 
-    attribute "lastCheckin", "String"
-    attribute "lastMotion", "String"
-    attribute "Light", "number"
+        attribute "lastCheckin", "String"
+        attribute "lastMotion", "String"
+        attribute "light", "number"
 
-    fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
-    fingerprint endpointId: "01", profileId: "0104", deviceId: "0107", inClusters: "0000,FFFF,0406,0400,0500,0001,0003", outClusters: "0000,0019", manufacturer: "LUMI", model: "lumi.sensor_motion.aq2", deviceJoinName: "Xiaomi Aqara Motion Sensor"
+        fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
+        fingerprint endpointId: "01", profileId: "0104", deviceId: "0107", inClusters: "0000,FFFF,0406,0400,0500,0001,0003", outClusters: "0000,0019", manufacturer: "LUMI", model: "lumi.sensor_motion.aq2", deviceJoinName: "Xiaomi Aqara Motion Sensor"
 
-    command "reset"
-    command "Refresh"
+        command "reset"
+        command "Refresh"
+    }
 
     simulator {
     }
@@ -63,8 +64,8 @@ metadata {
                 attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
         }
-        valueTile("Light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2){
-            state "Light", label:'${currentValue}% \nLight', unit: ""
+        valueTile("light", "device.light", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            state "light", label:'${currentValue}% \nLight', unit: ""
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "battery", label:'${currentValue}% battery', unit:""
@@ -89,7 +90,7 @@ metadata {
         }
 
         main(["motion"])
-        details(["motion", "Light", "battery", "icon", "lastmotion", "reset", "refresh"])
+        details(["motion", "light", "battery", "icon", "lastmotion", "reset", "refresh"])
         }
     }
 }
