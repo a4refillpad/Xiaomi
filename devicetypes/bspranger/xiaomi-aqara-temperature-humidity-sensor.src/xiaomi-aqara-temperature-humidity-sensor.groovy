@@ -60,7 +60,7 @@ metadata {
         }
         section {
             input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "pressOffset", "number", title: "Pressure", description: "Adjust prssure by this many units", range: "*..*", displayDuringSetup: false
+            input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: false
         }
     }
 
