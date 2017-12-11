@@ -75,12 +75,6 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
-        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
-        }
-        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
-        }
         valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
             state "default", label:'Last Update: ${currentValue}'
         }
@@ -91,7 +85,7 @@ metadata {
            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
         main (["contact"])
-        details(["contact","battery","resetClosed","resetOpen","lastCheckin","refresh"])
+        details(["contact","lastCheckin","refresh","battery"])
     }
 }
 
