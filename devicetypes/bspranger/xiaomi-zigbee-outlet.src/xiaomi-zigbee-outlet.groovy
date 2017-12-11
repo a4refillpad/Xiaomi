@@ -176,4 +176,3 @@ private Map parseCustomMessage(String description) {
 private Integer convertHexToInt(hex) {
 	Integer.parseInt(hex,16)
 }
-
