@@ -21,6 +21,7 @@
  *  sulee: changed to work as a push button
  *  sulee: added endpoint for Smartthings to detect properly
  *  sulee: cleaned everything up
+ *  bspranger: renamed to bspranger to remove confusion of a4refillpad
  *
  *  Fingerprint Endpoint data:
  *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 5F01 01 03 0000 FFFF 0006 03 0000 0004 FFFF","application":"03","manufacturer":"LUMI","model":"lumi.sensor_switch.aq2"}],"parent":"0000","joinType":1}
@@ -39,7 +40,7 @@
  *
  */
 metadata {
-	definition (name: "Original Xiaomi Aqara Button", namespace: "a4refillpad", author: "a4refillpad") {	
+	definition (name: "Original Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {	
     	capability "Battery"
 		capability "Button"
 		capability "Momentary"

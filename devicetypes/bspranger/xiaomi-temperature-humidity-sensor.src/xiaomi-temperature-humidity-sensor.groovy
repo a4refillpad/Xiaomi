@@ -1,5 +1,5 @@
 /**
- *  Copyright 2017 A4refillpad
+ *  Copyright 2017 bspranger
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -22,10 +22,11 @@
  *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
  *	known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
  *  known issue: there's nothing I can do about the pairing process with smartthings. it is indeed non standard, please refer to community forum for details
+ *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *
  */
 metadata {
-	definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+	definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "bspranger", author: "bspranger") {
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
 		capability "Sensor"

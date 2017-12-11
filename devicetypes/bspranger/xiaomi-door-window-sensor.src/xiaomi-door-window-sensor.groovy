@@ -23,10 +23,11 @@
  *  added experimental health check as worked out by rolled54.Why
  *  Rinkelk - added date-attribute support for Webcore
  *  Rinkelk - Changed battery icon according to Mobile785
+ *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *
  */
 metadata {
-   definition (name: "Xiaomi Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+   definition (name: "Xiaomi Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
    capability "Configuration"
    capability "Sensor"
    capability "Contact Sensor"

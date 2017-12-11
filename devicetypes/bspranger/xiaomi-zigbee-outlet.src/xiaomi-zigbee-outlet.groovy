@@ -13,10 +13,11 @@
  *  01/2017 corrected the temperature reading
  *  02/2017 added heartbeat to monitor connectivity health of outlet
  *  02/2017 added multiattribute tile
+ *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  */
 
 metadata {
-    definition (name: "Xiaomi Zigbee Outlet", namespace: "a4refillpad", author: "a4refillpad") {
+    definition (name: "Xiaomi Zigbee Outlet", namespace: "bspranger", author: "bspranger") {
         capability "Actuator"
         capability "Configuration"
         capability "Refresh"

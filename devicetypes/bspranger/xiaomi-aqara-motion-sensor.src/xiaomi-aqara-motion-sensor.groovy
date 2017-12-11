@@ -23,11 +23,12 @@
  * Heartdeat icon plus improved localisation of date
  * removed non working tiles and changed layout and incorporated latest colours
  * added experimental health check as worked out by rolled54.Why
+ *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *
  */
 
 metadata {
-	definition (name: "Xiaomi Aqara Motion Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+	definition (name: "Xiaomi Aqara Motion Sensor", namespace: "bspranger", author: "bspranger") {
 		capability "Motion Sensor"
 		capability "Configuration"
 		capability "Battery"
