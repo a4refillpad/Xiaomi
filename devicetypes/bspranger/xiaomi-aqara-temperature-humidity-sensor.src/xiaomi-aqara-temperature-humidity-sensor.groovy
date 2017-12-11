@@ -96,11 +96,9 @@ metadata {
         standardTile("pressure", "device.pressure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
         }
-
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}% battery', unit:""
         }
-
         valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
             state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
             backgroundColors:[
@@ -119,11 +117,9 @@ metadata {
                 [value: 96, color: "#bc2323"]
             ]
         }
-
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-
         main(["temperature2"])
         details(["temperature", "battery", "humidity","pressure","refresh"])
     }

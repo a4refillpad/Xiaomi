@@ -89,7 +89,6 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
-
         main(["motion"])
         details(["motion", "light", "battery", "icon", "lastmotion", "reset", "refresh"])
         }
