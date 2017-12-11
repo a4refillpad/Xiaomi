@@ -11,9 +11,6 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  https://github.com/bspranger/Xiaomi/tree/master/devicetypes/bspranger/xiaomi-aqara-door-window-sensor.src
- *  https://github.com/GvnCampbell/SmartThings-Xiaomi
- *
  *  Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *
  *  Change log:
