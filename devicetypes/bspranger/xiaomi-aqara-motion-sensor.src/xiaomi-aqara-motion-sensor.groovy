@@ -11,20 +11,21 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- * Based on original DH by Eric Maycock 2015
- * modified 29/12/2016 a4refillpad
- * Added fingerprinting
- * Added heartbeat/lastcheckin for monitoring
- * Added battery and refresh
- * Motion background colours consistent with latest DH
- * Fixed max battery percentage to be 100%
- * Added Last update to main tile
- * Added last motion tile
- * Heartdeat icon plus improved localisation of date
- * removed non working tiles and changed layout and incorporated latest colours
- * added experimental health check as worked out by rolled54.Why
- *  bspranger - renamed to bspranger to remove confusion of a4refillpad
+ *  Based on original DH by Eric Maycock 2015
  *
+ *  Change log:
+ *  modified 29/12/2016 a4refillpad
+ *  Added fingerprinting
+ *  Added heartbeat/lastcheckin for monitoring
+ *  Added battery and refresh
+ *  Motion background colours consistent with latest DH
+ *  Fixed max battery percentage to be 100%
+ *  Added Last update to main tile
+ *  Added last motion tile
+ *  Heartdeat icon plus improved localisation of date
+ *  Removed non working tiles and changed layout and incorporated latest colours
+ *  Added experimental health check as worked out by rolled54.Why
+ *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  */
 
 metadata {

@@ -20,8 +20,10 @@
  *  2017-03-29 Temperature offset preference added to handler
  *
  *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
- *	known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
+ *  known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
  *  known issue: there's nothing I can do about the pairing process with smartthings. it is indeed non standard, please refer to community forum for details
+ *
+ *  Change log:
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  */
 

@@ -14,17 +14,18 @@
  *  https://github.com/bspranger/Xiaomi/tree/master/devicetypes/bspranger/xiaomi-aqara-door-window-sensor.src
  *  https://github.com/GvnCampbell/SmartThings-Xiaomi
  *
- * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
- *  change log:
- *	added DH Colours
- *  added 100% battery max
- *  fixed battery parsing problem
- *  added lastcheckin attribute and tile
- *  added extra tile to show when last opened
- *  colours to confirm to new smartthings standards
- *  added ability to force override current state to Open or Closed.
- *  added experimental health check as worked out by rolled54.Why
- *  Bspranger - Adding Aqara Support
+ *  Based on original DH by Eric Maycock 2015 and Rave from Lazcad
+ *
+ *  Change log:
+ *  Added DH Colours
+ *  Added 100% battery max
+ *  Fixed battery parsing problem
+ *  Added lastcheckin attribute and tile
+ *  Added extra tile to show when last opened
+ *  Colours to confirm to new smartthings standards
+ *  Added ability to force override current state to Open or Closed.
+ *  Added experimental health check as worked out by rolled54.Why
+ *  bspranger - Adding Aqara Support
  *  Rinkelk - added date-attribute support for Webcore
  *  Rinkelk - Changed battery percentage with code from cancrusher
  *  Rinkelk - Changed battery icon according to Mobile785
