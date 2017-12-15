@@ -32,6 +32,7 @@
  *  sulee - Track battery as average of min and max over time
  *  sulee - Clean up some of the code
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
+ *  veeceeoh - added battery parse on button press
  */
 metadata {
    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
@@ -109,6 +110,9 @@ def parse(String description) {
        sendEvent(name: "lastOpenedDate", value: nowDate)
    } else if (description?.startsWith('catchall:')) {
        map = parseCatchAllMessage(description)
+// New condition to handle reset button press event
+   } else if (description?.startsWith('read attr - raw:')) {
+       map = parseButtonPress(description)
    }
    log.debug "${linkText}: Parse returned ${map}"
    def results = map ? createEvent(map) : null
@@ -160,6 +164,18 @@ private Map parseCatchAllMessage(String description) {
             		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
 			break
 		}
+	}
+
+	return resultMap
+}
+
+// Parse raw data on reset button press to retrieve reported battery voltage
+private Map parseButtonPress(String description) {
+    log.debug "Button press detected"
+	def buttonRaw = (description - "read attr - raw:")
+	Map resultMap = [:]
+    if (buttonRaw[65..68] == "01FF") {
+		resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
 	}
 
 	return resultMap
