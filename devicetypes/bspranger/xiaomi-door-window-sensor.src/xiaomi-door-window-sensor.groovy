@@ -59,9 +59,9 @@ metadata {
             attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
             attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
          }
-		tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
-		}
+//		tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+//			attributeState("default", label:'Last Update:\n${currentValue}',icon: "st.Health & Wellness.health9")
+//		}
       }
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 		state "default", label:'${currentValue}%', unit:"",
@@ -71,10 +71,10 @@ metadata {
 		[value: 51, color: "#44b621"] ]
       }
       valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'${currentValue}'
+			state "default", label:'Last Checkin:\n${currentValue}'
 	  }
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'${currentValue}'
+			state "default", label:'Last Open:\n${currentValue}'
 	  }
       standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
@@ -87,7 +87,7 @@ metadata {
 	  }
 
       main (["contact"])
-      details(["contact","battery","lastCheckin","lastopened","resetClosed","resetOpen","refresh"])
+      details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
