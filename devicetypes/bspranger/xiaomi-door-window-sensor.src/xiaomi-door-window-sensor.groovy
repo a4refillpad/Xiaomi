@@ -63,16 +63,14 @@ metadata {
 			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
 		}
       }
-      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 1) {
 		state "default", label:'${currentValue}%', unit:"",
 		backgroundColors: [
 		[value: 10, color: "#bc2323"],
 		[value: 26, color: "#f1d801"],
 		[value: 51, color: "#44b621"] ]
       }
-      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-            state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
-      }
+
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
 	  }
@@ -87,7 +85,7 @@ metadata {
 	  }
 
       main (["contact"])
-      details(["contact","battery","icon","lastopened","resetClosed","resetOpen","refresh"])
+      details(["contact","battery","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
@@ -241,18 +239,6 @@ def enrollResponse() {
 			"send 0x${device.deviceNetworkId} 1 1"
 	]
 }
-
-/*
-def refresh() {
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Refreshing Battery"
-    def endpointId = 0x01
-	[
-	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
-
-	] //+ enrollResponse()
-}
-*/
 
 def refresh() {
 	def linkText = getLinkText(device)
