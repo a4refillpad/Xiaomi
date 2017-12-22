@@ -63,14 +63,16 @@ metadata {
 			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
 		}
       }
-      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 1) {
+      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 		state "default", label:'${currentValue}%', unit:"",
 		backgroundColors: [
 		[value: 10, color: "#bc2323"],
 		[value: 26, color: "#f1d801"],
 		[value: 51, color: "#44b621"] ]
       }
-
+      valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "default", label:'${currentValue}'
+	  }
       valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'${currentValue}'
 	  }
@@ -85,7 +87,7 @@ metadata {
 	  }
 
       main (["contact"])
-      details(["contact","battery","lastopened","resetClosed","resetOpen","refresh"])
+      details(["contact","battery","lastCheckin","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
