@@ -40,8 +40,6 @@ metadata {
    attribute "lastOpenedDate", "Date" 
    attribute "lastCheckinDate", "Date"
 
-   // Not getting a zbjoin for this device, so it can't determine the endpoint
-
    fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "enrollResponse"
@@ -61,16 +59,10 @@ metadata {
             attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
             attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
          }
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
-            }
+		tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+		}
       }
-      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-            state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
-      }
-      valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'${currentValue}'
-	  }
       valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 		state "default", label:'${currentValue}%', unit:"",
 		backgroundColors: [
@@ -78,14 +70,19 @@ metadata {
 		[value: 26, color: "#f1d801"],
 		[value: 51, color: "#44b621"] ]
       }
-	   
-      standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
+      standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
+      }
+      valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "default", label:'${currentValue}'
+	  }
+      standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
 	  }
-	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 3, height: 1) {
+	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
 	  }
-      standardTile("refresh", "command.refresh", inactiveLabel: false) {
+      standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
 			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
 	  }
 
@@ -142,7 +139,8 @@ private Map parseReadAttrMessage(String description) {
     
     if (cluster == "0000" && attrId == "0005") 
     {
-        for (int i = 0; i < value.length(); i+=2) 
+        // Parsing the model
+		for (int i = 0; i < value.length(); i+=2) 
         {
             def str = value.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
@@ -161,7 +159,8 @@ private Map getBatteryResult(rawValue) {
 
 	def result = [
 		name: 'battery',
-		value: '--'
+		value: '--',
+		unit: '%'
 	]
     
     def rawVolts = rawValue / 1000
@@ -201,32 +200,10 @@ private Map parseCatchAllMessage(String description) {
                 resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
             }
 			break
-
-			case 0xFC02:
-			log.debug '${linkText}: ACCELERATION'
-			break
-
-			case 0x0402:
-			log.debug '${linkText}: TEMP'
-				// temp is last 2 data values. reverse to swap endian
-				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
-				def value = getTemperature(temp)
-				resultMap = getTemperatureResult(value)
-				break
 		}
 	}
 
 	return resultMap
-}
-
-private boolean shouldProcessMessage(cluster) {
-	// 0x0B is default response indicating message got through
-	// 0x07 is bind message
-	boolean ignoredMessage = cluster.profileId != 0x0104 ||
-	cluster.command == 0x0B ||
-	cluster.command == 0x07 ||
-	(cluster.data.size() > 0 && cluster.data.first() == 0x3e)
-	return !ignoredMessage
 }
 
 
@@ -308,13 +285,7 @@ private Map getContactResult(value) {
 private String swapEndianHex(String hex) {
 	reverseArray(hex.decodeHex()).encodeHex()
 }
-private getEndpointId() {
-	new BigInteger(device.endpointId, 16).toString()
-}
 
-Integer convertHexToInt(hex) {
-	Integer.parseInt(hex,16)
-}
 
 private byte[] reverseArray(byte[] array) {
 	int i = 0;
