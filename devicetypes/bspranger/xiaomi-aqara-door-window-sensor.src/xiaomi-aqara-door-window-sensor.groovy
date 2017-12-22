@@ -58,36 +58,41 @@ metadata {
     }
 
     tiles(scale: 2) {
-        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4) {
+        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
             tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
                 attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
                 attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
-            tileAttribute("device.lastOpened", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Opened: ${currentValue}')
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
         }
-
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
             backgroundColors: [
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"]
+                [value: 51, color: "#44b621"] 
             ]
         }
-        valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Update:\n ${currentValue}'
+        standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "default", label:'Last Opened:', icon:"st.Entertainment.entertainment15"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
-           state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
+        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'${currentValue}'
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false) {
-           state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
         }
+        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
+        }
+        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        }
+      
         main (["contact"])
-        details(["contact","battery","lastCheckin","refresh"])
-    }
+        details(["contact","battery","icon","lastopened","resetClosed","resetOpen","refresh"])
 }
 
 def parse(String description) {
@@ -169,13 +174,13 @@ private Map parseCatchAllMessage(String description) {
 // Parse raw data on reset button press to retrieve reported battery voltage
 private Map parseButtonPress(String description) {
     log.debug "Button press detected"
-	def buttonRaw = (description - "read attr - raw:")
-	Map resultMap = [:]
+    def buttonRaw = (description - "read attr - raw:")
+    Map resultMap = [:]
     if (buttonRaw[65..68] == "01FF") {
-		resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
-	}
+        resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
+    }
 
-	return resultMap
+    return resultMap
 }
 
 def configure() {
@@ -199,6 +204,14 @@ private Map getContactResult(result) {
         value: value,
         descriptionText: descriptionText
     ]
+}
+
+def resetClosed() {
+	sendEvent(name:"contact", value:"closed")
+} 
+
+def resetOpen() {
+	sendEvent(name:"contact", value:"open")
 }
 
 def installed() {
