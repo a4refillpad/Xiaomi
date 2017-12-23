@@ -90,39 +90,39 @@ metadata {
 }
 
 def parse(String description) {
-   def linkText = getLinkText(device)
-   log.debug "${linkText}: Parsing '${description}'"
-   
-//  send event for heartbeat    
-   def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-   def nowDate = new Date(now).getTime()
-   sendEvent(name: "lastCheckin", value: now)
-   sendEvent(name: "lastCheckinDate", value: nowDate) 
- 
-   Map map = [:]
+    def linkText = getLinkText(device)
+    log.debug "${linkText}: Parsing '${description}'"
 
-   if (description?.startsWith('on/off: ')) 
+    //  send event for heartbeat    
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def nowDate = new Date(now).getTime()
+    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckinDate", value: nowDate) 
+
+    Map map = [:]
+
+    if (description?.startsWith('on/off: ')) 
     {
-      map = parseCustomMessage(description) 
-      sendEvent(name: "lastOpened", value: now)
-      sendEvent(name: "lastOpenedDate", value: nowDate) 
-    } 
+        map = parseCustomMessage(description) 
+        sendEvent(name: "lastOpened", value: now)
+        sendEvent(name: "lastOpenedDate", value: nowDate) 
+    }
     else if (description?.startsWith('catchall:')) 
     {
-      map = parseCatchAllMessage(description)
-    } 
+        map = parseCatchAllMessage(description)
+    }
     else if (description?.startsWith("read attr - raw: "))
     {
-      map = parseReadAttrMessage(description)  
+        map = parseReadAttrMessage(description)  
     }
-   log.debug "${linkText}: Parse returned $map"
-   def results = map ? createEvent(map) : null
+    log.debug "${linkText}: Parse returned $map"
+    def results = map ? createEvent(map) : null
 
-   return results;
+    return results;
 }
 
 private Map parseReadAttrMessage(String description) {
-        def result = [
+    def result = [
         name: 'Model',
         value: ''
     ]
@@ -152,8 +152,6 @@ private Map parseReadAttrMessage(String description) {
 private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
     //log.debug '${linkText} Battery'
-
-    //log.debug rawValue
 
     def result = [
         name: 'battery',
@@ -214,16 +212,16 @@ def configure() {
     log.debug "${linkText}: ${device.zigbeeId}"
     log.debug "${linkText}: ${zigbeeEui}"
     def configCmds = [
-            //battery reporting and heartbeat
-            // send-me-a-report 3600 43200 is min and max reporting time range
-            "zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-            "zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-            "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
+        //battery reporting and heartbeat
+        // send-me-a-report 3600 43200 is min and max reporting time range
+        "zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
+        "zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
 
-            // Writes CIE attribute on end device to direct reports to the hub's EUID
-            "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-            "send 0x${device.deviceNetworkId} 1 1", "delay 500",
+        // Writes CIE attribute on end device to direct reports to the hub's EUID
+        "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
+        "send 0x${device.deviceNetworkId} 1 1", "delay 500",
     ]
 
     log.debug "${linkText}: configure: Write IAS CIE"
@@ -234,9 +232,9 @@ def enrollResponse() {
     def linkText = getLinkText(device)
     log.debug "${linkText}: Enrolling device into the IAS Zone"
     [
-            // Enrolling device into the IAS Zone
-            "raw 0x500 {01 23 00 00 00}", "delay 200",
-            "send 0x${device.deviceNetworkId} 1 1"
+        // Enrolling device into the IAS Zone
+        "raw 0x500 {01 23 00 00 00}", "delay 200",
+        "send 0x${device.deviceNetworkId} 1 1"
     ]
 }
 
@@ -248,23 +246,23 @@ def refresh() {
 
 
 private Map parseCustomMessage(String description) {
-   def result
-   if (description?.startsWith('on/off: ')) {
-      if (description == 'on/off: 0')         //contact closed
-         result = getContactResult("closed")
-      else if (description == 'on/off: 1')     //contact opened
-         result = getContactResult("open")
-      return result
-   }
+    def result
+    if (description?.startsWith('on/off: ')) {
+        if (description == 'on/off: 0')         //contact closed
+            result = getContactResult("closed")
+        else if (description == 'on/off: 1')     //contact opened
+            result = getContactResult("open")
+        return result
+    }
 }
 
 private Map getContactResult(value) {
-   def linkText = getLinkText(device)
-   def descriptionText = "${linkText} was ${value == 'open' ? 'opened' : 'closed'}"
-   return [
-      name: 'contact',
-      value: value,
-      descriptionText: descriptionText
+    def linkText = getLinkText(device)
+    def descriptionText = "${linkText} was ${value == 'open' ? 'opened' : 'closed'}"
+    return [
+        name: 'contact',
+        value: value,
+        descriptionText: descriptionText
     ]
 }
 
