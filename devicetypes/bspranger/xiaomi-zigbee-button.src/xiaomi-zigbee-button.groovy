@@ -40,36 +40,35 @@
  *
  */
 metadata {
-	definition (name: "Original Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {	
-    	capability "Battery"
-		capability "Button"
-		capability "Momentary"
-		capability "Refresh"
+    definition (name: "Original Xiaomi Button", namespace: "bspranger", author: "bspranger") {    
+        capability "Battery"
+        capability "Button"
+        capability "Momentary"
+        capability "Refresh"
         
-		attribute "lastPress", "string"
-		attribute "batterylevel", "string"
-		attribute "lastCheckin", "string"
+        attribute "lastPress", "string"
+        attribute "batterylevel", "string"
+        attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
         
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Original Xiaomi Aqara Button"
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Xiaomi Button"
-	}
-    
-    simulator {
-  		status "button 1 pressed": "on/off: 0"
+        fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
     }
     
-	tiles(scale: 2) {
+    simulator {
+          status "button 1 pressed": "on/off: 0"
+    }
+    
+    tiles(scale: 2) {
 
-		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-           		attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#53a7c0")
+        multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+            tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
+                   attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#53a7c0")
                 attributeState("off", label:' push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "on")
- 			}
+             }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
             }
-		}        
+        }        
        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
@@ -79,87 +78,87 @@ metadata {
                     [value: 51, color: "#44b621"] ]
         }
 
-		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
         
-		main "switch"
-		details(["switch", "battery", "refresh"])
-	}
+        main "switch"
+        details(["switch", "battery", "refresh"])
+    }
 }
 
 def parse(String description) {
-	def result = zigbee.getEvent(description)
+    def result = zigbee.getEvent(description)
 
-	//  send event for heartbeat    
-	def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-	def nowDate = new Date(now).getTime()
-	sendEvent(name: "lastCheckin", value: now)
-	sendEvent(name: "lastCheckinDate", value: nowDate)
+    //  send event for heartbeat    
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def nowDate = new Date(now).getTime()
+    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckinDate", value: nowDate)
 
     if (description?.startsWith('catchall:')) {
-		return parseCatchAllMessage(description)
-	} else if (result) {
+        return parseCatchAllMessage(description)
+    } else if (result) {
         push()
     }
 }
 
 def configure(){
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     log.debug "${linkText}: configuring"
     return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh(){
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
     return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseCatchAllMessage(String description) {
-	def linkText = getLinkText(device)
-	Map resultMap = [:]
-	def cluster = zigbee.parse(description)
-	log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
-	if (cluster) {
-		switch(cluster.clusterId) {
-			case 0x0000:
-            	if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
-            		resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
-			break
-		}
-	}
+    def linkText = getLinkText(device)
+    Map resultMap = [:]
+    def cluster = zigbee.parse(description)
+    log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
+    if (cluster) {
+        switch(cluster.clusterId) {
+            case 0x0000:
+                if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
+                    resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+            break
+        }
+    }
 
-	return resultMap
+    return resultMap
 }
 
 private Map getBatteryResult(rawValue) {
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     def rawVolts = rawValue / 1000
 
-	def maxBattery = state.maxBattery ?: 0
+    def maxBattery = state.maxBattery ?: 0
     def minBattery = state.minBattery ?: 0
 
-	if (maxBattery == 0 || rawVolts > minBattery)
-    	state.maxBattery = maxBattery = rawVolts
+    if (maxBattery == 0 || rawVolts > minBattery)
+        state.maxBattery = maxBattery = rawVolts
         
     if (minBattery == 0 || rawVolts < minBattery)
-    	state.minBattery = minBattery = rawVolts
+        state.minBattery = minBattery = rawVolts
     
     def volts = (maxBattery + minBattery) / 2
 
-	def minVolts = 2.7
+    def minVolts = 2.7
     def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
-	def result = [
-		name: 'battery',
-		value: roundedPct,
+    def result = [
+        name: 'battery',
+        value: roundedPct,
         unit: "%",
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
-	]
+    ]
     
     log.debug "${linkText}: ${result}"
     state.lastbatt = new Date().time
@@ -167,7 +166,7 @@ private Map getBatteryResult(rawValue) {
 }
 
 def push() {
-	def linkText = getLinkText(device)
-	log.debug "${linkText}: Button Pressed"
+    def linkText = getLinkText(device)
+    log.debug "${linkText}: Button Pressed"
     sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "Button pushed", isStateChange: true)
 }
