@@ -57,17 +57,14 @@ metadata {
         status "open": "on/off: 1"
     }
 
-    tiles(scale: 2) {
+   tiles(scale: 2) {
         multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
             tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
                 attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
                 attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
-            }
         }
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 1) {
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
             backgroundColors: [
                 [value: 10, color: "#bc2323"],
@@ -75,9 +72,11 @@ metadata {
                 [value: 51, color: "#44b621"] 
             ]
         }
-
+        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n${currentValue}'
+        }
         valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'${currentValue}'
+            state "default", label:'Last Open:\n${currentValue}'
         }
         standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
@@ -88,9 +87,10 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
-      
+
         main (["contact"])
-        details(["contact","battery","lastopened","resetClosed","resetOpen","refresh"])
+        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
+   }
 }
 
 def parse(String description) {

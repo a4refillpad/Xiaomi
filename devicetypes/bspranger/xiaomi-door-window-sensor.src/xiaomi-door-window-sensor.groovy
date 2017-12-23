@@ -13,7 +13,7 @@
  *
  * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
- *	added DH Colours
+ *    added DH Colours
  *  added 100% battery max
  *  fixed battery parsing problem
  *  added lastcheckin attribute and tile
@@ -54,40 +54,38 @@ metadata {
    }
     
    tiles(scale: 2) {
-      multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
-         tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-            attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
-            attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
-         }
-//		tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-//			attributeState("default", label:'Last Update:\n${currentValue}',icon: "st.Health & Wellness.health9")
-//		}
-      }
-      valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-		state "default", label:'${currentValue}%', unit:"",
-		backgroundColors: [
-		[value: 10, color: "#bc2323"],
-		[value: 26, color: "#f1d801"],
-		[value: 51, color: "#44b621"] ]
-      }
-      valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'Last Checkin:\n${currentValue}'
-	  }
-      valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'Last Open:\n${currentValue}'
-	  }
-      standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-			state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
-	  }
-	  standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-			state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
-	  }
-      standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-	  }
+        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
+            tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
+                attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
+                attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
+            }
+        }
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"",
+            backgroundColors: [
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"] 
+            ]
+        }
+        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n${currentValue}'
+        }
+        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Open:\n${currentValue}'
+        }
+        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
+        }
+        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
+        }
+        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        }
 
-      main (["contact"])
-      details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
+        main (["contact"])
+        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
 
@@ -124,10 +122,10 @@ def parse(String description) {
 }
 
 private Map parseReadAttrMessage(String description) {
-    	def result = [
-		name: 'Model',
-		value: ''
-	]
+        def result = [
+        name: 'Model',
+        value: ''
+    ]
     def cluster
     def attrId
     def value
@@ -140,7 +138,7 @@ private Map parseReadAttrMessage(String description) {
     if (cluster == "0000" && attrId == "0005") 
     {
         // Parsing the model
-		for (int i = 0; i < value.length(); i+=2) 
+        for (int i = 0; i < value.length(); i+=2) 
         {
             def str = value.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
@@ -155,24 +153,24 @@ private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
     //log.debug '${linkText} Battery'
 
-	//log.debug rawValue
+    //log.debug rawValue
 
-	def result = [
-		name: 'battery',
-		value: '--',
-		unit: '%'
-	]
+    def result = [
+        name: 'battery',
+        value: '--',
+        unit: '%'
+    ]
     
     def rawVolts = rawValue / 1000
 
-	def maxBattery = state.maxBattery ?: 0
+    def maxBattery = state.maxBattery ?: 0
     def minBattery = state.minBattery ?: 0
 
-	if (maxBattery == 0 || rawVolts > minBattery)
-    	state.maxBattery = maxBattery = rawVolts
+    if (maxBattery == 0 || rawVolts > minBattery)
+        state.maxBattery = maxBattery = rawVolts
         
     if (minBattery == 0 || rawVolts < minBattery)
-    	state.minBattery = minBattery = rawVolts
+        state.minBattery = minBattery = rawVolts
     
     def volts = (maxBattery + minBattery) / 2
     def minVolts = 2.7
@@ -181,69 +179,69 @@ private Map getBatteryResult(rawValue) {
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     
-	result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
 
-	return result
+    return result
 }
 
 private Map parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
-	Map resultMap = [:]
-	def cluster = zigbee.parse(description)
-	log.debug cluster
-	if (cluster) {
-		switch(cluster.clusterId) {
-			case 0x0000:
+    Map resultMap = [:]
+    def cluster = zigbee.parse(description)
+    log.debug cluster
+    if (cluster) {
+        switch(cluster.clusterId) {
+            case 0x0000:
             if (cluster.data.get(7) == 0x21)  // check the data type at minimum
             {
-				// bytes 8 and 9 are the battery voltage.
+                // bytes 8 and 9 are the battery voltage.
                 resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
             }
-			break
-		}
-	}
+            break
+        }
+    }
 
-	return resultMap
+    return resultMap
 }
 
 
 def configure() {
     def linkText = getLinkText(device)
 
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${linkText}: ${device.deviceNetworkId}"
+    String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
+    log.debug "${linkText}: ${device.deviceNetworkId}"
     def endpointId = 1
     log.debug "${linkText}: ${device.zigbeeId}"
     log.debug "${linkText}: ${zigbeeEui}"
-	def configCmds = [
-			//battery reporting and heartbeat
-			// send-me-a-report 3600 43200 is min and max reporting time range
-			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
+    def configCmds = [
+            //battery reporting and heartbeat
+            // send-me-a-report 3600 43200 is min and max reporting time range
+            "zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
+            "zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
+            "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
 
 
-			// Writes CIE attribute on end device to direct reports to the hub's EUID
-			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
-	]
+            // Writes CIE attribute on end device to direct reports to the hub's EUID
+            "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
+            "send 0x${device.deviceNetworkId} 1 1", "delay 500",
+    ]
 
-	log.debug "${linkText}: configure: Write IAS CIE"
-	return configCmds
+    log.debug "${linkText}: configure: Write IAS CIE"
+    return configCmds
 }
 
 def enrollResponse() {
     def linkText = getLinkText(device)
     log.debug "${linkText}: Enrolling device into the IAS Zone"
-	[
-			// Enrolling device into the IAS Zone
-			"raw 0x500 {01 23 00 00 00}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1"
-	]
+    [
+            // Enrolling device into the IAS Zone
+            "raw 0x500 {01 23 00 00 00}", "delay 200",
+            "send 0x${device.deviceNetworkId} 1 1"
+    ]
 }
 
 def refresh() {
-	def linkText = getLinkText(device)
+    def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
     zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
 }
@@ -252,9 +250,9 @@ def refresh() {
 private Map parseCustomMessage(String description) {
    def result
    if (description?.startsWith('on/off: ')) {
-      if (description == 'on/off: 0') 		//contact closed
+      if (description == 'on/off: 0')         //contact closed
          result = getContactResult("closed")
-      else if (description == 'on/off: 1') 	//contact opened
+      else if (description == 'on/off: 1')     //contact opened
          result = getContactResult("open")
       return result
    }
@@ -267,48 +265,48 @@ private Map getContactResult(value) {
       name: 'contact',
       value: value,
       descriptionText: descriptionText
-	]
+    ]
 }
 
 private String swapEndianHex(String hex) {
-	reverseArray(hex.decodeHex()).encodeHex()
+    reverseArray(hex.decodeHex()).encodeHex()
 }
 
 
 private byte[] reverseArray(byte[] array) {
-	int i = 0;
-	int j = array.length - 1;
-	byte tmp;
+    int i = 0;
+    int j = array.length - 1;
+    byte tmp;
 
-	while (j > i) {
-		tmp = array[j];
-		array[j] = array[i];
-		array[i] = tmp;
-		j--;
-		i++;
-	}
+    while (j > i) {
+        tmp = array[j];
+        array[j] = array[i];
+        array[i] = tmp;
+        j--;
+        i++;
+    }
 
-	return array
+    return array
 }
 
 def resetClosed() {
-	sendEvent(name:"contact", value:"closed")
+    sendEvent(name:"contact", value:"closed")
 } 
 
 def resetOpen() {
-	sendEvent(name:"contact", value:"open")
+    sendEvent(name:"contact", value:"open")
 }
 
 def installed() {
 // Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
     def linkText = getLinkText(device)
     log.debug "${linkText}: Configured health checkInterval when installed()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
 def updated() {
 // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     def linkText = getLinkText(device)
     log.debug "${linkText}: Configured health checkInterval when updated()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
