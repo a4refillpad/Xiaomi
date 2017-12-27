@@ -74,7 +74,7 @@ metadata {
             ]
         }
         valueTile("light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "light", label:'${currentValue} \nlux', unit: ""
+            state "light", label:'Light\n${currentValue}\nlux', unit: ""
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
