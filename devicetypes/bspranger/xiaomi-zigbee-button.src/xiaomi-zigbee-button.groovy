@@ -40,7 +40,7 @@
  *
  */
 metadata {
-    definition (name: "Original Xiaomi Button", namespace: "bspranger", author: "bspranger") {    
+    definition (name: "xiaomi-zigbee-button", namespace: "bspranger", author: "bspranger") {    
         capability "Battery"
         capability "Button"
         capability "Momentary"
