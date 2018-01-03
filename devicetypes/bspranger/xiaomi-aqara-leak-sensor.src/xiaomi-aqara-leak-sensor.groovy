@@ -34,7 +34,7 @@
  */
 
 metadata {
-    definition (name: "xiaomi-aqara-leak-sensor", namespace: "bspranger", author: "bspranger") {
+    definition (name: "Xiaomi Aqara Leak Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
         capability "Sensor"
         capability "Water Sensor"
