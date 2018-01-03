@@ -88,7 +88,7 @@ metadata {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
 
-        main (["contact"])
+        main (["water"])
         details(["water","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
    }
 }
