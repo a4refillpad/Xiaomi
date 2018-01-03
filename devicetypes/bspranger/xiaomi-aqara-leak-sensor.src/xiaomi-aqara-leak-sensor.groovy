@@ -76,7 +76,7 @@ metadata {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
         valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
+            state "default", label:'Last Wet:\n${currentValue}'
         }
         standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
@@ -95,8 +95,8 @@ metadata {
 
 def parse(String description) {
     def linkText = getLinkText(device)
-    def result = zigbee.getEvent(description)
-
+    log.debug "${linkText} Description:${description}"
+    
     // send event for heartbeat
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
@@ -105,20 +105,42 @@ def parse(String description) {
 
     Map map = [:]
 
-    if (result) {
-        log.debug "${linkText} Event: ${result}"
-        map = getContactResult(result);
-        sendEvent(name: "lastOpened", value: now)
-        sendEvent(name: "lastOpenedDate", value: nowDate)
+    if (description?.startsWith('zone status')) {
+        map = parseZoneStatusMessage(description)
+        if (map.value == "closed") {
+            sendEvent(name: "lastOpened", value: now)
+            sendEvent(name: "lastOpenedDate", value: nowDate) 
+        }
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
-        map = parseButtonPress(description)
+        map = parseReadAttr(description)
     }
 
     log.debug "${linkText}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
     return results
+}
+
+private Map parseZoneStatusMessage(String description) {
+    def linkText = getLinkText(device)
+    def result = [
+        name: 'contact',
+        value: value,
+        descriptionText: 'water contact'
+    ]
+    if (description?.startsWith('zone status')) {
+        if (description?.startsWith('zone status 0x0001')) { // detected water
+            result.value = "closed"
+            result.descriptionText = "${linkText} has detected water"
+        } else if (description?.startsWith('zone status 0x0000')) { // did not detect water
+            result.value = "open"
+            result.descriptionText = "${linkText} is dry"
+        }
+        return result
+    }
+    
+    return [:]
 }
 
 private Map getBatteryResult(rawValue) {
@@ -131,23 +153,23 @@ private Map getBatteryResult(rawValue) {
     ]
 
     def rawVolts = rawValue / 1000
-    def maxBattery = state.maxBattery ?: 0
-    def minBattery = state.minBattery ?: 0
+    //def maxBattery = state.maxBattery ?: 0
+    //def minBattery = state.minBattery ?: 0
 
-    if (maxBattery == 0 || rawVolts > minBattery)
-        state.maxBattery = maxBattery = rawVolts
+    //if (maxBattery == 0 || rawVolts > minBattery)
+    //    state.maxBattery = maxBattery = rawVolts
 
-    if (minBattery == 0 || rawVolts < minBattery)
-        state.minBattery = minBattery = rawVolts
+    //if (minBattery == 0 || rawVolts < minBattery)
+    //    state.minBattery = minBattery = rawVolts
 
-    def volts = (maxBattery + minBattery) / 2
+    //def volts = (maxBattery + minBattery) / 2
 
     def minVolts = 2.7
-    def maxVolts = 3.0
-    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def maxVolts = state.maxBatteryVoltage?:3.0
+    def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v" //, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     return result
 }
 
@@ -160,9 +182,8 @@ private Map parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-
-            if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
-            resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
+                if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) // Check CMD and Data Type
+                    resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
             break
         }
     }
@@ -170,15 +191,37 @@ private Map parseCatchAllMessage(String description) {
 }
 
 // Parse raw data on reset button press to retrieve reported battery voltage
-private Map parseButtonPress(String description) {
-    log.debug "Button press detected"
+private Map parseReadAttr(String description) {
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
-    if (buttonRaw[65..68] == "01FF") {
-        resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
+
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+    def model = value.split("01FF")[0]
+    def data = value.split("01FF")[1]
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
+    
+    if (data[4..7] == "0121") {
+    	def MaxBatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))/1000
+        state.maxBatteryVoltage = MaxBatteryVoltage
     }
 
-    return resultMap
+    if (cluster == "0000" && attrId == "0005")  {
+        resultMap.name = 'Model'
+        resultMap.value = ""
+        resultMap.descriptionText = "device model"
+        // Parsing the model
+        for (int i = 0; i < model.length(); i+=2) 
+        {
+            def str = model.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            resultMap.value = resultMap.value + NextChar
+        }
+        return resultMap
+    }
+    
+    return [:]    
 }
 
 def configure() {
@@ -191,17 +234,6 @@ def refresh() {
     def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
     return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
-}
-
-private Map getContactResult(result) {
-    def linkText = getLinkText(device)
-    def value = result.value == "on" ? "open" : "closed"
-    def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
-    return [
-        name: 'contact',
-        value: value,
-        descriptionText: descriptionText
-    ]
 }
 
 def resetClosed() {
