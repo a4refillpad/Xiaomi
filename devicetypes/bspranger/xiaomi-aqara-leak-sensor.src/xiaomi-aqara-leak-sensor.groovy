@@ -1,5 +1,5 @@
 /**
- *  Xiaomi Aqara Door/Window Sensor
+ *  Xiaomi Aqara Leak Sensor
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -34,7 +34,7 @@
  */
 
 metadata {
-    definition (name: "xiaomi-aqara-leak-sensor", namespace: "bspranger", author: "bspranger") {
+    definition (name: "Xiaomi Aqara Leak Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
         capability "Sensor"
         capability "Water Sensor"
