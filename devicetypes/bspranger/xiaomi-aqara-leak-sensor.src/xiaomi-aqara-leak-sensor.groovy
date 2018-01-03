@@ -37,7 +37,7 @@ metadata {
     definition (name: "xiaomi-aqara-leak-sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
         capability "Sensor"
-        capability "Contact Sensor"
+        capability "Water Sensor"
         capability "Refresh"
         capability "Battery"
         capability "Health Check"
@@ -60,8 +60,8 @@ metadata {
    tiles(scale: 2) {
         multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
             tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-                attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
-                attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
+                attributeState "dry", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
+                attributeState "wet", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -131,10 +131,10 @@ private Map parseZoneStatusMessage(String description) {
     ]
     if (description?.startsWith('zone status')) {
         if (description?.startsWith('zone status 0x0001')) { // detected water
-            result.value = "closed"
+            result.value = "wet"
             result.descriptionText = "${linkText} has detected water"
         } else if (description?.startsWith('zone status 0x0000')) { // did not detect water
-            result.value = "open"
+            result.value = "dry"
             result.descriptionText = "${linkText} is dry"
         }
         return result
