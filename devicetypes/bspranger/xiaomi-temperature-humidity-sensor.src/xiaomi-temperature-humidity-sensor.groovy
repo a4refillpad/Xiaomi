@@ -223,22 +223,29 @@ private String parseReadAttrMessage(String description) {
 
 private String parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
+    def MsgLength
+    def i
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
     log.debug cluster
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            if (cluster.data.get(7) == 0x21)  // check the data type at minimum
-            {
-                // bytes 8 and 9 are the battery voltage.
-                resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
-            }
+            	MsgLength = cluster.data.get(2)/2;
+                for (i = 0; i < (MsgLength-3); i++)
+                {
+                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    {
+                        // next two bytes are the battery voltage.
+                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        return resultMap.value
+                    }
+                }
             break
         }
     }
 
-    return result.value
+    return ""
 }
 
 
