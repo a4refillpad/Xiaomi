@@ -222,35 +222,57 @@ private String parseReadAttrMessage(String description) {
 }
 
 private String parseCatchAllMessage(String description) {
-	def result = '--'
-	def cluster = zigbee.parse(description)
-	log.debug cluster
-	if (cluster) {
-		switch(cluster.clusterId) {
-			case 0x0000:
-			result = getBatteryResult(cluster.data.get(6)) 
- 			break
-		}
-	}
+    def linkText = getLinkText(device)
+    Map resultMap = [:]
+    def cluster = zigbee.parse(description)
+    log.debug cluster
+    if (cluster) {
+        switch(cluster.clusterId) {
+            case 0x0000:
+            if (cluster.data.get(7) == 0x21)  // check the data type at minimum
+            {
+                // bytes 8 and 9 are the battery voltage.
+                resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
+            }
+            break
+        }
+    }
 
-	return result
+    return result.value
 }
 
 
-private String getBatteryResult(rawValue) {
-	//log.debug 'Battery'
-	//def linkText = getLinkText(device)
-	//log.debug rawValue
+private Map getBatteryResult(rawValue) {
+    def linkText = getLinkText(device)
+    //log.debug '${linkText} Battery'
 
-	def result =  '--'
-    def maxBatt = 100
-    def battLevel = Math.round(rawValue * 100 / 255)
-	
-	if (battLevel > maxBatt) {
-				battLevel = maxBatt
-    }
+    def result = [
+        name: 'battery',
+        value: '--',
+        unit: '%'
+    ]
+    
+    def rawVolts = rawValue / 1000
 
-	return battLevel
+    def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+    if (maxBattery == 0 || rawVolts > minBattery)
+        state.maxBattery = maxBattery = rawVolts
+        
+    if (minBattery == 0 || rawVolts < minBattery)
+        state.minBattery = minBattery = rawVolts
+    
+    def volts = (maxBattery + minBattery) / 2
+    def minVolts = 2.7
+    def maxVolts = 3.0
+    def pct = (volts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.round(pct * 100)
+    result.value = Math.min(100, roundedPct)
+    
+    result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+
+    return result
 }
 
 def refresh() {
