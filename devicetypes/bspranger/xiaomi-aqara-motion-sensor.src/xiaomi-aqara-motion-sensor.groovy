@@ -175,12 +175,16 @@ private Map parseCatchAllMessage(String description) {
     if (shouldProcessMessage(cluster)) {
         switch(cluster.clusterId) {
             case 0x0000:
-
-            // Check CMD and Data Type
-            if ((cluster.data.get(4) == 1) && (cluster.data.get(5) == 0x21)) {
-                resultMap = getBatteryResult((cluster.data.get(7)<<8) + cluster.data.get(6))
-            }
-            break
+            	def MsgLength = cluster.data.size();
+                for (i = 0; i < (MsgLength-3); i++)
+                {
+                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    {
+                        // next two bytes are the battery voltage.
+                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                    }
+                }
+            	break
         }
     }
     return resultMap

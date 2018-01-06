@@ -190,12 +190,16 @@ private Map parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            if (cluster.data.get(7) == 0x21)  // check the data type at minimum
-            {
-                // bytes 8 and 9 are the battery voltage.
-                resultMap = getBatteryResult((cluster.data.get(9)<<8) + cluster.data.get(8))
-            }
-            break
+            	def MsgLength = cluster.data.size();
+                for (i = 0; i < (MsgLength-3); i++)
+                {
+                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    {
+                        // next two bytes are the battery voltage.
+                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                    }
+                }
+            	break
         }
     }
 

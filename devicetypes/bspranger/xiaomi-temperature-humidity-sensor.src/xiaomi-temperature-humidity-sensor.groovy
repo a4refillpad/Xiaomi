@@ -231,14 +231,13 @@ private String parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	MsgLength = cluster.data.get(2)/2;
+            	MsgLength = cluster.data.size();
                 for (i = 0; i < (MsgLength-3); i++)
                 {
                     if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                     {
                         // next two bytes are the battery voltage.
                         resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                        return resultMap.value
                     }
                 }
             break
