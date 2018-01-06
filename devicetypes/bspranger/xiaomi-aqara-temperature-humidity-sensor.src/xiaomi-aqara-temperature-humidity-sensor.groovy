@@ -291,7 +291,8 @@ private String parseCatchAllMessage(String description) {
                     if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                     {
                         // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        def resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        return resultMap.value
                     }
                 }
             	break
@@ -300,21 +301,36 @@ private String parseCatchAllMessage(String description) {
     return result
 }
 
-private String getBatteryResult(rawValue) {
+private Map getBatteryResult(rawValue) {
     def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
-    //log.debug rawValue
-    def result ="--"
-    def volts = rawValue / 1000
-    def minVolts = 2.0
-    def maxVolts = 3.055
+    def result = [
+        name: 'battery',
+        value: '--',
+        unit: "%",
+        translatable: true
+    ]
+
+    def rawVolts = rawValue / 1000
+    def maxBattery = state.maxBattery ?: 0
+    def minBattery = state.minBattery ?: 0
+
+    if (maxBattery == 0 || rawVolts > minBattery)
+        state.maxBattery = maxBattery = rawVolts
+
+    if (minBattery == 0 || rawVolts < minBattery)
+        state.minBattery = minBattery = rawVolts
+
+    def volts = (maxBattery + minBattery) / 2
+
+    def minVolts = 2.7
+    def maxVolts = 3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
-    pct = Math.min(100, roundedPct)
-    log.debug "${device.displayName} battery was ${pct}%, ${volts} volts"
-    result = pct.toString();
+    result.value = Math.min(100, roundedPct)
+    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     return result
 }
+
 
 def refresh() {
     def linkText = getLinkText(device)

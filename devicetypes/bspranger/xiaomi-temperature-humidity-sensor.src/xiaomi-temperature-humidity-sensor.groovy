@@ -238,6 +238,7 @@ private String parseCatchAllMessage(String description) {
                     {
                         // next two bytes are the battery voltage.
                         resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        return resultMap.value
                     }
                 }
             break
