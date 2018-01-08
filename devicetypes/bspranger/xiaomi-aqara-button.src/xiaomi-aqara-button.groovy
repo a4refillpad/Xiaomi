@@ -69,7 +69,7 @@ metadata {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
+                attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
                 attributeState("released", label:'${name}', backgroundColor:"#ffffff")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
@@ -87,14 +87,14 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
+        valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Pressed:\n${currentValue}'
         }
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
         main (["button"])
-        details(["button","battery","lastcheckin","lastopened","refresh"])
+        details(["button","battery","lastcheckin","lastpressed","refresh"])
    }
 }
 
@@ -113,8 +113,8 @@ def parse(String description) {
     if (description?.startsWith('on/off: ')) 
     {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastOpened", value: now)
-        sendEvent(name: "lastOpenedDate", value: nowDate) 
+        sendEvent(name: "lastpressed", value: now)
+        sendEvent(name: "lastpressedDate", value: nowDate) 
     }
     else if (description?.startsWith('catchall:')) 
     {
@@ -239,12 +239,20 @@ private Map getBatteryResult(rawValue) {
 private Map parseCustomMessage(String description) {
     def linkText = getLinkText(device)
     def result = [:]
+    if ((state.button != "pushed") && (state.button != "released")) {
+    	state.button = "released"
+    }
     if (description?.startsWith('on/off: ')) {
         if (description == 'on/off: 0'){
-            result = getContactResult("pushed")
-            log.debug "${linkText}: Parse returned $result"
-            createEvent(result)
-            result = getContactResult("released")
+        	log.debug "${linkText}: ${state.button}"
+        	if (state.button == "released") {
+               result = getContactResult("pushed")
+               state.button = "pushed"
+            }
+            else {
+               result = getContactResult("released")
+               state.button = "released"
+            }
         }
         return result
     }
