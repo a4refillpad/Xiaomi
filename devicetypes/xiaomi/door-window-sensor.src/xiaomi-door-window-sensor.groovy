@@ -24,7 +24,7 @@
  *
  */
 metadata {
-   definition (name: "Xiaomi Door/Window Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+   definition (name: "Xiaomi Door/Window Sensor", namespace: "xiaomi", author: "beshkenadze") {
    capability "Configuration"
    capability "Sensor"
    capability "Contact Sensor"

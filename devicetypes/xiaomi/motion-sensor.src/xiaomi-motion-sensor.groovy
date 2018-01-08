@@ -27,7 +27,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Motion Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+	definition (name: "Xiaomi Motion Sensor", namespace: "xiaomi", author: "beshkenadze") {
 		capability "Motion Sensor"
 		capability "Configuration"
 		capability "Battery"
