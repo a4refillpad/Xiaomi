@@ -100,8 +100,15 @@ metadata {
 
 def parse(String description) {
     def linkText = getLinkText(device)
-    log.debug "${linkText}: Parsing '${description}'"
+    def result = zigbee.getEvent(description)
 
+    if(result) {
+        log.debug "${linkText}: Parsing '${description}' Event Result: ${result}"
+    }
+    else
+    {
+    	log.debug "${linkText}: Parsing '${description}'"
+    }
     //  send event for heartbeat    
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
@@ -132,14 +139,15 @@ def parse(String description) {
 
 def configure(){
     def linkText = getLinkText(device)
+    state.button = "released"
     log.debug "${linkText}: configuring"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    return zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 3600, 0x01)
 }
 
 def refresh(){
     def linkText = getLinkText(device)
     log.debug "${linkText}: refreshing"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    return zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 3600, 0x01)
 }
 
 private Map parseReadAttrMessage(String description) {
@@ -152,7 +160,7 @@ private Map parseReadAttrMessage(String description) {
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
     def model = value.split("01FF")[0]
     def data = value.split("01FF")[1]
-    log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
     
     if (data[4..7] == "0121") {
     	def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
@@ -244,7 +252,6 @@ private Map parseCustomMessage(String description) {
     }
     if (description?.startsWith('on/off: ')) {
         if (description == 'on/off: 0'){
-        	log.debug "${linkText}: ${state.button}"
         	if (state.button == "released") {
                result = getContactResult("pushed")
                state.button = "pushed"
