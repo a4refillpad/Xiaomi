@@ -25,7 +25,7 @@
  *
  */
 metadata {
-	definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "a4refillpad", author: "a4refillpad") {
+	definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "xiaomi", author: "beshkenadze") {
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
 		capability "Sensor"

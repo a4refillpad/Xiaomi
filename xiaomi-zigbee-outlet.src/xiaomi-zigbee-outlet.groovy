@@ -16,7 +16,7 @@
  */
 
 metadata {
-    definition (name: "Xiaomi Zigbee Outlet", namespace: "a4refillpad", author: "a4refillpad") {
+    definition (name: "Xiaomi Zigbee Outlet", namespace: "xiaomi", author: "beshkenadze") {
         capability "Actuator"
         capability "Configuration"
         capability "Refresh"
