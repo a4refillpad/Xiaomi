@@ -92,7 +92,7 @@ metadata {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
 		standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset date', unit:"", action:"resetBatteryRuntime"
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
 		}
 
         main(["motion"])
