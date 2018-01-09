@@ -303,6 +303,11 @@ def resetOpen() {
     sendEvent(name:"contact", value:"open")
 }
 
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
+}
+
 def installed() {
 // Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
     def linkText = getLinkText(device)
