@@ -38,9 +38,11 @@ metadata {
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
+	attribute "batteryRuntime", "String"	
 
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
+	command "resetBatteryRuntime"	
         command "reset"
         command "Refresh"
         
@@ -86,9 +88,11 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false) {
 			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
 	   }
-
+		standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
+		} 
 		main(["motion"])
-		details(["motion", "battery", "icon", "lastmotion", "reset", "refresh"])
+		details(["motion", "battery", "icon", "lastmotion", "reset", "refresh","batteryRuntime"])
 	}
 }
 
@@ -346,6 +350,11 @@ def stopMotion() {
 
 def reset() {
 	sendEvent(name:"motion", value:"inactive")
+}
+
+def resetBatteryRuntime() {
+    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }
 
 def installed() {
