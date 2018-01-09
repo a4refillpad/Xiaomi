@@ -51,12 +51,15 @@ metadata {
         attribute "batterylevel", "string"
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
+	attribute "batteryRuntime", "String"
+
+	command "resetBatteryRuntime"
         
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Xiaomi Aqara Button"
     }
     
     simulator {
-          status "button 1 pressed": "on/off: 0"
+        status "button 1 pressed": "on/off: 0"
       	status "button 1 released": "on/off: 1"
     }
     
@@ -93,8 +96,12 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
+	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+	    state "batteryRuntime", label:'Battery Changed: ${currentValue} Double tap to reset counter', unit:"", action:"resetBatteryRuntime"
+	}    
+	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastpressed","refresh"])
+        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
    }
 }
 
@@ -273,4 +280,9 @@ private Map getContactResult(value) {
         value: value,
         descriptionText: descriptionText
     ]
+}
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }
