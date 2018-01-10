@@ -64,11 +64,12 @@ metadata {
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"] 
-            ]
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
@@ -94,8 +95,7 @@ metadata {
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Parsing '${description}'"
+    log.debug "${device.displayName}: Parsing '${description}'"
 
     //  send event for heartbeat    
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
@@ -119,7 +119,7 @@ def parse(String description) {
     {
         map = parseReadAttrMessage(description)  
     }
-    log.debug "${linkText}: Parse returned $map"
+    log.debug "${device.displayName}: Parse returned $map"
     def results = map ? createEvent(map) : null
 
     return results;
@@ -154,8 +154,7 @@ private Map parseReadAttrMessage(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
+    //log.debug '${device.displayName} Battery'
 
     def result = [
         name: 'battery',
@@ -187,7 +186,6 @@ private Map getBatteryResult(rawValue) {
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
     def i
@@ -213,13 +211,11 @@ private Map parseCatchAllMessage(String description) {
 
 
 def configure() {
-    def linkText = getLinkText(device)
-
     String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-    log.debug "${linkText}: ${device.deviceNetworkId}"
+    log.debug "${device.displayName}: ${device.deviceNetworkId}"
     def endpointId = 1
-    log.debug "${linkText}: ${device.zigbeeId}"
-    log.debug "${linkText}: ${zigbeeEui}"
+    log.debug "${device.displayName}: ${device.zigbeeId}"
+    log.debug "${device.displayName}: ${zigbeeEui}"
     def configCmds = [
         //battery reporting and heartbeat
         // send-me-a-report 3600 43200 is min and max reporting time range
@@ -233,13 +229,12 @@ def configure() {
         "send 0x${device.deviceNetworkId} 1 1", "delay 500",
     ]
 
-    log.debug "${linkText}: configure: Write IAS CIE"
+    log.debug "${device.displayName}: configure: Write IAS CIE"
     return configCmds
 }
 
 def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Enrolling device into the IAS Zone"
+    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
     [
         // Enrolling device into the IAS Zone
         "raw 0x500 {01 23 00 00 00}", "delay 200",
@@ -248,8 +243,7 @@ def enrollResponse() {
 }
 
 def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
+    log.debug "${device.displayName}: refreshing"
     zigbee.configureReporting(0x0001, 0x0021, DataType.UINT8, 3600, 43200, 0x01)
 }
 
@@ -266,8 +260,7 @@ private Map parseCustomMessage(String description) {
 }
 
 private Map getContactResult(value) {
-    def linkText = getLinkText(device)
-    def descriptionText = "${linkText} was ${value == 'open' ? 'opened' : 'closed'}"
+    def descriptionText = "${device.displayName} was ${value == 'open' ? 'opened' : 'closed'}"
     return [
         name: 'contact',
         value: value,
@@ -311,14 +304,12 @@ def resetBatteryRuntime() {
 
 def installed() {
 // Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when installed()"
+    log.debug "${device.displayName}: Configured health checkInterval when installed()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
 def updated() {
 // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when updated()"
+    log.debug "${device.displayName}: Configured health checkInterval when updated()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
