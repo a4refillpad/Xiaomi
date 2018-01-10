@@ -35,9 +35,12 @@ metadata {
         capability "Health Check"
         
         attribute "lastCheckin", "String"
+	attribute "batteryRuntime", "String"
         
-		fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
-	}
+	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
+
+	command "resetBatteryRuntime"	
+}
 
 	// simulator metadata
 	simulator {
@@ -113,9 +116,11 @@ metadata {
 		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-            
+        	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
+	}     
 		main(["temperature2"])
-		details(["temperature", "battery", "humidity","refresh"])
+		details(["temperature", "battery", "humidity","refresh","batteryRuntime"])
 	}
 }
 
@@ -333,4 +338,9 @@ private byte[] reverseArray(byte[] array) {
 		i++;
 	}
 	return array
+}
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }

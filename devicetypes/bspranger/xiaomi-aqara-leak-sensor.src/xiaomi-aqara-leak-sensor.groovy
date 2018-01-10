@@ -46,10 +46,12 @@ metadata {
         attribute "lastOpened", "String"
         attribute "lastOpenedDate", "Date"
         attribute "lastCheckinDate", "Date"
+	attribute "batteryRuntime", "String"
         
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0402", inClusters: "0000,0003,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Xiaomi Leak Sensor"
 
         command "Refresh"
+	command "resetBatteryRuntime"
     }
 
     simulator {
@@ -87,9 +89,12 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
+	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+	}
 
         main (["water"])
-        details(["water","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
+        details(["water","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh","batteryRuntime"])
    }
 }
 
@@ -242,6 +247,11 @@ def resetClosed() {
 
 def resetOpen() {
 	sendEvent(name:"contact", value:"open")
+}
+
+def resetBatteryRuntime() {
+    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }
 
 def installed() {

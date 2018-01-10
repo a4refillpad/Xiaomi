@@ -38,9 +38,12 @@ metadata {
         capability "Health Check"
 
         attribute "lastCheckin", "String"
+        attribute "batteryRuntime", "String"
 
         fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
-    }
+    
+        command "resetBatteryRuntime"
+}
 
     simulator {
         for (int i = 0; i <= 100; i += 10) {
@@ -126,8 +129,12 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
+		standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+		}        
+        
         main(["temperature2"])
-        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "refresh"])
+        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "refresh", "batteryRuntime"])
     }
 }
 
@@ -383,3 +390,9 @@ private byte[] reverseArray(byte[] array) {
     }
     return array
 }
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
+}
+

@@ -51,9 +51,12 @@ metadata {
         attribute "batterylevel", "string"
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
-        
+        attribute "batteryRuntime", "String"
+	    
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
-    }
+    
+	command "resetBatteryRuntime"
+}
     
     simulator {
           status "button 1 pressed": "on/off: 0"
@@ -93,8 +96,11 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
+	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
+	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastopened","refresh"])
+        details(["button","battery","lastcheckin","lastopened","refresh","batteryRuntime"])
    }
 }
 
@@ -257,4 +263,9 @@ private Map getContactResult(value) {
         value: value,
         descriptionText: descriptionText
     ]
+}
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }

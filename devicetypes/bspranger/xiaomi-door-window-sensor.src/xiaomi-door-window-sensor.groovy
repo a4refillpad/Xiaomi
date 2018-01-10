@@ -39,9 +39,11 @@ metadata {
    attribute "lastOpened", "String"
    attribute "lastOpenedDate", "Date" 
    attribute "lastCheckinDate", "Date"
+   attribute "batteryRuntime", "String"
 
    fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
+   command "resetBatteryRuntime"
    command "enrollResponse"
    command "resetClosed"
    command "resetOpen"
@@ -83,9 +85,11 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
-
+		  standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			   state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
+		  } 
         main (["contact"])
-        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
+        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh","batteryRuntime"])
    }
 }
 
@@ -297,6 +301,11 @@ def resetClosed() {
 
 def resetOpen() {
     sendEvent(name:"contact", value:"open")
+}
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }
 
 def installed() {
