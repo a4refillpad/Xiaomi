@@ -177,6 +177,7 @@ private Map parseCatchAllMessage(String description) {
 
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
+    def i
     log.debug cluster
     if (shouldProcessMessage(cluster)) {
         switch(cluster.clusterId) {

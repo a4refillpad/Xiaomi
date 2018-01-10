@@ -287,6 +287,7 @@ private String parseReadAttrMessage(String description) {
 private String parseCatchAllMessage(String description) {
     def result = '--'
     def cluster = zigbee.parse(description)
+    def i
     log.debug cluster
 
     if (cluster) {

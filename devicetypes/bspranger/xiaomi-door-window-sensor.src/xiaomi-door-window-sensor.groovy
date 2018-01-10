@@ -190,6 +190,7 @@ private Map parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
+    def i
     log.debug cluster
     if (cluster) {
         switch(cluster.clusterId) {

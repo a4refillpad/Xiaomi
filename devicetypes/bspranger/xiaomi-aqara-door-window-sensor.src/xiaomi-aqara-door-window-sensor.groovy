@@ -118,7 +118,7 @@ def parse(String description) {
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
-        map = parseButtonPress(description)
+        map = parseReadAttr(description)
     }
 
     log.debug "${linkText}: Parse returned ${map}"
@@ -148,7 +148,7 @@ private Map getBatteryResult(rawValue) {
     def volts = (maxBattery + minBattery) / 2
 
     def minVolts = 2.7
-    def maxVolts = 3.0
+    def maxVolts = (state.maxBatteryVoltage > 3.0)?state.maxBatteryVoltage:3.0
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
@@ -159,6 +159,7 @@ private Map getBatteryResult(rawValue) {
 private Map parseCatchAllMessage(String description) {
     def linkText = getLinkText(device)
     Map resultMap = [:]
+    def i
     def cluster = zigbee.parse(description)
     log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
 
@@ -181,15 +182,37 @@ private Map parseCatchAllMessage(String description) {
 }
 
 // Parse raw data on reset button press to retrieve reported battery voltage
-private Map parseButtonPress(String description) {
-    log.debug "Button press detected"
+private Map parseReadAttr(String description) {
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
-    if (buttonRaw[65..68] == "01FF") {
-        resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
+
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+    def model = value.split("01FF")[0]
+    def data = value.split("01FF")[1]
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
+    
+    if (data[4..7] == "0121") {
+    	def MaxBatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))/1000
+        state.maxBatteryVoltage = MaxBatteryVoltage
     }
 
-    return resultMap
+    if (cluster == "0000" && attrId == "0005")  {
+        resultMap.name = 'Model'
+        resultMap.value = ""
+        resultMap.descriptionText = "device model"
+        // Parsing the model
+        for (int i = 0; i < model.length(); i+=2) 
+        {
+            def str = model.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            resultMap.value = resultMap.value + NextChar
+        }
+        return resultMap
+    }
+    
+    return [:]    
 }
 
 def configure() {
