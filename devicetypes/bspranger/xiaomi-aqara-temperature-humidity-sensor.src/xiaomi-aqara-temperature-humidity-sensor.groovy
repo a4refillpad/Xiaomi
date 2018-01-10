@@ -99,11 +99,12 @@ metadata {
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"]
-            ]
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
         }
         valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
             state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
@@ -152,16 +153,15 @@ def updated() {
 
 // Parse incoming device messages to generate events
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText} Parsing: $description"
+    log.debug "${device.displayName} Parsing: $description"
     def name = parseName(description)
-    log.debug "${linkText} Parsename: $name"
+    log.debug "${device.displayName} Parsename: $name"
     def value = parseValue(description)
-    log.debug "${linkText} Parsevalue: $value"
+    log.debug "${device.displayName} Parsevalue: $value"
     def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : ((name == "pressure")? PressureUnits: null))
     def result = createEvent(name: name, value: value, unit: unit)
-    log.debug "${linkText} Evencreated: $name, $value, $unit"
-    log.debug "${linkText} Parse returned: ${result?.descriptionText}"
+    log.debug "${device.displayName} Evencreated: $name, $value, $unit"
+    log.debug "${device.displayName} Parse returned: ${result?.descriptionText}"
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     return result
@@ -188,8 +188,6 @@ private String parseName(String description) {
 }
 
 private String parseValue(String description) {
-    def linkText = getLinkText(device)
-
     if (description?.startsWith("temperature: ")) {
         def value = ((description - "temperature: ").trim()) as Float
 
@@ -222,7 +220,7 @@ private String parseValue(String description) {
     } else if (description?.startsWith("read attr - raw: ")) {
         return parseReadAttrMessage(description)
     } else {
-        log.debug "${linkText} unknown: $description"
+        log.debug "${device.displayName} unknown: $description"
         sendEvent(name: "unknown", value: description)
     }
     null
@@ -233,7 +231,6 @@ private String parseReadAttrMessage(String description) {
     def cluster
     def attrId
     def value
-    def linkText = getLinkText(device)
     cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
     attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
     value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
@@ -241,7 +238,7 @@ private String parseReadAttrMessage(String description) {
     if (cluster == "0403" && attrId == "0000") {
         result = value[0..3]
         float pressureval = Integer.parseInt(result, 16)
-        log.debug "${linkText}: Converting ${pressureval} to ${PressureUnits}"
+        log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
 
         switch (PressureUnits) {
             case "mbar":
@@ -265,7 +262,7 @@ private String parseReadAttrMessage(String description) {
                 break;
         }
 
-        log.debug "${linkText}: ${pressureval} ${PressureUnits} before applying the pressure offset."
+        log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
 
         if (pressOffset) {
             pressureval = (pressureval + pressOffset)
@@ -310,7 +307,6 @@ private String parseCatchAllMessage(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
     def result = [
         name: 'battery',
         value: '--',
@@ -335,14 +331,13 @@ private Map getBatteryResult(rawValue) {
     def pct = (volts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    result.descriptionText = "${device.displayName}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     return result
 }
 
 
 def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refresh called"
+    log.debug "${device.displayName}: refresh called"
     def refreshCmds = [
         "st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
         "st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
@@ -361,8 +356,7 @@ def configure() {
 }
 
 def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Sending enroll response"
+    log.debug "${device.displayName}: Sending enroll response"
     String zigbeeEui = swapEndianHex(device.hub.zigbeeEui) [
         //Resending the CIE in case the enroll request is sent before CIE is written
         "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
@@ -396,4 +390,3 @@ def resetBatteryRuntime() {
    	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
-
