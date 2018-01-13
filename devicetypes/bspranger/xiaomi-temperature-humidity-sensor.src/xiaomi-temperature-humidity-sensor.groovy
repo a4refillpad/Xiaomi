@@ -230,7 +230,6 @@ private String parseReadAttrMessage(String description) {
 }
 
 private String parseCatchAllMessage(String description) {
-    def MsgLength
     def i
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
@@ -242,7 +241,7 @@ private String parseCatchAllMessage(String description) {
                 for (i = 0; i < (MsgLength-3); i++)
                 {
                     // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(0) == 0xFF))
+                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
                     {
                         if (cluster.data.get(i) == 0x21) // check the data ID and data type
                         {
