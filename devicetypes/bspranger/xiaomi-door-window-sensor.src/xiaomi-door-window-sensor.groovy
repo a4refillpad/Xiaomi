@@ -178,20 +178,25 @@ private Map parseCatchAllMessage(String description) {
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
     def i
-    log.debug cluster
+    log.debug "${device.displayName}: Parsing CatchAll: ${cluster}"
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	def MsgLength = cluster.data.size();
+                def MsgLength = cluster.data.size();
                 for (i = 0; i < (MsgLength-3); i++)
                 {
-                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(0) == 0xFF))
                     {
-                        // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        if (cluster.data.get(i) == 0x21) // check the data ID and data type
+                        {
+                            // next two bytes are the battery voltage.
+                            resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
+                            return resultMap
+                        }
                     }
                 }
-            	break
+                break
         }
     }
 
