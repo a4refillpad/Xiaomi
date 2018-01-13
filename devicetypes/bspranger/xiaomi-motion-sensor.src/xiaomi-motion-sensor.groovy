@@ -66,7 +66,13 @@ metadata {
             }
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:""
+			state "battery", label:'${currentValue}% battery', unit:"",
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
 		}
               
 	    standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
@@ -97,8 +103,7 @@ metadata {
 }
 
 def parse(String description) {
-	def linkText = getLinkText(device)
-    log.debug "${linkText} Parsing: $description"
+    log.debug "${device.displayName} Parsing: $description"
 
 	Map map = [:]
 	if (description?.startsWith('catchall:')) {
@@ -108,7 +113,7 @@ def parse(String description) {
 		map = parseReportAttributeMessage(description)
 	}
  
-	log.debug "${linkText} Parse returned: $map"
+	log.debug "${device.displayName} Parse returned: $map"
 	def result = map ? createEvent(map) : null
 //  send event for heartbeat    
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
@@ -116,7 +121,7 @@ def parse(String description) {
     
     if (description?.startsWith('enroll request')) {
     	List cmds = enrollResponse()
-        log.debug "${linkText} enroll response: ${cmds}"
+        log.debug "${device.displayName} enroll response: ${cmds}"
         result = cmds?.collect { new physicalgraph.device.HubAction(it) }
     }
 
@@ -124,8 +129,7 @@ def parse(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
+    //log.debug '${device.displayName} Battery'
 
 	//log.debug rawValue
 
@@ -141,14 +145,12 @@ private Map getBatteryResult(rawValue) {
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
     
-	result.descriptionText = "${linkText} battery was ${result.value}%, ${volts} volts."
+	result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts."
 
 	return result
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
-    
 	Map resultMap = [:]
 	def cluster = zigbee.parse(description)
     def i
@@ -168,7 +170,7 @@ private Map parseCatchAllMessage(String description) {
             	break
 
 			case 0x0402:
-				log.debug '${linkText}: TEMP'
+				log.debug '${device.displayName}: TEMP'
 				// temp is last 2 data values. reverse to swap endian
 				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
 				def value = getTemperature(temp)
@@ -192,12 +194,11 @@ private boolean shouldProcessMessage(cluster) {
 
 
 def configure() {
-	def linkText = getLinkText(device)
 	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${linkText}: ${device.deviceNetworkId}"
+	log.debug "${device.displayName}: ${device.deviceNetworkId}"
     def endpointId = 1
-    log.debug "${linkText}: ${device.zigbeeId}"
-    log.debug "${linkText}: ${zigbeeEui}"
+    log.debug "${device.displayName}: ${device.zigbeeId}"
+    log.debug "${device.displayName}: ${zigbeeEui}"
 	def configCmds = [
 			//battery reporting and heartbeat
 			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
@@ -210,13 +211,12 @@ def configure() {
 			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
 	]
 
-	log.debug "${linkText} configure: Write IAS CIE"
+	log.debug "${device.displayName} configure: Write IAS CIE"
 	return configCmds
 }
 
 def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Enrolling device into the IAS Zone"
+    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
 	[
 			// Enrolling device into the IAS Zone
 			"raw 0x500 {01 23 00 00 00}", "delay 200",
@@ -225,8 +225,7 @@ def enrollResponse() {
 }
 
 def refresh() {
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Refreshing Battery"
+    log.debug "${device.displayName}: Refreshing Battery"
 //    def endpointId = 0x01
 //	[
 //	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
@@ -279,7 +278,6 @@ private Map parseCustomMessage(String description) {
 }
 
 private Map parseIasMessage(String description) {
-    def linkText = getLinkText(device)
     List parsedMsg = description.split(' ')
     String msgCode = parsedMsg[2]
     
@@ -294,7 +292,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0022': // Tamper Alarm
-        	log.debug '${linkText}: motion with tamper alarm'
+        	log.debug '${device.displayName}: motion with tamper alarm'
         	resultMap = getMotionResult('active')
             break
 
@@ -302,7 +300,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0024': // Supervision Report
-        	log.debug '${linkText}: no motion with tamper alarm'
+        	log.debug '${device.displayName}: no motion with tamper alarm'
         	resultMap = getMotionResult('inactive')
             break
 
@@ -310,7 +308,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0026': // Trouble/Failure
-        	log.debug '${linkText}: motion with failure alarm'
+        	log.debug '${device.displayName}: motion with failure alarm'
         	resultMap = getMotionResult('active')
             break
 
@@ -322,9 +320,8 @@ private Map parseIasMessage(String description) {
 
 
 private Map getMotionResult(value) {
-	def linkText = getLinkText(device)
-    //log.debug "${linkText}: motion"
-	String descriptionText = value == 'active' ? "${linkText} detected motion" : "${linkText} motion has stopped"
+    //log.debug "${device.displayName}: motion"
+	String descriptionText = value == 'active' ? "${device.displayName} detected motion" : "${device.displayName} motion has stopped"
 	def commands = [
 		name: 'motion',
 		value: value,
@@ -360,14 +357,12 @@ def resetBatteryRuntime() {
 
 def installed() {
 // Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when installed()"
+    log.debug "${device.displayName}: Configured health checkInterval when installed()"
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
 def updated() {
 // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when updated()"
+    log.debug "${device.displayName}: Configured health checkInterval when updated()"
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
