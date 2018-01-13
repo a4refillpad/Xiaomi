@@ -99,7 +99,6 @@ metadata {
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
     def result = zigbee.getEvent(description)
 
     // send event for heartbeat
@@ -111,7 +110,7 @@ def parse(String description) {
     Map map = [:]
 
     if (result) {
-        log.debug "${linkText} Event: ${result}"
+        log.debug "${device.displayName} Event: ${result}"
         map = getContactResult(result);
         sendEvent(name: "lastOpened", value: now)
         sendEvent(name: "lastOpenedDate", value: nowDate)
@@ -121,7 +120,7 @@ def parse(String description) {
         map = parseReadAttr(description)
     }
 
-    log.debug "${linkText}: Parse returned ${map}"
+    log.debug "${device.displayName}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
     return results
 }
@@ -148,11 +147,10 @@ private Map getBatteryResult(rawValue) {
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
     Map resultMap = [:]
     def i
     def cluster = zigbee.parse(description)
-    log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
+    log.debug "${device.displayName}: Parsing CatchAll: '${cluster}'"
 
     if (cluster) {
         switch(cluster.clusterId) {
@@ -207,20 +205,18 @@ private Map parseReadAttr(String description) {
 }
 
 def configure() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    log.debug "${device.displayName}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 def refresh() {
     log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 private Map getContactResult(result) {
-    def linkText = getLinkText(device)
     def value = result.value == "on" ? "open" : "closed"
-    def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
+    def descriptionText = "${device.displayName} was ${value == "open" ? value + "ed" : value}"
     return [
         name: 'contact',
         value: value,
@@ -251,7 +247,6 @@ def updated() {
 
 private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when ${text}()"
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
