@@ -200,15 +200,13 @@ private boolean shouldProcessMessage(cluster) {
 
 
 def configure() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    log.debug "${device.displayName}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
-def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def enrollResponse() {

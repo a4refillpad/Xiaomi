@@ -223,15 +223,9 @@ def enrollResponse() {
 	]
 }
 
-def refresh() {
-    log.debug "${device.displayName}: Refreshing Battery"
-//    def endpointId = 0x01
-//	[
-//	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
-//	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000", "delay 200"
-//	] //+ enrollResponse()
-
-    zigbee.configureReporting(0x0001, 0x0021, 0x20, 300, 600, 0x01)
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseReportAttributeMessage(String description) {

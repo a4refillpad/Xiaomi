@@ -328,13 +328,9 @@ private Map getBatteryResult(rawValue) {
 }
 
 
-def refresh() {
-    log.debug "${device.displayName}: refresh called"
-    def refreshCmds = [
-        "st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
-        "st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
-    ]
-    return refreshCmds + enrollResponse()
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def configure() {

@@ -147,12 +147,12 @@ def parse(String description) {
 def configure(){
     state.button = "released"
     log.debug "${device.displayName}: configuring"
-    return zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 3600, 0x01)
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh(){
     log.debug "${device.displayName}: refreshing"
-    return zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 3600, 0x01)
+    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseReadAttrMessage(String description) {
