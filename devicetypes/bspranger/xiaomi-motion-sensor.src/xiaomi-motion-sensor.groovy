@@ -129,25 +129,24 @@ def parse(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    //log.debug '${device.displayName} Battery'
+    def rawVolts = rawValue / 1000
 
-	//log.debug rawValue
+    def minVolts = 2.7
+    def maxVolts = 3.0
+    def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.min(100, Math.round(pct * 100))
 
-	def result = [
-		name: 'battery',
-		value: '--'
-	]
+    def result = [
+        name: 'battery',
+        value: roundedPct,
+        unit: "%",
+        isStateChange:true,
+        descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
+    ]
     
-    def volts = rawValue / 1000
-    def minVolts = 2.0
-    def maxVolts = 3.04
-    def pct = (volts - minVolts) / (maxVolts - minVolts)
-    def roundedPct = Math.round(pct * 100)
-    result.value = Math.min(100, roundedPct)
+    log.debug "${device.displayName}: ${result}"
     
-	result.descriptionText = "${device.displayName} battery was ${result.value}%, ${volts} volts."
-
-	return result
+    return result
 }
 
 private Map parseCatchAllMessage(String description) {
