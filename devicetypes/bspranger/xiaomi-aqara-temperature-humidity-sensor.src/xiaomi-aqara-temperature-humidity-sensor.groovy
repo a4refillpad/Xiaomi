@@ -329,7 +329,7 @@ private Map getBatteryResult(rawValue) {
 
 def refresh(){
     log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) + configureReporting(0x0403, 0x0000, 0x29, 30, 3600, 0x0064)// send refresh cmds as part of config
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) + zigbee.configureReporting(0x0403, 0x0000, 0x29, 30, 3600, 0x0064)// send refresh cmds as part of config
 }
 
 def configure() {
@@ -339,7 +339,7 @@ def configure() {
 
     // temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
     // battery minReport 30 seconds, maxReportTime 6 hrs by default
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) + configureReporting(0x0403, 0x0000, 0x29, 30, 3600, 0x0064)// send refresh cmds as part of config
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) + zigbee.configureReporting(0x0403, 0x0000, 0x29, 30, 3600, 0x0064)// send refresh cmds as part of config
 }
 
 def resetBatteryRuntime() {
