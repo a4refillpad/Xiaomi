@@ -238,11 +238,11 @@ private Map getBatteryResult(rawValue) {
 private Map parseCustomMessage(String description) {
     def result = [:]
     if ((state.button != "pushed") && (state.button != "released")) {
-    	state.button = "released"
+        state.button = "released"
     }
     if (description?.startsWith('on/off: ')) {
         if (description == 'on/off: 0'){
-        	if (state.button == "released") {
+            if (state.button == "released") {
                result = getContactResult("pushed")
                state.button = "pushed"
             }

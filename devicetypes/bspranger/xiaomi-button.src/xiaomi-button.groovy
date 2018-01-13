@@ -64,8 +64,8 @@ metadata {
     }
     
     preferences{
-    	input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"",
-        		defaultValue: 4, displayDuringSetup: false)
+        input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 4, displayDuringSetup: false)
+        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
     }
     
     tiles(scale: 2) {
@@ -137,6 +137,7 @@ def parse(String description) {
 }
 
 def configure(){
+    state.button = "released"
     log.debug "${device.displayName}: configuring"
     return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
@@ -232,11 +233,38 @@ private Map getBatteryResult(rawValue) {
 
 private Map parseCustomMessage(String description) {
     def result = [:]
-    if (description?.startsWith('on/off: ')) {
-        if (description == 'on/off: 0'){
-            result = getContactResult("pushed")
-        } else if (description == 'on/off: 1'){
-            result = getContactResult("released")
+    if (description?.startsWith('on/off: ')) 
+    {
+        if (PressType == "Toggle")
+        {
+            if ((state.button != "pushed") && (state.button != "released")) 
+            {
+                state.button = "released"
+            }
+            if (description == 'on/off: 0')
+            {
+                if (state.button == "released") 
+                {
+                   result = getContactResult("pushed")
+                   state.button = "pushed"
+                }
+                else 
+                {
+                   result = getContactResult("released")
+                   state.button = "released"
+                }
+            }
+        }
+        else
+        {
+            if (description == 'on/off: 0')
+            {
+                result = getContactResult("pushed")
+            } 
+            else if (description == 'on/off: 1')
+            {
+                result = getContactResult("released")
+            }
         }
         return result
     }
