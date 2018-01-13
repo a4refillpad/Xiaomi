@@ -81,11 +81,12 @@ metadata {
         }        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"] 
-            ]
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
@@ -105,8 +106,7 @@ metadata {
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Parsing '${description}'"
+    log.debug "${device.displayName}: Parsing '${description}'"
 
     //  send event for heartbeat    
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
@@ -130,26 +130,23 @@ def parse(String description) {
     {
         map = parseReadAttrMessage(description)  
     }
-    log.debug "${linkText}: Parse returned $map"
+    log.debug "${device.displayName}: Parse returned $map"
     def results = map ? createEvent(map) : null
 
     return results;
 }
 
 def configure(){
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
+    log.debug "${device.displayName}: configuring"
     return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh(){
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
+    log.debug "${device.displayName}: refreshing"
     return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 private Map parseReadAttrMessage(String description) {
-    def linkText = getLinkText(device)
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
 
@@ -163,7 +160,7 @@ private Map parseReadAttrMessage(String description) {
     if (data[4..7] == "0121") {
     	def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
         resultMap = getBatteryResult(BatteryVoltage)
-        log.debug "${linkText}: Parse returned $resultMap"
+        log.debug "${device.displayName}: Parse returned $resultMap"
         createEvent(resultMap)
     }
 
@@ -185,7 +182,6 @@ private Map parseReadAttrMessage(String description) {
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
     def MsgLength
     def i
     Map resultMap = [:]
@@ -210,7 +206,6 @@ private Map parseCatchAllMessage(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
     def rawVolts = rawValue / 1000
 
     def maxBattery = state.maxBattery ?: 0
@@ -237,13 +232,12 @@ private Map getBatteryResult(rawValue) {
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     ]
     
-    log.debug "${linkText}: ${result}"
+    log.debug "${device.displayName}: ${result}"
     state.lastbatt = new Date().time
     return createEvent(result)
 }
 
 private Map parseCustomMessage(String description) {
-    def linkText = getLinkText(device)
     def result = [:]
     if (description?.startsWith('on/off: ')) {
         if (description == 'on/off: 0'){
@@ -256,8 +250,7 @@ private Map parseCustomMessage(String description) {
 }
 
 private Map getContactResult(value) {
-    def linkText = getLinkText(device)
-    def descriptionText = "${linkText} was ${value == 'pushed' ? 'pushed' : 'released'}"
+    def descriptionText = "${device.displayName} was ${value == 'pushed' ? 'pushed' : 'released'}"
     return [
         name: 'button',
         value: value,
