@@ -68,11 +68,12 @@ metadata {
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"] 
-            ]
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
@@ -99,8 +100,7 @@ metadata {
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText} Description:${description}"
+    log.debug "${device.displayName} Description:${description}"
     
     // send event for heartbeat
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
@@ -122,13 +122,12 @@ def parse(String description) {
         map = parseReadAttr(description)
     }
 
-    log.debug "${linkText}: Parse returned ${map}"
+    log.debug "${device.displayName}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
     return results
 }
 
 private Map parseZoneStatusMessage(String description) {
-    def linkText = getLinkText(device)
     def result = [
         name: 'water',
         value: value,
@@ -137,10 +136,10 @@ private Map parseZoneStatusMessage(String description) {
     if (description?.startsWith('zone status')) {
         if (description?.startsWith('zone status 0x0001')) { // detected water
             result.value = "wet"
-            result.descriptionText = "${linkText} has detected water"
+            result.descriptionText = "${device.displayName} has detected water"
         } else if (description?.startsWith('zone status 0x0000')) { // did not detect water
             result.value = "dry"
-            result.descriptionText = "${linkText} is dry"
+            result.descriptionText = "${device.displayName} is dry"
         }
         return result
     }
@@ -149,7 +148,6 @@ private Map parseZoneStatusMessage(String description) {
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
     def result = [
         name: 'battery',
         value: '--',
@@ -174,16 +172,15 @@ private Map getBatteryResult(rawValue) {
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.round(pct * 100)
     result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v" //, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    result.descriptionText = "${device.displayName}: raw battery is ${rawVolts}v" //, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
     return result
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
     Map resultMap = [:]
     def i
     def cluster = zigbee.parse(description)
-    log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
+    log.debug "${device.displayName}: Parsing CatchAll: '${cluster}'"
 
     if (cluster) {
         switch(cluster.clusterId) {
@@ -238,14 +235,12 @@ private Map parseReadAttr(String description) {
 }
 
 def configure() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
+    log.debug "${device.displayName}: configuring"
     return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
 def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
+    log.debug "${device.displayName}: refreshing"
     return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
 }
 
@@ -272,7 +267,6 @@ def updated() {
 
 private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when ${text}()"
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
