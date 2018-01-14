@@ -64,8 +64,8 @@ metadata {
     }
     
     preferences{
-    	input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"",
-        		defaultValue: 4, displayDuringSetup: false)
+    	input ("ReleaseTime", "number", title: "Minimum time in seconds for a press to clear", defaultValue: 2, displayDuringSetup: false)
+        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
     }
     
     tiles(scale: 2) {
@@ -237,22 +237,45 @@ private Map getBatteryResult(rawValue) {
 
 private Map parseCustomMessage(String description) {
     def result = [:]
-    if ((state.button != "pushed") && (state.button != "released")) {
-        state.button = "released"
-    }
-    if (description?.startsWith('on/off: ')) {
-        if (description == 'on/off: 0'){
-            if (state.button == "released") {
-               result = getContactResult("pushed")
-               state.button = "pushed"
+    if (description?.startsWith('on/off: ')) 
+    {
+        if (PressType == "Toggle")
+        {
+            if ((state.button != "pushed") && (state.button != "released")) 
+            {
+                state.button = "released"
             }
-            else {
-               result = getContactResult("released")
-               state.button = "released"
+            if (state.button == "released") 
+            {
+                result = getContactResult("pushed")
+                state.button = "pushed"
             }
+            else 
+            {
+                result = getContactResult("released")
+                state.button = "released"
+            }
+        }    
+        else
+        {
+        	result = getContactResult("pushed")
+            state.button = "pushed"
+        	runIn(ReleaseTime, ReleaseButton)
         }
-        return result
     }
+     return result
+}
+
+def ReleaseButton()
+{
+	def result = [:]
+    
+    log.debug "${device.displayName}: Calling Release Button"
+    
+	result = getContactResult("released")
+    state.button = "released"
+    log.debug "${device.displayName}: ${result}"
+    sendEvent(result)
 }
 
 private Map getContactResult(value) {
@@ -260,6 +283,7 @@ private Map getContactResult(value) {
     return [
         name: 'button',
         value: value,
+        isStateChange: true,
         descriptionText: descriptionText
     ]
 }
