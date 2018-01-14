@@ -170,7 +170,11 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    sendEvent(name: "batteryRuntime", value: now)
+    if (state.battery != result.value)
+    {
+    	state.battery = result.value
+        resetBatteryRuntime()
+    }
     return result
 }
 
@@ -205,6 +209,7 @@ private Map parseCatchAllMessage(String description) {
 
 
 def configure() {
+	state.battery = 0
     String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
     log.debug "${device.displayName}: ${device.deviceNetworkId}"
     def endpointId = 1

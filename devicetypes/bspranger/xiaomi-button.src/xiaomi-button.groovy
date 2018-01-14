@@ -137,6 +137,7 @@ def parse(String description) {
 }
 
 def configure(){
+	state.battery = 0
     state.button = "released"
     log.debug "${device.displayName}: configuring"
     return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
@@ -227,7 +228,11 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    sendEvent(name: "batteryRuntime", value: now)
+    if (state.battery != result.value)
+    {
+    	state.battery = result.value
+        resetBatteryRuntime()
+    }
     return createEvent(result)
 }
 
