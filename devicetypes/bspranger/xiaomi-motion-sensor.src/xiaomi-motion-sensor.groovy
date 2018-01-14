@@ -38,11 +38,11 @@ metadata {
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
-	attribute "batteryRuntime", "String"	
+	    attribute "batteryRuntime", "String"	
 
     	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
-	command "resetBatteryRuntime"	
+	    command "resetBatteryRuntime"	
         command "reset"
         command "Refresh"
         
@@ -132,7 +132,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.0
+    def maxVolts = 3.3
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 

@@ -35,7 +35,7 @@ metadata {
         capability "Health Check"
         
         attribute "lastCheckin", "String"
-	attribute "batteryRuntime", "String"
+	    attribute "batteryRuntime", "String"
         
 	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
 
@@ -263,7 +263,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.0
+    def maxVolts = 3.3
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -276,7 +276,7 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    
+    sendEvent(name: "batteryRuntime", value: now)
     return result
 }
 
