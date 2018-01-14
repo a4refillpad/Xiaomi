@@ -51,9 +51,9 @@ metadata {
         attribute "batterylevel", "string"
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
-	attribute "batteryRuntime", "String"
+	    attribute "batteryRuntime", "String"
 
-	command "resetBatteryRuntime"
+	    command "resetBatteryRuntime"
         
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Xiaomi Aqara Button"
     }
@@ -231,7 +231,7 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    state.lastbatt = new Date().time
+    sendEvent(name: "batteryRuntime", value: now)
     return createEvent(result)
 }
 

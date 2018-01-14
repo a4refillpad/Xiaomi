@@ -46,12 +46,12 @@ metadata {
         attribute "lastOpened", "String"
         attribute "lastOpenedDate", "Date"
         attribute "lastCheckinDate", "Date"
-	attribute "batteryRuntime", "String"
+	    attribute "batteryRuntime", "String"
 
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
         command "Refresh"
-	command "resetBatteryRuntime"
+	    command "resetBatteryRuntime"
     }
 
     simulator {
@@ -142,7 +142,7 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    
+    sendEvent(name: "batteryRuntime", value: now)
     return result
 }
 

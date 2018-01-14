@@ -323,7 +323,7 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    
+    sendEvent(name: "batteryRuntime", value: now)
     return result
 }
 

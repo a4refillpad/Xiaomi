@@ -55,7 +55,7 @@ metadata {
 	    
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
     
-	command "resetBatteryRuntime"
+	   command "resetBatteryRuntime"
 }
     
     simulator {
@@ -227,7 +227,7 @@ private Map getBatteryResult(rawValue) {
     ]
     
     log.debug "${device.displayName}: ${result}"
-    state.lastbatt = new Date().time
+    sendEvent(name: "batteryRuntime", value: now)
     return createEvent(result)
 }
 

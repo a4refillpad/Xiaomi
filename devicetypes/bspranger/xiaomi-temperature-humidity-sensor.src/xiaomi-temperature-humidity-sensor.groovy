@@ -37,9 +37,9 @@ metadata {
         attribute "lastCheckin", "String"
 	    attribute "batteryRuntime", "String"
         
-	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
+	    fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
 
-	command "resetBatteryRuntime"	
+	    command "resetBatteryRuntime"	
 }
 
 	// simulator metadata
