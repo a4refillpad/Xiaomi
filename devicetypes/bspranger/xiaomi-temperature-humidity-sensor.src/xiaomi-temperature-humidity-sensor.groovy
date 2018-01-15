@@ -35,9 +35,12 @@ metadata {
         capability "Health Check"
         
         attribute "lastCheckin", "String"
+	    attribute "batteryRuntime", "String"
         
-		fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
-	}
+	    fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
+
+	    command "resetBatteryRuntime"	
+}
 
 	// simulator metadata
 	simulator {
@@ -88,7 +91,13 @@ metadata {
 		}
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "default", label:'${currentValue}% battery', unit:""
+			state "default", label:'${currentValue}% battery', unit:"",
+			backgroundColors:[
+				[value: 0, color: "#c0392b"],
+				[value: 25, color: "#f1c40f"],
+				[value: 50, color: "#e67e22"],
+				[value: 75, color: "#27ae60"]
+			]
 		}
         
 		valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
@@ -113,9 +122,11 @@ metadata {
 		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-            
+        	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
+	}     
 		main(["temperature2"])
-		details(["temperature", "battery", "humidity","refresh"])
+		details(["temperature", "battery", "humidity","refresh","batteryRuntime"])
 	}
 }
 
@@ -133,16 +144,15 @@ def updated() {
 
 // Parse incoming device messages to generate events
 def parse(String description) {
-	def linkText = getLinkText(device)
-    log.debug "${linkText} Parsing: $description"
+    log.debug "${device.displayName} Parsing: $description"
 	def name = parseName(description)
-    log.debug "${linkText} Parsename: $name"
+    log.debug "${device.displayName} Parsename: $name"
 	def value = parseValue(description)
-    log.debug "${linkText} Parsevalue: $value"
+    log.debug "${device.displayName} Parsevalue: $value"
 	def unit = (name == "temperature") ? getTemperatureScale() : ((name == "humidity") ? "%" : null)
 	def result = createEvent(name: name, value: value, unit: unit)
-    log.debug "${linkText} Evencreated: $name, $value, $unit"
-	log.debug "${linkText} Parse returned: ${result?.descriptionText}"
+    log.debug "${device.displayName} Evencreated: $name, $value, $unit"
+	log.debug "${device.displayName} Parse returned: ${result?.descriptionText}"
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
 	return result
@@ -163,8 +173,6 @@ private String parseName(String description) {
 }
 
 private String parseValue(String description) {
-    def linkText = getLinkText(device)
-    
 	if (description?.startsWith("temperature: ")) {
 		def value = ((description - "temperature: ").trim()) as Float 
         if (value > 100)
@@ -199,7 +207,7 @@ private String parseValue(String description) {
         return parseReadAttrMessage(description)
         
     }else {
-    log.debug "${linkText} unknown: $description"
+    log.debug "${device.displayName} unknown: $description"
     sendEvent(name: "unknown", value: description)
     }
 	null
@@ -222,8 +230,6 @@ private String parseReadAttrMessage(String description) {
 }
 
 private String parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
-    def MsgLength
     def i
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
@@ -231,14 +237,18 @@ private String parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	MsgLength = cluster.data.size();
+                def MsgLength = cluster.data.size();
                 for (i = 0; i < (MsgLength-3); i++)
                 {
-                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
                     {
-                        // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                        return resultMap.value
+                        if (cluster.data.get(i) == 0x21) // check the data ID and data type
+                        {
+                            // next two bytes are the battery voltage.
+                            resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
+                            return resultMap
+                        }
                     }
                 }
             break
@@ -250,87 +260,47 @@ private String parseCatchAllMessage(String description) {
 
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
-    //log.debug '${linkText} Battery'
+    def rawVolts = rawValue / 1000
+
+    def minVolts = 2.7
+    def maxVolts = 3.3
+    def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.min(100, Math.round(pct * 100))
 
     def result = [
         name: 'battery',
-        value: '--',
-        unit: '%'
+        value: roundedPct,
+        unit: "%",
+        isStateChange:true,
+        descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
     
-    def rawVolts = rawValue / 1000
-
-    def maxBattery = state.maxBattery ?: 0
-    def minBattery = state.minBattery ?: 0
-
-    if (maxBattery == 0 || rawVolts > minBattery)
-        state.maxBattery = maxBattery = rawVolts
-        
-    if (minBattery == 0 || rawVolts < minBattery)
-        state.minBattery = minBattery = rawVolts
-    
-    def volts = (maxBattery + minBattery) / 2
-    def minVolts = 2.7
-    def maxVolts = 3.0
-    def pct = (volts - minVolts) / (maxVolts - minVolts)
-    def roundedPct = Math.round(pct * 100)
-    result.value = Math.min(100, roundedPct)
-    
-    result.descriptionText = "${device.displayName} raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
-
+    log.debug "${device.displayName}: ${result}"
+    if (state.battery != result.value)
+    {
+    	state.battery = result.value
+        resetBatteryRuntime()
+    }
     return result
 }
 
-def refresh() {
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: refresh called"
-	def refreshCmds = [
-		"st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
-		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
-	]
-
-	return refreshCmds + enrollResponse()
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
 }
 
 def configure() {
+	state.battery = 0
 	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
 	// enrolls with default periodic reporting until newer 5 min interval is confirmed
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 
 	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
 	// battery minReport 30 seconds, maxReportTime 6 hrs by default
-	return refresh() + zigbee.batteryConfig() + zigbee.temperatureConfig(30, 900) // send refresh cmds as part of config
+	return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
 }
 
-def enrollResponse() {
-	def linkText = getLinkText(device)
-    log.debug "${linkText}: Sending enroll response"
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	[
-		//Resending the CIE in case the enroll request is sent before CIE is written
-		"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-		"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 2000",
-		//Enroll Response
-		"raw 0x500 {01 23 00 00 00}", "delay 200",
-		"send 0x${device.deviceNetworkId} 1 1", "delay 2000"
-	]
-}
-
-private String swapEndianHex(String hex) {
-	reverseArray(hex.decodeHex()).encodeHex()
-}
-
-private byte[] reverseArray(byte[] array) {
-	int i = 0;
-	int j = array.length - 1;
-	byte tmp;
-	while (j > i) {
-		tmp = array[j];
-		array[j] = array[i];
-		array[i] = tmp;
-		j--;
-		i++;
-	}
-	return array
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }

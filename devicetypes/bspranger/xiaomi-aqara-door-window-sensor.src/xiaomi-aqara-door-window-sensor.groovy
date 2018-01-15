@@ -46,10 +46,12 @@ metadata {
         attribute "lastOpened", "String"
         attribute "lastOpenedDate", "Date"
         attribute "lastCheckinDate", "Date"
+	    attribute "batteryRuntime", "String"
 
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
         command "Refresh"
+	    command "resetBatteryRuntime"
     }
 
     simulator {
@@ -87,14 +89,16 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
+	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+	}
 
         main (["contact"])
-        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh"])
+        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh","batteryRuntime"])
    }
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
     def result = zigbee.getEvent(description)
 
     // send event for heartbeat
@@ -106,56 +110,51 @@ def parse(String description) {
     Map map = [:]
 
     if (result) {
-        log.debug "${linkText} Event: ${result}"
+        log.debug "${device.displayName} Event: ${result}"
         map = getContactResult(result);
         sendEvent(name: "lastOpened", value: now)
         sendEvent(name: "lastOpenedDate", value: nowDate)
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
-        map = parseButtonPress(description)
+        map = parseReadAttr(description)
     }
 
-    log.debug "${linkText}: Parse returned ${map}"
+    log.debug "${device.displayName}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
     return results
 }
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
-    def result = [
-        name: 'battery',
-        value: '--',
-        unit: "%",
-        translatable: true
-    ]
-
     def rawVolts = rawValue / 1000
-    def maxBattery = state.maxBattery ?: 0
-    def minBattery = state.minBattery ?: 0
-
-    if (maxBattery == 0 || rawVolts > minBattery)
-        state.maxBattery = maxBattery = rawVolts
-
-    if (minBattery == 0 || rawVolts < minBattery)
-        state.minBattery = minBattery = rawVolts
-
-    def volts = (maxBattery + minBattery) / 2
 
     def minVolts = 2.7
-    def maxVolts = 3.0
-    def pct = (volts - minVolts) / (maxVolts - minVolts)
-    def roundedPct = Math.round(pct * 100)
-    result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    def maxVolts = 3.3
+    def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.min(100, Math.round(pct * 100))
+
+    def result = [
+        name: 'battery',
+        value: roundedPct,
+        unit: "%",
+        isStateChange:true,
+        descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
+    ]
+    
+    log.debug "${device.displayName}: ${result}"
+    if (state.battery != result.value)
+    {
+    	state.battery = result.value
+        resetBatteryRuntime()
+    }
     return result
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
     Map resultMap = [:]
+    def i
     def cluster = zigbee.parse(description)
-    log.debug "${linkText}: Parsing CatchAll: '${cluster}'"
+    log.debug "${device.displayName}: Parsing CatchAll: '${cluster}'"
 
     if (cluster) {
         switch(cluster.clusterId) {
@@ -176,33 +175,53 @@ private Map parseCatchAllMessage(String description) {
 }
 
 // Parse raw data on reset button press to retrieve reported battery voltage
-private Map parseButtonPress(String description) {
-    log.debug "Button press detected"
+private Map parseReadAttr(String description) {
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
-    if (buttonRaw[65..68] == "01FF") {
-        resultMap = getBatteryResult(Integer.parseInt((buttonRaw[79..80] + buttonRaw[77..78]),16))
+
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+    def model = value.split("01FF")[0]
+    def data = value.split("01FF")[1]
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
+    
+    if (data[4..7] == "0121") {
+    	def MaxBatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))/1000
+        state.maxBatteryVoltage = MaxBatteryVoltage
     }
 
-    return resultMap
+    if (cluster == "0000" && attrId == "0005")  {
+        resultMap.name = 'Model'
+        resultMap.value = ""
+        resultMap.descriptionText = "device model"
+        // Parsing the model
+        for (int i = 0; i < model.length(); i+=2) 
+        {
+            def str = model.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            resultMap.value = resultMap.value + NextChar
+        }
+        return resultMap
+    }
+    
+    return [:]    
 }
 
 def configure() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+	state.battery = 0
+    log.debug "${device.displayName}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0021) + zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 private Map getContactResult(result) {
-    def linkText = getLinkText(device)
     def value = result.value == "on" ? "open" : "closed"
-    def descriptionText = "${linkText} was ${value == "open" ? value + "ed" : value}"
+    def descriptionText = "${device.displayName} was ${value == "open" ? value + "ed" : value}"
     return [
         name: 'contact',
         value: value,
@@ -218,6 +237,11 @@ def resetOpen() {
 	sendEvent(name:"contact", value:"open")
 }
 
+def resetBatteryRuntime() {
+    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
+}
+
 def installed() {
     checkIntervalEvent("installed");
 }
@@ -228,7 +252,6 @@ def updated() {
 
 private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when ${text}()"
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }

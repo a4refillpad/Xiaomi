@@ -41,10 +41,12 @@ metadata {
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
         attribute "light", "number"
+        attribute "batteryRuntime", "String"
 
         fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0107", inClusters: "0000,FFFF,0406,0400,0500,0001,0003", outClusters: "0000,0019", manufacturer: "LUMI", model: "lumi.sensor_motion.aq2", deviceJoinName: "Xiaomi Aqara Motion Sensor"
 
+        command "resetBatteryRuntime"
         command "reset"
         command "Refresh"
     }
@@ -89,6 +91,10 @@ metadata {
         standardTile("refresh", "command.refresh", inactiveLabel: false) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
+		standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+		}
+
         main(["motion"])
         details(["motion", "battery", "light", "reset", "lastcheckin", "refresh"])
     }
@@ -137,32 +143,27 @@ private Map parseIlluminanceMessage(String description) {
 
 
 private Map getBatteryResult(rawValue) {
-    def linkText = getLinkText(device)
-    def result = [
-        name: 'battery',
-        value: '--',
-        unit: "%",
-        translatable: true
-    ]
-
     def rawVolts = rawValue / 1000
 
-    def maxBattery = state.maxBattery ?: 0
-    def minBattery = state.minBattery ?: 0
-
-    if (maxBattery == 0 || rawVolts > minBattery)
-        state.maxBattery = maxBattery = rawVolts
-
-    if (minBattery == 0 || rawVolts < minBattery)
-        state.minBattery = minBattery = rawVolts
-
-    def volts = (maxBattery + minBattery) / 2
     def minVolts = 2.7
-    def maxVolts = 3.0
-    def pct = (volts - minVolts) / (maxVolts - minVolts)
-    def roundedPct = Math.round(pct * 100)
-    result.value = Math.min(100, roundedPct)
-    result.descriptionText = "${linkText}: raw battery is ${rawVolts}v, state: ${volts}v, ${minBattery}v - ${maxBattery}v"
+    def maxVolts = 3.3
+    def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
+    def roundedPct = Math.min(100, Math.round(pct * 100))
+
+    def result = [
+        name: 'battery',
+        value: roundedPct,
+        unit: "%",
+        isStateChange:true,
+        descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
+    ]
+    
+    log.debug "${device.displayName}: ${result}"
+    if (state.battery != result.value)
+    {
+    	state.battery = result.value
+        resetBatteryRuntime()
+    }
     return result
 }
 
@@ -171,6 +172,7 @@ private Map parseCatchAllMessage(String description) {
 
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
+    def i
     log.debug cluster
     if (shouldProcessMessage(cluster)) {
         switch(cluster.clusterId) {
@@ -202,15 +204,14 @@ private boolean shouldProcessMessage(cluster) {
 
 
 def configure() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: configuring"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+	state.battery = 0
+    log.debug "${device.displayName}: configuring"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
-def refresh() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: refreshing"
-    return zigbee.configureReporting(0x0001, 0x0021, 0x20, 600, 21600, 0x01)
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 def enrollResponse() {
@@ -324,6 +325,11 @@ def stopMotion() {
 
 def reset() {
     sendEvent(name:"motion", value:"inactive")
+}
+
+def resetBatteryRuntime() {
+   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
 }
 
 def installed() {
