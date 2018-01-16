@@ -31,6 +31,7 @@
  *  sulee - Clean up some of the code
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *  veeceeoh - added battery parse on button press
+ *  veeceeoh - added wet/dry override capability
  */
 
 metadata {
@@ -50,13 +51,14 @@ metadata {
         
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0402", inClusters: "0000,0003,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Xiaomi Leak Sensor"
 
-        command "Refresh"
-	    command "resetBatteryRuntime"
+        command "resetDry"
+        command "resetWet"
+	command "resetBatteryRuntime"
     }
 
     simulator {
-        status "closed": "on/off: 0"
-        status "open": "on/off: 1"
+        status "dry": "on/off: 0"
+        status "wet": "on/off: 1"
     }
 
    tiles(scale: 2) {
@@ -87,7 +89,7 @@ metadata {
         standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("refresh", "device.water", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
 	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
@@ -112,9 +114,9 @@ def parse(String description) {
 
     if (description?.startsWith('zone status')) {
         map = parseZoneStatusMessage(description)
-        if (map.value == "closed") {
-            sendEvent(name: "lastOpened", value: now)
-            sendEvent(name: "lastOpenedDate", value: nowDate) 
+        if (map.value == "wet") {
+            sendEvent(name: "lastWet", value: now)
+            sendEvent(name: "lastWetDate", value: nowDate) 
         }
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
@@ -241,12 +243,16 @@ def refresh() {
     return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
-def resetClosed() {
-	sendEvent(name:"contact", value:"closed")
+def resetDry() {
+	sendEvent(name:"water", value:"dry")
 } 
 
-def resetOpen() {
-	sendEvent(name:"contact", value:"open")
+def resetWet() {
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def nowDate = new Date(now).getTime()
+    sendEvent(name:"water", value:"wet")
+    sendEvent(name: "lastWet", value: now)
+    sendEvent(name: "lastWetDate", value: nowDate)
 }
 
 def resetBatteryRuntime() {
