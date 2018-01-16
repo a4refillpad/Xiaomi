@@ -31,6 +31,7 @@
  *  sulee - Clean up some of the code
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *  veeceeoh - added battery parse on button press
+ *  veeceoh - added new refresh & configure code, fixed open/close override code
  */
 
 metadata {
@@ -46,12 +47,13 @@ metadata {
         attribute "lastOpened", "String"
         attribute "lastOpenedDate", "Date"
         attribute "lastCheckinDate", "Date"
-	    attribute "batteryRuntime", "String"
+	attribute "batteryRuntime", "String"
 
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
-        command "Refresh"
-	    command "resetBatteryRuntime"
+	command "resetBatteryRuntime"
+	command "resetClosed"
+        command "resetOpen"
     }
 
     simulator {
@@ -86,7 +88,7 @@ metadata {
         standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("refresh", "device.contact", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
 	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
@@ -211,12 +213,18 @@ private Map parseReadAttr(String description) {
 def configure() {
 	state.battery = 0
     log.debug "${device.displayName}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    return zigbee.readAttribute(0x0006, 0x0000)
+    // Read cluster 0x0006 (on/off status)
 }
 
 def refresh() {
     log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
+    return zigbee.readAttribute(0x0006, 0x0000) +
+    // Read cluster 0x0006 (on/off status)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
 }
 
 private Map getContactResult(result) {
@@ -234,7 +242,11 @@ def resetClosed() {
 } 
 
 def resetOpen() {
-	sendEvent(name:"contact", value:"open")
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def nowDate = new Date(now).getTime()
+    sendEvent(name:"contact", value:"open")
+    sendEvent(name: "lastOpened", value: now)
+    sendEvent(name: "lastOpenedDate", value: nowDate)
 }
 
 def resetBatteryRuntime() {
