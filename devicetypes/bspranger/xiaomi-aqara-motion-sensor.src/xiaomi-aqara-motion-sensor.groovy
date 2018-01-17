@@ -101,8 +101,11 @@ metadata {
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText} Parsing: $description"
+    log.debug "${device.displayName} Parsing: $description"
+    
+    // send event for heartbeat
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
 
     Map map = [:]
     if (description?.startsWith('catchall:')) {
@@ -114,30 +117,31 @@ def parse(String description) {
     else if (description?.startsWith('illuminance:')) {
         map = parseIlluminanceMessage(description)
     }
-
-    log.debug "${linkText} Parse returned: $map"
-    def result = map ? createEvent(map) : null
-    // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-    sendEvent(name: "lastCheckin", value: now)
-
-    if (description?.startsWith('enroll request')) {
+    else if (description?.startsWith('enroll request')) {
         List cmds = enrollResponse()
-        log.debug "${linkText} enroll response: ${cmds}"
+        log.debug "${device.displayName} enroll response: ${cmds}"
         result = cmds?.collect { new physicalgraph.device.HubAction(it) }
     }
+
+    log.debug "${device.displayName} Parse returned: $map"
+    def result = map ? createEvent(map) : null
+    
+
+    
     return result
 }
 
 private Map parseIlluminanceMessage(String description) {
-    def linkText = getLinkText(device)
+
+    def Lux = ((description - "illuminance: ").trim()) as Float
+
     def result = [
         name: 'Light',
-        value: '--'
+        value: Lux,
+        unit: "Lux",
+        isStateChange:true,
+        descriptionText : "${device.displayName} Light was ${Lux} Lux"
     ]
-    def value = ((description - "illuminance: ").trim()) as Float
-    result.value = value
-    result.descriptionText = "${linkText} Light was ${result.value}"
     return result;
 }
 
@@ -168,38 +172,44 @@ private Map getBatteryResult(rawValue) {
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
-
+    def i
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
-    def i
     log.debug cluster
-    if (shouldProcessMessage(cluster)) {
-        switch(cluster.clusterId) {
+    if (cluster) {
+        switch(cluster.clusterId) 
+        {
             case 0x0000:
-            	def MsgLength = cluster.data.size();
-                for (i = 0; i < (MsgLength-3); i++)
+                def MsgLength = cluster.data.size();
+
+                // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+                if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
                 {
-                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                    for (i = 0; i < (MsgLength-3); i++)
                     {
-                        // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        if (cluster.data.get(i) == 0x21) // check the data ID and data type
+                        {
+                            // next two bytes are the battery voltage.
+                            resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
+                            break
+                        }
+                    }
+                }else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF))
+                {
+                    for (i = 0; i < (MsgLength-3); i++)
+                    {
+                        if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
+                        {
+                            // next two bytes are the battery voltage.
+                            resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                            break
+                        }
                     }
                 }
-            	break
+            break
         }
     }
     return resultMap
-}
-
-private boolean shouldProcessMessage(cluster) {
-    // 0x0B is default response indicating message got through
-    // 0x07 is bind message
-    boolean ignoredMessage = cluster.profileId != 0x0104 ||
-    cluster.command == 0x0B ||
-    cluster.command == 0x07 ||
-    (cluster.data.size() > 0 && cluster.data.first() == 0x3e)
-    return !ignoredMessage
 }
 
 
@@ -215,8 +225,7 @@ def refresh(){
 }
 
 def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Enrolling device into the IAS Zone"
+    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
     [
         // Enrolling device into the IAS Zone
         "raw 0x500 {01 23 00 00 00}", "delay 200",
@@ -225,35 +234,38 @@ def enrollResponse() {
 }
 
 private Map parseReportAttributeMessage(String description) {
-    Map descMap = (description - "read attr - ").split(",").inject([:]) { map, param ->
-        def nameAndValue = param.split(":")
-        map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
-    }
-    //log.debug "Desc Map: $descMap"
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
     Map resultMap = [:]
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
 
-    if (descMap.cluster == "0001" && descMap.attrId == "0020") {
-        resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    }
-    else if (descMap.cluster == "0406" && descMap.attrId == "0000") {
-        def value = descMap.value.endsWith("01") ? "active" : "inactive"
+    if ((cluster == "0406") && (attrId == "0000"))
+    {
+        def motion = (value == "01") ? "active" : "inactive"
         sendEvent(name: "lastMotion", value: now)
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 120
-        if (value == "active") runIn(settings.motionReset, stopMotion)
-        resultMap = getMotionResult(value)
+        if (motion == "active") runIn(settings.motionReset, stopMotion)
+        resultMap = getMotionResult(motion)
+    }
+    else if (cluster == "0000" && attrId == "0005")  
+    {
+        def modelName = ""
+        // Parsing the model
+        for (int i = 0; i < value.length(); i+=2) 
+        {
+            def str = value.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            modelName = modelName + NextChar
+        }
+        log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}"
     }
     return resultMap
 }
 
-private Map parseCustomMessage(String description) {
-    Map resultMap = [:]
-    return resultMap
-}
 
 private Map parseIasMessage(String description) {
-    def linkText = getLinkText(device)
     List parsedMsg = description.split(' ')
     String msgCode = parsedMsg[2]
 
@@ -268,7 +280,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0022': // Tamper Alarm
-            log.debug '${linkText}: motion with tamper alarm'
+            log.debug '${device.displayName}: motion with tamper alarm'
             resultMap = getMotionResult('active')
             break
 
@@ -276,7 +288,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0024': // Supervision Report
-            log.debug '${linkText}: no motion with tamper alarm'
+            log.debug '${device.displayName}: no motion with tamper alarm'
             resultMap = getMotionResult('inactive')
             break
 
@@ -284,7 +296,7 @@ private Map parseIasMessage(String description) {
             break
 
         case '0x0026': // Trouble/Failure
-            log.debug '${linkText}: motion with failure alarm'
+            log.debug '${device.displayName}: motion with failure alarm'
             resultMap = getMotionResult('active')
             break
 
@@ -296,27 +308,13 @@ private Map parseIasMessage(String description) {
 
 
 private Map getMotionResult(value) {
-    def linkText = getLinkText(device)
-    // log.debug "${linkText}: motion"
-    String descriptionText = value == 'active' ? "${linkText} detected motion" : "${linkText} motion has stopped"
+    String descriptionText = value == 'active' ? "${device.displayName} detected motion" : "${device.displayName} motion has stopped"
     def commands = [
         name: 'motion',
         value: value,
         descriptionText: descriptionText
     ]
     return commands
-}
-
-private byte[] reverseArray(byte[] array) {
-    byte tmp;
-    tmp = array[1];
-    array[1] = array[0];
-    array[0] = tmp;
-    return array
-}
-
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
 }
 
 def stopMotion() {
@@ -342,7 +340,6 @@ def updated() {
 
 private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when ${text}()"
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
