@@ -44,8 +44,8 @@ metadata {
         capability "Health Check"
 
         attribute "lastCheckin", "String"
-        attribute "lastOpened", "String"
-        attribute "lastOpenedDate", "Date"
+        attribute "lastWet", "String"
+        attribute "lastWetDate", "Date"
         attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
 
@@ -83,7 +83,7 @@ metadata {
         valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Wet:\n${currentValue}'
         }
-        standardTile("resetWet", "device.resetCWet", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", action:"resetWet", label: "Override Wet", icon:"st.alarm.water.wet"
         }
         standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
