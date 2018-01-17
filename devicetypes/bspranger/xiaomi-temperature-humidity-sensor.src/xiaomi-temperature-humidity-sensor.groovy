@@ -178,15 +178,15 @@ private Map parseTemperature(String description){
     
     if (getTemperatureScale() == "C") {
         if (tempOffset) {
-            return (Math.round(temp * 10))/ 10 + tempOffset as Float
+            temp = (Math.round(temp * 10))/ 10 + tempOffset as Float
         } else {
-            return (Math.round(temp * 10))/ 10 as Float
+            temp = (Math.round(temp * 10))/ 10 as Float
         }
     } else {
         if (tempOffset) {
-            return (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
+            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
         } else {
-            return (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
+            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
         }
     }
     def units = getTemperatureScale()
