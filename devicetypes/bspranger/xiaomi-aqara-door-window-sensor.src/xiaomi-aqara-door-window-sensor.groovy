@@ -178,6 +178,7 @@ private Map parseCatchAllMessage(String description) {
 
 // Parse raw data on reset button press to retrieve reported battery voltage
 private Map parseReadAttr(String description) {
+    log.debug "${device.displayName}: button press detected"
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
 
@@ -186,28 +187,22 @@ private Map parseReadAttr(String description) {
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
     def model = value.split("01FF")[0]
     def data = value.split("01FF")[1]
-    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
-    
-    if (data[4..7] == "0121") {
-    	def MaxBatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))/1000
-        state.maxBatteryVoltage = MaxBatteryVoltage
-    }
 
     if (cluster == "0000" && attrId == "0005")  {
-        resultMap.name = 'Model'
-        resultMap.value = ""
-        resultMap.descriptionText = "device model"
+        def modelName = ""
         // Parsing the model
         for (int i = 0; i < model.length(); i+=2) 
         {
             def str = model.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
-            resultMap.value = resultMap.value + NextChar
+            modelName = modelName + NextChar
         }
-        return resultMap
+        log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}"
     }
-    
-    return [:]    
+    if (data[4..7] == "0121") {
+    	resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
+    }
+    return resultMap    
 }
 
 def configure() {
