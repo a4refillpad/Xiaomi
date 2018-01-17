@@ -155,7 +155,7 @@ def updated() {
 
 // Parse incoming device messages to generate events
 def parse(String description) {
-
+    log.debug "${device.displayName}: Parsing description: ${description}"
     // send event for heartbeat
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
@@ -173,9 +173,16 @@ def parse(String description) {
     } else if (description?.startsWith('read attr - raw:')) {
         map = parseReadAttr(description)
     }
-
-    log.debug "${device.displayName}: Parse returned ${map}"
-    def results = map ? createEvent(map) : null
+    def results = null
+    if (map)
+    {
+    	log.debug "${device.displayName}: Parse returned ${map}"
+    	results =createEvent(map)
+    }
+    else
+    {
+    	log.debug "${device.displayName}: was unable to parse ${description}"
+    }
     return results
 }
 
@@ -189,18 +196,19 @@ private Map parseTemperature(String description){
     
     if (getTemperatureScale() == "C") {
         if (tempOffset) {
-            return (Math.round(temp * 10))/ 10 + tempOffset as Float
+            temp = (Math.round(temp * 10))/ 10 + tempOffset as Float
         } else {
-            return (Math.round(temp * 10))/ 10 as Float
+            temp = (Math.round(temp * 10))/ 10 as Float
         }
     } else {
         if (tempOffset) {
-            return (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
+            temp =  (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
         } else {
-            return (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
+            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
         }
     }
     def units = getTemperatureScale()
+
     def result = [
         name: 'temperature',
         value: temp,
@@ -282,10 +290,12 @@ private Map parseReadAttr(String description) {
     def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
+	log.debug "${device.displayName} parseReadAttr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
 
-    if (cluster == "0403" && attrId == "0000") {
-        result = value[0..3]
+    if ((cluster == "0403") && (attrId == "0000")) {
+        def result = value[0..3]
         float pressureval = Integer.parseInt(result, 16)
+
         log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
 
         switch (PressureUnits) {
