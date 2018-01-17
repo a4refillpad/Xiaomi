@@ -41,9 +41,9 @@ metadata {
         attribute "batteryRuntime", "String"
 
         fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
-    
+
         command "resetBatteryRuntime"
-}
+    }
 
     // simulator metadata
     simulator {
@@ -55,7 +55,7 @@ metadata {
             status "${i}%": "humidity: ${i}%"
         }
     }
-    
+
     preferences {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
@@ -69,28 +69,28 @@ metadata {
             input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: false
         }
     }
-    
+
     // UI tile definitions
     tiles(scale: 2) {
         multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
-            tileAttribute("device.temperature", key:"PRIMARY_CONTROL"){
-                attributeState("temperature", label:'${currentValue}°',
-                backgroundColors:[
-                    [value: 0, color: "#153591"],
-                    [value: 5, color: "#1e9cbb"],
-                    [value: 10, color: "#90d2a7"],
-                    [value: 15, color: "#44b621"],
-                    [value: 20, color: "#f1d801"],
-                    [value: 25, color: "#d04e00"],
-                    [value: 30, color: "#bc2323"],
-                    [value: 44, color: "#1e9cbb"],
-                    [value: 59, color: "#90d2a7"],
-                    [value: 74, color: "#44b621"],
-                    [value: 84, color: "#f1d801"],
-                    [value: 95, color: "#d04e00"],
-                    [value: 96, color: "#bc2323"]                                      
-                ]
-            )
+            tileAttribute("device.temperature", key:"PRIMARY_CONTROL") {
+                attributeState("temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
+                    backgroundColors:[
+                        [value: 0, color: "#153591"],
+                        [value: 5, color: "#1e9cbb"],
+                        [value: 10, color: "#90d2a7"],
+                        [value: 15, color: "#44b621"],
+                        [value: 20, color: "#f1d801"],
+                        [value: 25, color: "#d04e00"],
+                        [value: 30, color: "#bc2323"],
+                        [value: 44, color: "#1e9cbb"],
+                        [value: 59, color: "#90d2a7"],
+                        [value: 74, color: "#44b621"],
+                        [value: 84, color: "#f1d801"],
+                        [value: 95, color: "#d04e00"],
+                        [value: 96, color: "#bc2323"]
+                    ]
+                )
             }
         }
         standardTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
@@ -100,7 +100,7 @@ metadata {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}% battery', unit:"",
+            state "default", label:'${currentValue}%', unit:"",
             backgroundColors:[
                 [value: 0, color: "#c0392b"],
                 [value: 25, color: "#f1c40f"],
@@ -108,34 +108,16 @@ metadata {
                 [value: 75, color: "#27ae60"]
             ]
         }
-        valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
-            state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
-                backgroundColors:[
-                    [value: 0, color: "#153591"],
-                    [value: 5, color: "#1e9cbb"],
-                    [value: 10, color: "#90d2a7"],
-                    [value: 15, color: "#44b621"],
-                    [value: 20, color: "#f1d801"],
-                    [value: 25, color: "#d04e00"],
-                    [value: 30, color: "#bc2323"],
-                    [value: 44, color: "#1e9cbb"],
-                    [value: 59, color: "#90d2a7"],
-                    [value: 74, color: "#44b621"],
-                    [value: 84, color: "#f1d801"],
-                    [value: 95, color: "#d04e00"],
-                    [value: 96, color: "#bc2323"]                                      
-                ]
-        }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
             state "default", label:'Last Update:\n ${currentValue}'
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-            standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+        standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
             state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
-    }     
-        
+        }
+
         main(["temperature"])
         details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "refresh", "batteryRuntime"])
     }
@@ -182,11 +164,9 @@ def parse(String description) {
 
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float 
-    if (temp > 100)
-    {
+    if (temp > 100) {
       temp = 100.0 - temp
     }
-    
     if (getTemperatureScale() == "C") {
         if (tempOffset) {
             return (Math.round(temp * 10))/ 10 + tempOffset as Float
@@ -214,10 +194,10 @@ private Map parseTemperature(String description){
 
 private Map parseHumidity(String description){
     def pct = (description - "humidity: " - "%").trim()
-        
+
     if (pct.isNumber()) {
         pct =  Math.round(new BigDecimal(pct))
-        
+
         def result = [
             name: 'humidity',
             value: pct,
@@ -227,7 +207,7 @@ private Map parseHumidity(String description){
         ]
         return result
     }
-    
+
     return [:]
 }
 
@@ -244,8 +224,7 @@ private Map parseCatchAllMessage(String description) {
                 def MsgLength = cluster.data.size();
 
                 // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-                if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
-                {
+                if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF)) {
                     for (i = 0; i < (MsgLength-3); i++)
                     {
                         if (cluster.data.get(i) == 0x21) // check the data ID and data type
@@ -255,8 +234,7 @@ private Map parseCatchAllMessage(String description) {
                             break
                         }
                     }
-                }else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF))
-                {
+                } else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF)) {
                     for (i = 0; i < (MsgLength-3); i++)
                     {
                         if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
@@ -345,7 +323,6 @@ private Map parseReadAttr(String description) {
     return resultMap
 }
 
-
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
@@ -361,7 +338,7 @@ private Map getBatteryResult(rawValue) {
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
-    
+
     log.debug "${device.displayName}: ${result}"
     if (state.battery != result.value)
     {
