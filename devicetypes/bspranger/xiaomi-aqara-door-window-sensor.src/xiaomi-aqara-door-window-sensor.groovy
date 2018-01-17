@@ -206,11 +206,11 @@ private Map parseReadAttr(String description) {
 }
 
 def configure() {
-	state.battery = 0
+    state.battery = 0
     log.debug "${device.displayName}: configuring"
-    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
     // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-    return zigbee.readAttribute(0x0006, 0x0000)
+    zigbee.readAttribute(0x0006, 0x0000) 
     // Read cluster 0x0006 (on/off status)
 }
 
