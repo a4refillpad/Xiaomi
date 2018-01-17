@@ -250,20 +250,18 @@ private String parseCatchAllMessage(String description) {
                             return resultMap.value
                         }
                     }
-		    if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF))
+                    if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF))
                     {
                         if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                         {
                             // next two bytes are the battery voltage.
                             resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2)
-			    return resultMap.value
                         }
-		    }
+                    }
                 }
             break
         }
     }
-
     return ""
 }
 
