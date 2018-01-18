@@ -158,8 +158,7 @@ def updated() {
 def parse(String description) {
     log.debug "${device.displayName}: Parsing description: ${description}"
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-    def nowDate = new Date(now).getTime()
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
 
@@ -190,6 +189,9 @@ def parse(String description) {
 
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float 
+    
+    if (tempOffset == null || tempOffset == "" ) tempOffset = 0
+    
     if (temp > 100) {
       temp = 100.0 - temp
     }
@@ -319,6 +321,7 @@ private Map parseReadAttr(String description) {
 
         log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
 
+        if (pressOffset == null || pressOffset == "" ) pressOffset = 0
         if (pressOffset) {
             pressureval = (pressureval + pressOffset)
             pressureval = pressureval.round(2);
@@ -394,6 +397,6 @@ def configure() {
 }
 
 def resetBatteryRuntime() {
-       def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     sendEvent(name: "batteryRuntime", value: now)
 }

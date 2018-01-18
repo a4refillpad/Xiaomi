@@ -117,7 +117,7 @@ def parse(String description) {
     	log.debug "${device.displayName}: Parsing '${description}'"
     }
     //  send event for heartbeat    
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate) 
@@ -294,6 +294,6 @@ private Map getContactResult(value) {
 }
 
 def resetBatteryRuntime() {
-   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     sendEvent(name: "batteryRuntime", value: now)
 }

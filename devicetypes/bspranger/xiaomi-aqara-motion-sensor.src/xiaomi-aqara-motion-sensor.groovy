@@ -104,7 +104,7 @@ def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
     
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     sendEvent(name: "lastCheckin", value: now)
 
     Map map = [:]
@@ -239,7 +239,7 @@ private Map parseReportAttributeMessage(String description) {
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
     Map resultMap = [:]
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
 
     if ((cluster == "0406") && (attrId == "0000"))
     {
@@ -326,7 +326,7 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
     sendEvent(name: "batteryRuntime", value: now)
 }
 
