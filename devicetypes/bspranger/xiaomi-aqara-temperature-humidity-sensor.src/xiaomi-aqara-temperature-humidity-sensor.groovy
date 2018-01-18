@@ -187,7 +187,7 @@ def parse(String description) {
 
 
 private Map parseTemperature(String description){
-    def temp = ((description - "temperature: ").trim()) as Float 
+    def temp = ((description - "temperature: ").trim()) as Float
     if (temp > 100) {
       temp = 100.0 - temp
     }
@@ -317,7 +317,8 @@ private Map parseReadAttr(String description) {
 
         log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
 
-        if (pressOffset) {
+	if (pressOffset == null || pressOffset == "" ) pressOffset = 0    
+	if (pressOffset) {
             pressureval = (pressureval + pressOffset)
             pressureval = pressureval.round(2);
         }
