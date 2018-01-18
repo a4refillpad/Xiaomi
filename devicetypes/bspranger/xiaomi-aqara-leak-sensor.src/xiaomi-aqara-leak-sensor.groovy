@@ -67,6 +67,9 @@ metadata {
                 attributeState "dry", label:"Dry", icon:"st.alarm.water.dry"
                 attributeState "wet", label:"Wet", icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
             }
+            tileAttribute("device.lastWet", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Wet: ${currentValue}')
+            }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
@@ -80,24 +83,21 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Wet:\n${currentValue}'
-        }
-        standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetWet", label: "Override Wet", icon:"st.alarm.water.wet"
         }
-        standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetDry", label: "Override Dry", icon:"st.alarm.water.dry"
         }
-        standardTile("refresh", "device.water", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-            state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
 
         main (["water"])
-        details(["water","battery","lastcheckin","lastopened","resetDry","resetWet","refresh","batteryRuntime"])
+        details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime","refresh"])
     }
 }
 
@@ -105,7 +105,7 @@ def parse(String description) {
     log.debug "${device.displayName} Description:${description}"
 
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
@@ -245,7 +245,7 @@ def resetDry() {
 }
 
 def resetWet() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name:"water", value:"wet")
     sendEvent(name: "lastWet", value: now)
@@ -253,7 +253,7 @@ def resetWet() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("dd MMM yyyy", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
