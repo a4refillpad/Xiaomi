@@ -105,7 +105,7 @@ def parse(String description) {
     log.debug "${device.displayName} Description:${description}"
 
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
@@ -245,7 +245,7 @@ def resetDry() {
 }
 
 def resetWet() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name:"water", value:"wet")
     sendEvent(name: "lastWet", value: now)
@@ -253,7 +253,7 @@ def resetWet() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
