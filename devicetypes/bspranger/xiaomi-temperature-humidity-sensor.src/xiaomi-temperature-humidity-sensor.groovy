@@ -91,7 +91,7 @@ metadata {
         }
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}% battery', unit:"",
+            state "default", label:'${currentValue}%', unit:"",
             backgroundColors:[
                 [value: 0, color: "#c0392b"],
                 [value: 25, color: "#f1c40f"],
