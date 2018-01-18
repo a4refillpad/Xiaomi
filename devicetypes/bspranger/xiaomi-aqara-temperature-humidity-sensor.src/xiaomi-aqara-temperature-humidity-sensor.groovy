@@ -188,6 +188,7 @@ def parse(String description) {
 
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float
+    if (tempOffset == null || tempOffset == "" ) tempOffset = 0
     if (temp > 100) {
       temp = 100.0 - temp
     }
