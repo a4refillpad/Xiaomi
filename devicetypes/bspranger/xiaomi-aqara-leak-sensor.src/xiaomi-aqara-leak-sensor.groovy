@@ -64,8 +64,8 @@ metadata {
     tiles(scale: 2) {
         multiAttributeTile(name:"water", type: "generic", width: 6, height: 4){
             tileAttribute ("device.water", key: "PRIMARY_CONTROL") {
-                attributeState "dry", label:"Dry", icon:"st.alarm.water.dry", backgroundColor:"#00a0dc"
-                attributeState "wet", label:"Wet", icon:"st.alarm.water.wet", backgroundColor:"#e86d13"
+                attributeState "dry", label:"Dry", icon:"st.alarm.water.dry"
+                attributeState "wet", label:"Wet", icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
             }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
