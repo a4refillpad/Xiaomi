@@ -157,8 +157,7 @@ def updated() {
 def parse(String description) {
     log.debug "${device.displayName}: Parsing description: ${description}"
     // send event for heartbeat
-    def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
-    def nowDate = new Date(now).getTime()
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
 
@@ -393,6 +392,6 @@ def configure() {
 }
 
 def resetBatteryRuntime() {
-       def now = new Date().format("dd MMM yyyy", location.timeZone)
+    def now = new Date().format("MMM dd yyyy", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }

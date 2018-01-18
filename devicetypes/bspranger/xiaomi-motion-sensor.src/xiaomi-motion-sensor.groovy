@@ -116,7 +116,7 @@ def parse(String description) {
 	log.debug "${device.displayName} Parse returned: $map"
 	def result = map ? createEvent(map) : null
 
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     
     if (description?.startsWith('enroll request')) {
@@ -246,7 +246,7 @@ private Map parseReportAttributeMessage(String description) {
 	//log.debug "Desc Map: $descMap"
  
 	Map resultMap = [:]
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
    
 	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
 		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
@@ -354,7 +354,7 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", ${(location.timeZone != null) ? location.timeZone : TimeZone.getTimeZone("UTC")})
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
