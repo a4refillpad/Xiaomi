@@ -120,15 +120,15 @@ def parse(String description) {
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate) 
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false) 
 
     Map map = [:]
 
     if (description?.startsWith('on/off: ')) 
     {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastpressed", value: now)
-        sendEvent(name: "lastpressedDate", value: nowDate) 
+        sendEvent(name: "lastpressed", value: now, displayed: false))
+        sendEvent(name: "lastpressedDate", value: nowDate, displayed: false)) 
     }
     else if (description?.startsWith('catchall:')) 
     {

@@ -108,15 +108,15 @@ def parse(String description) {
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate)
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
 
     if (description?.startsWith('zone status')) {
         map = parseZoneStatusMessage(description)
         if (map.value == "wet") {
-            sendEvent(name: "lastWet", value: now)
-            sendEvent(name: "lastWetDate", value: nowDate)
+            sendEvent(name: "lastWet", value: now, displayed: false)
+            sendEvent(name: "lastWetDate", value: nowDate, displayed: false)
         }
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)

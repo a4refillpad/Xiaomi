@@ -107,15 +107,15 @@ def parse(String description) {
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate)
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
 
     if (result) {
         log.debug "${device.displayName} Event: ${result}"
         map = getContactResult(result);
-        sendEvent(name: "lastOpened", value: now)
-        sendEvent(name: "lastOpenedDate", value: nowDate)
+        sendEvent(name: "lastOpened", value: now, displayed: false)
+        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
