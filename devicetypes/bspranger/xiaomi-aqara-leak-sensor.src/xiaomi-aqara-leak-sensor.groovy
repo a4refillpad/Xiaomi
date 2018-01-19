@@ -1,5 +1,5 @@
 /**
- *  Xiaomi Aqara Door/Window Sensor
+ *  Xiaomi Aqara Leak Sensor
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -31,77 +31,78 @@
  *  sulee - Clean up some of the code
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *  veeceeoh - added battery parse on button press
- *  veeceoh - added new refresh & configure code, fixed open/close override code
+ *  veeceeoh - added wet/dry override capability
  */
 
 metadata {
-    definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
+    definition (name: "Xiaomi Aqara Leak Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
         capability "Sensor"
-        capability "Contact Sensor"
+        capability "Water Sensor"
         capability "Refresh"
         capability "Battery"
         capability "Health Check"
 
         attribute "lastCheckin", "String"
-        attribute "lastOpened", "String"
-        attribute "lastOpenedDate", "Date"
+        attribute "lastWet", "String"
+        attribute "lastWetDate", "Date"
         attribute "lastCheckinDate", "Date"
-	attribute "batteryRuntime", "String"
+        attribute "batteryRuntime", "String"
 
-        fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
+        fingerprint endpointId: "01", profileId: "0104", deviceId: "0402", inClusters: "0000,0003,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Xiaomi Leak Sensor"
 
-	command "resetBatteryRuntime"
-	command "resetClosed"
-        command "resetOpen"
+        command "resetDry"
+        command "resetWet"
+        command "resetBatteryRuntime"
     }
 
     simulator {
-        status "closed": "on/off: 0"
-        status "open": "on/off: 1"
+        status "dry": "on/off: 0"
+        status "wet": "on/off: 1"
     }
 
-   tiles(scale: 2) {
-        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
-            tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-                attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
-                attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
+    tiles(scale: 2) {
+        multiAttributeTile(name:"water", type: "generic", width: 6, height: 4){
+            tileAttribute ("device.water", key: "PRIMARY_CONTROL") {
+                attributeState "dry", label:"Dry", icon:"st.alarm.water.dry"
+                attributeState "wet", label:"Wet", icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
             }
-            tileAttribute("device.lastOpened", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Opened: ${currentValue}')
+            tileAttribute("device.lastWet", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Wet: ${currentValue}')
             }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"] 
+            backgroundColors:[
+                [value: 0, color: "#c0392b"],
+                [value: 25, color: "#f1c40f"],
+                [value: 50, color: "#e67e22"],
+                [value: 75, color: "#27ae60"]
             ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
+        standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"resetWet", label: "Override Wet", icon:"st.alarm.water.wet"
         }
-        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
+        standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"resetDry", label: "Override Dry", icon:"st.alarm.water.dry"
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-	    state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
-	}
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
+        }
 
-        main (["contact"])
-        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime","refresh"])
-   }
+        main (["water"])
+        details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime","refresh"])
+    }
 }
 
 def parse(String description) {
-    def result = zigbee.getEvent(description)
+    log.debug "${device.displayName} Description:${description}"
 
     // send event for heartbeat
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
@@ -111,11 +112,12 @@ def parse(String description) {
 
     Map map = [:]
 
-    if (result) {
-        log.debug "${device.displayName} Event: ${result}"
-        map = getContactResult(result);
-        sendEvent(name: "lastOpened", value: now, displayed: false)
-        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+    if (description?.startsWith('zone status')) {
+        map = parseZoneStatusMessage(description)
+        if (map.value == "wet") {
+            sendEvent(name: "lastWet", value: now, displayed: false)
+            sendEvent(name: "lastWetDate", value: nowDate, displayed: false)
+        }
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
@@ -125,6 +127,26 @@ def parse(String description) {
     log.debug "${device.displayName}: Parse returned ${map}"
     def results = map ? createEvent(map) : null
     return results
+}
+
+private Map parseZoneStatusMessage(String description) {
+    def result = [
+        name: 'water',
+        value: value,
+        descriptionText: 'water contact'
+    ]
+    if (description?.startsWith('zone status')) {
+        if (description?.startsWith('zone status 0x0001')) { // detected water
+            result.value = "wet"
+            result.descriptionText = "${device.displayName} has detected water"
+        } else if (description?.startsWith('zone status 0x0000')) { // did not detect water
+            result.value = "dry"
+            result.descriptionText = "${device.displayName} is dry"
+        }
+        return result
+    }
+
+    return [:]
 }
 
 private Map getBatteryResult(rawValue) {
@@ -142,11 +164,10 @@ private Map getBatteryResult(rawValue) {
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
-    
+
     log.debug "${device.displayName}: ${result}"
-    if (state.battery != result.value)
-    {
-    	state.battery = result.value
+    if (state.battery != result.value) {
+        state.battery = result.value
         resetBatteryRuntime()
     }
     return result
@@ -161,16 +182,15 @@ private Map parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	def MsgLength = cluster.data.size();
-                for (i = 0; i < (MsgLength-3); i++)
-                {
+                def MsgLength = cluster.data.size();
+                for (i = 0; i < (MsgLength-3); i++) {
                     if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                     {
                         // next two bytes are the battery voltage.
                         resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
                     }
                 }
-            	break
+            break
         }
     }
     return resultMap
@@ -178,7 +198,6 @@ private Map parseCatchAllMessage(String description) {
 
 // Parse raw data on reset button press to retrieve reported battery voltage
 private Map parseReadAttr(String description) {
-    log.debug "${device.displayName}: button press detected"
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
 
@@ -187,61 +206,50 @@ private Map parseReadAttr(String description) {
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
     def model = value.split("01FF")[0]
     def data = value.split("01FF")[1]
+    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
+
+    if (data[4..7] == "0121") {
+        def MaxBatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))/1000
+        state.maxBatteryVoltage = MaxBatteryVoltage
+    }
 
     if (cluster == "0000" && attrId == "0005")  {
-        def modelName = ""
+        resultMap.name = 'Model'
+        resultMap.value = ""
+        resultMap.descriptionText = "device model"
         // Parsing the model
-        for (int i = 0; i < model.length(); i+=2) 
-        {
+        for (int i = 0; i < model.length(); i+=2) {
             def str = model.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
-            modelName = modelName + NextChar
+            resultMap.value = resultMap.value + NextChar
         }
-        log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}"
+        return resultMap
     }
-    if (data[4..7] == "0121") {
-    	resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
-    }
-    return resultMap    
+
+    return [:]
 }
 
 def configure() {
     state.battery = 0
     log.debug "${device.displayName}: configuring"
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-    zigbee.readAttribute(0x0006, 0x0000) 
-    // Read cluster 0x0006 (on/off status)
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 def refresh() {
     log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0006, 0x0000) +
-    // Read cluster 0x0006 (on/off status)
-    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
-private Map getContactResult(result) {
-    def value = result.value == "on" ? "open" : "closed"
-    def descriptionText = "${device.displayName} was ${value == "open" ? value + "ed" : value}"
-    return [
-        name: 'contact',
-        value: value,
-        descriptionText: descriptionText
-    ]
+def resetDry() {
+    sendEvent(name:"water", value:"dry")
 }
 
-def resetClosed() {
-	sendEvent(name:"contact", value:"closed")
-} 
-
-def resetOpen() {
+def resetWet() {
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
-    sendEvent(name:"contact", value:"open")
-    sendEvent(name: "lastOpened", value: now)
-    sendEvent(name: "lastOpenedDate", value: nowDate)
+    sendEvent(name:"water", value:"wet")
+    sendEvent(name: "lastWet", value: now)
+    sendEvent(name: "lastWetDate", value: nowDate)
 }
 
 def resetBatteryRuntime() {
