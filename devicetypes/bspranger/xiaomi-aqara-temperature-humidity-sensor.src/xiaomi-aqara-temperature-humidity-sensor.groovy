@@ -59,7 +59,7 @@ metadata {
     preferences {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false, defaultValue: 0, required: true
+            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
         }
         section {
             input name: "PressureUnits", type: "enum", title: "Pressure Units", options: ["mbar", "kPa", "inHg", "mmHg"], description: "Sets the unit in which pressure will be reported", defaultValue: "mbar", displayDuringSetup: true, required: true
@@ -67,7 +67,6 @@ metadata {
         section {
             input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
             input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
-
         }
     }
 
@@ -127,18 +126,18 @@ metadata {
                     [value: 96, color: "#bc2323"]
                 ]
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
-            state "default", label:'Last Update:\n ${currentValue}'
+        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n ${currentValue}'
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
+        }
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
-        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-            state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
         }
 
         main(["temperature2"])
-        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "refresh", "batteryRuntime"])
+        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime", "refresh"])
     }
 }
 
@@ -158,7 +157,7 @@ def updated() {
 def parse(String description) {
     log.debug "${device.displayName}: Parsing description: ${description}"
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
 
@@ -188,10 +187,8 @@ def parse(String description) {
 
 
 private Map parseTemperature(String description){
-    def temp = ((description - "temperature: ").trim()) as Float 
-    
+    def temp = ((description - "temperature: ").trim()) as Float
     if (tempOffset == null || tempOffset == "" ) tempOffset = 0
-    
     if (temp > 100) {
       temp = 100.0 - temp
     }
@@ -321,8 +318,8 @@ private Map parseReadAttr(String description) {
 
         log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
 
-        if (pressOffset == null || pressOffset == "" ) pressOffset = 0
-        if (pressOffset) {
+	if (pressOffset == null || pressOffset == "" ) pressOffset = 0    
+	if (pressOffset) {
             pressureval = (pressureval + pressOffset)
             pressureval = pressureval.round(2);
         }
@@ -397,6 +394,6 @@ def configure() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("MMM dd yyyy", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }

@@ -67,6 +67,9 @@ metadata {
                 attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
                 attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
+            tileAttribute("device.lastOpened", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Opened: ${currentValue}')
+            }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
@@ -79,24 +82,21 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
-        }
-        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
         }
-        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
         }
-        standardTile("refresh", "device.contact", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+	    state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
 	}
 
         main (["contact"])
-        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh","batteryRuntime"])
+        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime","refresh"])
    }
 }
 
@@ -104,7 +104,7 @@ def parse(String description) {
     def result = zigbee.getEvent(description)
 
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate)
@@ -237,7 +237,7 @@ def resetClosed() {
 } 
 
 def resetOpen() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name:"contact", value:"open")
     sendEvent(name: "lastOpened", value: now)
@@ -245,7 +245,7 @@ def resetOpen() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("MMM dd yyyy", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
 

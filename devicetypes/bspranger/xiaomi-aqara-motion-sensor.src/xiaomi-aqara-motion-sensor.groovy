@@ -82,21 +82,24 @@ metadata {
         standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
-            state "default", label:'Last Update:\n ${currentValue}'
+        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n ${currentValue}'
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
         standardTile("refresh", "command.refresh", inactiveLabel: false) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
-		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
+		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+			state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
+		}
+        standardTile("empty1x1", "null", width: 1, height: 1, decoration: "flat") {
+			state "emptySmall", label:'', defaultState: true
 		}
 
         main(["motion"])
-        details(["motion", "battery", "light", "reset", "lastcheckin", "refresh"])
+        details(["motion", "battery", "light", "reset", "lastcheckin", "refresh", "batteryRuntime"])
     }
 }
 
@@ -104,7 +107,7 @@ def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
     
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
 
     Map map = [:]
@@ -237,8 +240,7 @@ private Map parseReportAttributeMessage(String description) {
     def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
     Map resultMap = [:]
-
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
 
     if ((cluster == "0406") && (attrId == "0000"))
     {
@@ -325,7 +327,7 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("MMM dd yyyy", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
