@@ -102,7 +102,7 @@ metadata {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
         main (["button"])
-        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime","refresh"])details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
+        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime","refresh"])
    }
 }
 
