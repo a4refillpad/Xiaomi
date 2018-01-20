@@ -157,7 +157,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.25
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -208,43 +208,6 @@ private Map parseCatchAllMessage(String description) {
 }
 
 
-def configure() {
-	state.battery = 0
-    String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-    log.debug "${device.displayName}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${device.displayName}: ${device.zigbeeId}"
-    log.debug "${device.displayName}: ${zigbeeEui}"
-    def configCmds = [
-        //battery reporting and heartbeat
-        // send-me-a-report 3600 43200 is min and max reporting time range
-        "zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-        "zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
-
-
-        // Writes CIE attribute on end device to direct reports to the hub's EUID
-        "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 1", "delay 500",
-    ]
-
-    log.debug "${device.displayName}: configure: Write IAS CIE"
-    return configCmds
-}
-
-def enrollResponse() {
-    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
-    [
-        // Enrolling device into the IAS Zone
-        "raw 0x500 {01 23 00 00 00}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 1"
-    ]
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
 
 
 private Map parseCustomMessage(String description) {
@@ -267,27 +230,6 @@ private Map getContactResult(value) {
     ]
 }
 
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
-}
-
-
-private byte[] reverseArray(byte[] array) {
-    int i = 0;
-    int j = array.length - 1;
-    byte tmp;
-
-    while (j > i) {
-        tmp = array[j];
-        array[j] = array[i];
-        array[i] = tmp;
-        j--;
-        i++;
-    }
-
-    return array
-}
-
 def resetClosed() {
     sendEvent(name:"contact", value:"closed")
 } 
@@ -301,14 +243,36 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+    return zigbee.readAttribute(0x0006, 0x0000) +
+    // Read cluster 0x0006 (on/off status)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    zigbee.readAttribute(0x0006, 0x0000) 
+    // Read cluster 0x0006 (on/off status)
+}
+
 def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when installed()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    state.battery = 0
+    checkIntervalEvent("installed");
 }
 
 def updated() {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when updated()"
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }

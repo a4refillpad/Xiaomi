@@ -136,18 +136,6 @@ def parse(String description) {
     return results;
 }
 
-def configure(){
-	state.battery = 0
-    state.button = "released"
-    log.debug "${device.displayName}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
 private Map parseReadAttrMessage(String description) {
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
@@ -215,7 +203,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.25
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -287,4 +275,32 @@ private Map getContactResult(value) {
 def resetBatteryRuntime() {
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
+}
+
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    state.button = "released"
+    checkIntervalEvent("configure");
+}
+
+def installed() {
+    state.battery = 0
+    state.button = "released"
+    checkIntervalEvent("installed");
+}
+
+def updated() {
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }

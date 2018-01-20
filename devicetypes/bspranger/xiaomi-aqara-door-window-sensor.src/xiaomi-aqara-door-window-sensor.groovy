@@ -131,7 +131,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.25
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -205,22 +205,7 @@ private Map parseReadAttr(String description) {
     return resultMap    
 }
 
-def configure() {
-    state.battery = 0
-    log.debug "${device.displayName}: configuring"
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-    zigbee.readAttribute(0x0006, 0x0000) 
-    // Read cluster 0x0006 (on/off status)
-}
 
-def refresh() {
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0006, 0x0000) +
-    // Read cluster 0x0006 (on/off status)
-    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-}
 
 private Map getContactResult(result) {
     def value = result.value == "on" ? "open" : "closed"
@@ -249,7 +234,27 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+    return zigbee.readAttribute(0x0006, 0x0000) +
+    // Read cluster 0x0006 (on/off status)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    zigbee.readAttribute(0x0006, 0x0000) 
+    // Read cluster 0x0006 (on/off status)
+}
+
 def installed() {
+    state.battery = 0
     checkIntervalEvent("installed");
 }
 

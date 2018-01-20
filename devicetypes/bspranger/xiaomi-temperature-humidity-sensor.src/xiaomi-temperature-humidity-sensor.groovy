@@ -130,18 +130,6 @@ metadata {
     }
 }
 
-def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "Configured health checkInterval when installed()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-}
-
-def updated() {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "Configured health checkInterval when updated()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-}
-
 // Parse incoming device messages to generate events
 def parse(String description) {
 
@@ -300,7 +288,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.25
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -321,23 +309,38 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
+def resetBatteryRuntime() {
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "batteryRuntime", value: now)
+}
+
 def refresh(){
     log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
     return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
 def configure() {
+    log.debug "${device.displayName}: configure"
     state.battery = 0
-    // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
-    // enrolls with default periodic reporting until newer 5 min interval is confirmed
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    checkIntervalEvent("configure");
 
     // temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
     // battery minReport 30 seconds, maxReportTime 6 hrs by default
     return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
-def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-    sendEvent(name: "batteryRuntime", value: now)
+def installed() {
+    state.battery = 0
+    checkIntervalEvent("installed");
+}
+
+def updated() {
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
