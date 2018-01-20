@@ -41,19 +41,20 @@
  */
 metadata {
     definition (name: "Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {
-        capability "Battery"
+        capability "Configuration"
+        capability "Sensor"
         capability "Button"
-		capability "Configuration"
-		capability "Sensor"
         capability "Refresh"
+        capability "Battery"
+        capability "Health Check"
         
-        attribute "lastPress", "string"
-        attribute "batterylevel", "string"
         attribute "lastCheckin", "string"
+        attribute "lastPress", "string"
+        attribute "lastpressedDate", "Date"
         attribute "lastCheckinDate", "Date"
-	    attribute "batteryRuntime", "String"
+        attribute "batteryRuntime", "String"
 
-	    command "resetBatteryRuntime"
+        command "resetBatteryRuntime"
         
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Xiaomi Aqara Button"
     }
@@ -75,34 +76,33 @@ metadata {
                 attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
                 attributeState("released", label:'${name}', backgroundColor:"#ffffff")
              }
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+            tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Pressed: ${currentValue}')
             }
         }        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-			backgroundColors:[
-				[value: 0, color: "#c0392b"],
-				[value: 25, color: "#f1c40f"],
-				[value: 50, color: "#e67e22"],
-				[value: 75, color: "#27ae60"]
-			]
+            backgroundColors:[
+                [value: 0, color: "#c0392b"],
+                [value: 25, color: "#f1c40f"],
+                [value: 50, color: "#e67e22"],
+                [value: 75, color: "#27ae60"]
+            ]
+        }
+        standardTile("empty2x2", "null", width: 2, height: 2, decoration: "flat") {
+             state "emptySmall", label:'', defaultState: true
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Pressed:\n${currentValue}'
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
-	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
-	}    
-	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
+        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime","refresh"])details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
    }
 }
 
