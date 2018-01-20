@@ -56,7 +56,7 @@ metadata {
     preferences {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
+            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
         }
     }
     
@@ -172,22 +172,24 @@ def parse(String description) {
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float 
 
-    if (tempOffset == null || tempOffset == "" ) tempOffset = 0
-
+    if (!(settings.tempOffset)){
+        settings.tempOffset = 0
+    }
+    
     if (temp > 100)
     {
-      temp = 100.0 - temp
+        temp = 100.0 - temp
     }
     
     if (getTemperatureScale() == "C") {
-        if (tempOffset) {
-            temp = (Math.round(temp * 10))/ 10 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp = (Math.round(temp * 10))/ 10 + settings.tempOffset as Float
         } else {
             temp = (Math.round(temp * 10))/ 10 as Float
         }
     } else {
-        if (tempOffset) {
-            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + settings.tempOffset as Float
         } else {
             temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
         }

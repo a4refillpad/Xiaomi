@@ -59,14 +59,14 @@ metadata {
     preferences {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
+            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
         }
         section {
             input name: "PressureUnits", type: "enum", title: "Pressure Units", options: ["mbar", "kPa", "inHg", "mmHg"], description: "Sets the unit in which pressure will be reported", defaultValue: "mbar", displayDuringSetup: true, required: true
         }
         section {
             input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
-            input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
+            input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true
         }
     }
 
@@ -188,19 +188,23 @@ def parse(String description) {
 
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float
-    if (tempOffset == null || tempOffset == "" ) tempOffset = 0
+    
+    if (!(settings.tempOffset)){
+        settings.tempOffset = 0
+    }
+    
     if (temp > 100) {
-      temp = 100.0 - temp
+        temp = 100.0 - temp
     }
     if (getTemperatureScale() == "C") {
-        if (tempOffset) {
-            temp = (Math.round(temp * 10))/ 10 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp = (Math.round(temp * 10))/ 10 + settings.tempOffset as Float
         } else {
             temp = (Math.round(temp * 10))/ 10 as Float
         }
     } else {
-        if (tempOffset) {
-            temp =  (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp =  (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + settings.tempOffset as Float
         } else {
             temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
         }
@@ -318,9 +322,12 @@ private Map parseReadAttr(String description) {
 
         log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
 
-	if (pressOffset == null || pressOffset == "" ) pressOffset = 0    
-	if (pressOffset) {
-            pressureval = (pressureval + pressOffset)
+	if (!(settings.pressOffset)){
+        settings.pressOffset = 0
+    }
+    
+	if (settings.pressOffset) {
+            pressureval = (pressureval + settings.pressOffset)
             pressureval = pressureval.round(2);
         }
         
@@ -356,7 +363,7 @@ private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
     def minVolts = 2.7
-    def maxVolts = 3.3
+    def maxVolts = 3.25
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -379,7 +386,7 @@ private Map getBatteryResult(rawValue) {
 
 def refresh(){
     log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0000, 0x0001) + zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
+    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
 def configure() {
@@ -390,7 +397,7 @@ def configure() {
 
     // temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
     // battery minReport 30 seconds, maxReportTime 6 hrs by default
-    return zigbee.readAttribute(0x0000, 0x0001) + zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
+    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
 def resetBatteryRuntime() {
