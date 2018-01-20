@@ -88,15 +88,12 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
         }
-		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-			state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
-		}
         standardTile("empty1x1", "null", width: 1, height: 1, decoration: "flat") {
-			state "emptySmall", label:'', defaultState: true
-		}
+             state "emptySmall", label:'', defaultState: true
+        }
 
         main(["motion"])
         details(["motion", "battery", "light", "reset", "lastcheckin", "refresh", "batteryRuntime"])
