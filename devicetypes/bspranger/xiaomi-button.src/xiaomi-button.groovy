@@ -43,8 +43,8 @@ metadata {
     definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
         capability "Battery"
         capability "Button"
-		capability "Configuration"
-		capability "Sensor"
+        capability "Configuration"
+        capability "Sensor"
         capability "Refresh"
         
         attribute "lastPress", "string"
@@ -52,15 +52,15 @@ metadata {
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
-	    
+
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
-    
-	   command "resetBatteryRuntime"
+
+        command "resetBatteryRuntime"
 }
     
     simulator {
           status "button 1 pressed": "on/off: 0"
-      	status "button 1 released": "on/off: 1"
+          status "button 1 released": "on/off: 1"
     }
     
     preferences{
@@ -91,8 +91,8 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
+        valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Pressed:\n${currentValue}'
         }
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
@@ -101,7 +101,7 @@ metadata {
 	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
 	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastopened","refresh","batteryRuntime"])
+        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
    }
 }
 
@@ -119,8 +119,8 @@ def parse(String description) {
     if (description?.startsWith('on/off: ')) 
     {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastOpened", value: now, displayed: false)
-        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false) 
+        sendEvent(name: "lastpressed", value: now, displayed: false)
+        sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
     }
     else if (description?.startsWith('catchall:')) 
     {
