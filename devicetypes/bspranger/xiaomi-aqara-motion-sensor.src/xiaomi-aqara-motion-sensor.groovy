@@ -69,7 +69,7 @@ metadata {
             }
         }
         valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}${unit}', unit:"%",
+            state "default", label:'${currentValue}%', unit:"%",
             backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
@@ -77,7 +77,7 @@ metadata {
             ]
         }
         valueTile("illuminance", "device.illuminance", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue} ${unit}', unit:"lux"
+            state "default", label:'${currentValue} lux', unit:"lux"
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", action:"reset", label:'Reset Motion', icon:"st.motion.motion.active"
@@ -230,7 +230,7 @@ private Map parseReportAttributeMessage(String description) {
     if ((cluster == "0406") && (attrId == "0000"))
     {
         def motion = (value == "01") ? "active" : "inactive"
-        sendEvent(name: "lastMotion", value: now)
+        sendEvent(name: "lastMotion", value: now, displayed: false)
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 120
         if (motion == "active") runIn(settings.motionReset, stopMotion)
         resultMap = getMotionResult(motion)

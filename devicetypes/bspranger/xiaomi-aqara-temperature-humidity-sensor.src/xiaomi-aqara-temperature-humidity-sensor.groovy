@@ -99,7 +99,7 @@ metadata {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
         }
         valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}${unit}', unit:"%",
+            state "default", label:'${currentValue}%', unit:"%",
             backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
