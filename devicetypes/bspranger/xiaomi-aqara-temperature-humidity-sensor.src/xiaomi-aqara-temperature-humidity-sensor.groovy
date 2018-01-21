@@ -58,22 +58,21 @@ metadata {
 
     preferences {
         section {
-            input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
+            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type:"paragraph", element:"paragraph"
+            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", displayDuringSetup: true, required: true
         }
         section {
-            input name: "PressureUnits", type: "enum", title: "Pressure Units", options: ["mbar", "kPa", "inHg", "mmHg"], description: "Sets the unit in which pressure will be reported", defaultValue: "mbar", displayDuringSetup: true, required: true
+            input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported", defaultValue:"mbar", displayDuringSetup: true, required: true
         }
         section {
-            input title: "Pressure Offset", description: "This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
-            input "pressOffset", "number", title: "Pressure", description: "Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true
+            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true
         }
     }
 
-    // UI tile definitions
     tiles(scale: 2) {
         multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
-            tileAttribute("device.temperature", key:"PRIMARY_CONTROL") {
+            tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
                 attributeState("temperature", label:'${currentValue}°',
                     backgroundColors:[
                         [value: 0, color: "#153591"],
@@ -93,46 +92,45 @@ metadata {
                 )
             }
         }
-        standardTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}%', icon:"st.Weather.weather12"
+        standardTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
+            state "default", label:'${currentValue} ${unit}', unit="%" icon:"st.Weather.weather12"
         }
-        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
         }
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"",
+        valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue}${unit}', unit:"%",
             backgroundColors:[
-                [value: 0, color: "#c0392b"],
-                [value: 25, color: "#f1c40f"],
-                [value: 50, color: "#e67e22"],
-                [value: 75, color: "#27ae60"]
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
             ]
         }
         valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
             state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
-                backgroundColors:[
-                    [value: 0, color: "#153591"],
-                    [value: 5, color: "#1e9cbb"],
-                    [value: 10, color: "#90d2a7"],
-                    [value: 15, color: "#44b621"],
-                    [value: 20, color: "#f1d801"],
-                    [value: 25, color: "#d04e00"],
-                    [value: 30, color: "#bc2323"],
-                    [value: 44, color: "#1e9cbb"],
-                    [value: 59, color: "#90d2a7"],
-                    [value: 74, color: "#44b621"],
-                    [value: 84, color: "#f1d801"],
-                    [value: 95, color: "#d04e00"],
-                    [value: 96, color: "#bc2323"]
-                ]
+            backgroundColors:[
+                [value: 0, color: "#153591"],
+                [value: 5, color: "#1e9cbb"],
+                [value: 10, color: "#90d2a7"],
+                [value: 15, color: "#44b621"],
+                [value: 20, color: "#f1d801"],
+                [value: 25, color: "#d04e00"],
+                [value: 30, color: "#bc2323"],
+                [value: 44, color: "#1e9cbb"],
+                [value: 59, color: "#90d2a7"],
+                [value: 74, color: "#44b621"],
+                [value: 84, color: "#f1d801"],
+                [value: 95, color: "#d04e00"],
+                [value: 96, color: "#bc2323"]
+            ]
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+        valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n ${currentValue}'
         }
-        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
 
@@ -176,11 +174,11 @@ def parse(String description) {
 
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float
-    
+
     if (!(settings.tempOffset)){
         settings.tempOffset = 0
     }
-    
+
     if (temp > 100) {
         temp = 100.0 - temp
     }
@@ -236,7 +234,7 @@ private Map parseCatchAllMessage(String description) {
     def cluster = zigbee.parse(description)
     log.debug cluster
     if (cluster) {
-        switch(cluster.clusterId) 
+        switch(cluster.clusterId)
         {
             case 0x0000:
                 def MsgLength = cluster.data.size();
@@ -313,12 +311,12 @@ private Map parseReadAttr(String description) {
 	if (!(settings.pressOffset)){
         settings.pressOffset = 0
     }
-    
+
 	if (settings.pressOffset) {
             pressureval = (pressureval + settings.pressOffset)
             pressureval = pressureval.round(2);
         }
-        
+
         resultMap = [
             name: 'pressure',
             value: pressureval,
@@ -329,17 +327,17 @@ private Map parseReadAttr(String description) {
     } else if (cluster == "0000" && attrId == "0005")  {
         def model = value.split("01FF")[0]
         def data = value.split("01FF")[1]
-        
+
         def modelName = ""
         // Parsing the model
-        for (int i = 0; i < model.length(); i+=2) 
+        for (int i = 0; i < model.length(); i+=2)
         {
             def str = model.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
             modelName = modelName + NextChar
         }
         log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}"
-    
+
         if (data[4..7] == "0121") {
             resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
         }
