@@ -293,6 +293,7 @@ def resetBatteryRuntime() {
 def refresh(){
     log.debug "${device.displayName}: refreshing"
     checkIntervalEvent("refresh");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
 }
 
 def configure() {
@@ -300,6 +301,7 @@ def configure() {
     state.battery = 0
     state.button = "released"
     checkIntervalEvent("configure");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
 }
 
 def installed() {
@@ -310,6 +312,7 @@ def installed() {
 
 def updated() {
     checkIntervalEvent("updated");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
 }
 
 private checkIntervalEvent(text) {

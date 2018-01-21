@@ -76,8 +76,8 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
-        valueTile("light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-		state "light", label:'${currentValue} ${unit}', unit:"lux"
+        valueTile("illuminance", "device.illuminance", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+		state "default", label:'${currentValue} ${unit}', unit:"lux"
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
@@ -96,7 +96,7 @@ metadata {
         }
 
         main(["motion"])
-        details(["motion", "battery", "light", "reset", "lastcheckin", "refresh", "batteryRuntime"])
+        details(["motion", "battery", "illuminance", "reset", "lastcheckin", "refresh", "batteryRuntime"])
     }
 }
 
@@ -134,11 +134,11 @@ private Map parseIlluminanceMessage(String description) {
     def Lux = ((description - "illuminance: ").trim()) as Float
 
     def result = [
-        name: 'Light',
+        name: 'illuminance',
         value: Lux,
-        unit: "Lux",
+        unit: "lux",
         isStateChange:true,
-        descriptionText : "${device.displayName} Light was ${Lux} Lux"
+        descriptionText : "${device.displayName} illuminance was ${Lux} Lux"
     ]
     return result;
 }
