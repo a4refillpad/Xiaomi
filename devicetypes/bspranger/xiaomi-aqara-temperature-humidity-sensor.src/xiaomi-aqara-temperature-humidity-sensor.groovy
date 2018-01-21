@@ -93,7 +93,7 @@ metadata {
             }
         }
         standardTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} ${unit}', unit="%" icon:"st.Weather.weather12"
+            state "default", label:'${currentValue}${unit}', unit:"%", icon:"st.Weather.weather12"
         }
         standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
@@ -107,7 +107,7 @@ metadata {
             ]
         }
         valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
-            state "temperature", label:'${currentValue}°', icon: "st.Weather.weather2",
+            state "temperature", label:'${currentValue}°', icon:"st.Weather.weather2",
             backgroundColors:[
                 [value: 0, color: "#153591"],
                 [value: 5, color: "#1e9cbb"],

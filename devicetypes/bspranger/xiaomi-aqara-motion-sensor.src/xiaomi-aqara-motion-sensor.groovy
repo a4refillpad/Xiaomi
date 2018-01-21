@@ -138,7 +138,7 @@ private Map parseIlluminanceMessage(String description) {
         value: Lux,
         unit: "lux",
         isStateChange:true,
-        descriptionText : "${device.displayName} illuminance was ${Lux} Lux"
+        descriptionText : "${device.displayName} illuminance was ${Lux} lux"
     ]
     return result;
 }
