@@ -378,6 +378,7 @@ def resetBatteryRuntime() {
 def refresh(){
     log.debug "${device.displayName}: refreshing"
     checkIntervalEvent("refresh");
+    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
     return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
@@ -385,9 +386,7 @@ def configure() {
     log.debug "${device.displayName}: configure"
     state.battery = 0
     checkIntervalEvent("configure");
-
-    // temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
-    // battery minReport 30 seconds, maxReportTime 6 hrs by default
+    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
     return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
 }
 
