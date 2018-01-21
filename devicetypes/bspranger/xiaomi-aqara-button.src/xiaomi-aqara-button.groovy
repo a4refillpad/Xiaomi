@@ -9,14 +9,14 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- * 
+ *
   * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
  *  added 100% battery max
  *  fixed battery parsing problem
  *  added lastcheckin attribute and tile
  *  added a means to also push button in as tile on smartthings app
- *  fixed ios tile label problem and battery bug 
+ *  fixed ios tile label problem and battery bug
  *  sulee: change battery calculation
  *  sulee: changed to work as a push button
  *  sulee: added endpoint for Smartthings to detect properly
@@ -51,7 +51,7 @@ metadata {
         capability "Refresh"
         capability "Battery"
         capability "Health Check"
-        
+
         attribute "lastCheckin", "string"
         attribute "lastPress", "string"
         attribute "lastpressedDate", "Date"
@@ -59,52 +59,51 @@ metadata {
         attribute "batteryRuntime", "String"
 
         command "resetBatteryRuntime"
-        
+
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Xiaomi Aqara Button"
     }
-    
+
     simulator {
         status "button 1 pressed": "on/off: 0"
-      	status "button 1 released": "on/off: 1"
+        status "button 1 released": "on/off: 1"
     }
-    
-    preferences{
-    	input ("ReleaseTime", "number", title: "Minimum time in seconds for a press to clear", defaultValue: 2, displayDuringSetup: false)
-        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
-    }
-    
-    tiles(scale: 2) {
 
-        multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
-                attributeState("released", label:'${name}', backgroundColor:"#ffffff")
-             }
-            tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Pressed: ${currentValue}')
+    preferences {
+        input name:"ReleaseTime", type:"number", title:"Minimum time in seconds for a press to clear", defaultValue: 2, displayDuringSetup: false
+        input name:"PressType", type:"enum", options:["Toggle", "Momentary"], description:"Effects how the button toggles", defaultValue:"Toggle", displayDuringSetup: true
+    }
+
+    tiles(scale: 2) {
+        multiAttributeTile(name:"button", type:"lighting", width: 6, height: 4, canChangeIcon: true) {
+            tileAttribute("device.button", key: "PRIMARY_CONTROL") {
+                attributeState "pushed", label:'${name}', backgroundColor:"#00a0dc"
+                attributeState "released", label:'${name}', backgroundColor:"#ffffff"
             }
-        }        
+            tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
+                attributeState "default", label:'Last Pressed: ${currentValue}'
+            }
+        }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"",
+            state "default", label:'${currentValue}%', unit:"%",
             backgroundColors:[
-                [value: 0, color: "#c0392b"],
-                [value: 25, color: "#f1c40f"],
-                [value: 50, color: "#e67e22"],
-                [value: 75, color: "#27ae60"]
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
             ]
         }
         standardTile("empty2x2", "null", width: 2, height: 2, decoration: "flat") {
              state "emptySmall", label:'', defaultState: true
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+        valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+        standardTile("refresh", "device.refresh", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+        valueTile("batteryRuntime", "device.batteryRuntime", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
+
         main (["button"])
         details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime","refresh"])
    }
@@ -118,29 +117,29 @@ def parse(String description) {
     }
     else
     {
-    	log.debug "${device.displayName}: Parsing '${description}'"
+        log.debug "${device.displayName}: Parsing '${description}'"
     }
-    //  send event for heartbeat    
+    //  send event for heartbeat
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false) 
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
 
-    if (description?.startsWith('on/off: ')) 
+    if (description?.startsWith('on/off: '))
     {
-        map = parseCustomMessage(description) 
+        map = parseCustomMessage(description)
         sendEvent(name: "lastpressed", value: now, displayed: false)
         sendEvent(name: "lastpressedDate", value: nowDate, displayed: false)
     }
-    else if (description?.startsWith('catchall:')) 
+    else if (description?.startsWith('catchall:'))
     {
         map = parseCatchAllMessage(description)
     }
     else if (description?.startsWith("read attr - raw: "))
     {
-        map = parseReadAttrMessage(description)  
+        map = parseReadAttrMessage(description)
     }
     log.debug "${device.displayName}: Parse returned $map"
     def results = map ? createEvent(map) : null
@@ -158,20 +157,20 @@ private Map parseReadAttrMessage(String description) {
     def model = value.split("01FF")[0]
     def data = value.split("01FF")[1]
     //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
-    
+
     if (data[4..7] == "0121") {
-    	def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
+        def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
         resultMap = getBatteryResult(BatteryVoltage)
         log.debug "${device.displayName}: Parse returned $resultMap"
         createEvent(resultMap)
     }
 
-    if (cluster == "0000" && attrId == "0005")  {
+    if (cluster == "0000" && attrId == "0005") {
         resultMap.name = 'Model'
         resultMap.value = ""
         resultMap.descriptionText = "device model"
         // Parsing the model
-        for (int i = 0; i < model.length(); i+=2) 
+        for (int i = 0; i < model.length(); i+=2)
         {
             def str = model.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
@@ -179,8 +178,7 @@ private Map parseReadAttrMessage(String description) {
         }
         return resultMap
     }
-    
-    return [:]    
+    return [:]
 }
 
 private Map parseCatchAllMessage(String description) {
@@ -192,15 +190,15 @@ private Map parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	MsgLength = cluster.data.size();
-                for (i = 0; i < (MsgLength-3); i++)
+            MsgLength = cluster.data.size();
+            for (i = 0; i < (MsgLength-3); i++)
+            {
+                if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                 {
-                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
-                    {
-                        // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                    }
+                    // next two bytes are the battery voltage.
+                    resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
                 }
+            }
             break
         }
     }
@@ -222,11 +220,11 @@ private Map getBatteryResult(rawValue) {
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
-    
+
     log.debug "${device.displayName}: ${result}"
     if (state.battery != result.value)
     {
-    	state.battery = result.value
+        state.battery = result.value
         resetBatteryRuntime()
     }
     return createEvent(result)
@@ -234,30 +232,30 @@ private Map getBatteryResult(rawValue) {
 
 private Map parseCustomMessage(String description) {
     def result = [:]
-    if (description?.startsWith('on/off: ')) 
+    if (description?.startsWith('on/off: '))
     {
         if (PressType == "Toggle")
         {
-            if ((state.button != "pushed") && (state.button != "released")) 
+            if ((state.button != "pushed") && (state.button != "released"))
             {
                 state.button = "released"
             }
-            if (state.button == "released") 
+            if (state.button == "released")
             {
                 result = getContactResult("pushed")
                 state.button = "pushed"
             }
-            else 
+            else
             {
                 result = getContactResult("released")
                 state.button = "released"
             }
-        }    
+        }
         else
         {
-        	result = getContactResult("pushed")
+            result = getContactResult("pushed")
             state.button = "pushed"
-        	runIn(ReleaseTime, ReleaseButton)
+            runIn(ReleaseTime, ReleaseButton)
         }
     }
      return result
@@ -265,11 +263,9 @@ private Map parseCustomMessage(String description) {
 
 def ReleaseButton()
 {
-	def result = [:]
-    
+    def result = [:]
     log.debug "${device.displayName}: Calling Release Button"
-    
-	result = getContactResult("released")
+    result = getContactResult("released")
     state.button = "released"
     log.debug "${device.displayName}: ${result}"
     sendEvent(result)
