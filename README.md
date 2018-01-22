@@ -5,6 +5,7 @@ Taken over by bspranger
 Contributions From veeceeoh, ronvandegraaf, tmleafs & gn0st1c
 
 Install Manally or GitHub integration by using these settings:
+
 Owner: bspranger
 Name: Xiaomi
 Branch: master
