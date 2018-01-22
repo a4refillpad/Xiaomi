@@ -1,6 +1,67 @@
-# Xiaomi
-Repository of my smartthings device handlers for Xiaomi Devices. Created them primarily for my own use but you are free to use if you so wish.
+# Xiaomi Orginal & Aqara Device Handlers
 
-The devices are difficult to get paired initially. Plenty of information https://community.smartthings.com/t/release-xiaomi-sensors-and-button-beta/77576
+These are developed originally from a4refillpad
 
-Great devices but I personally do not recommend the outlets as they appear to make my system less stable. However, other people do not seem to report this.
+Taken over by bspranger
+
+Contributions From veeceeoh, ronvandegraaf, tmleafs & gn0st1c
+
+Install Manally or GitHub integration by using these settings:
+
+Owner: bspranger
+Name: Xiaomi
+Branch: master
+
+The devices are difficult to get paired initially. More informaton and help available at <a href="https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1"> SmartThings Community Post</a>
+
+Xiaomi Aqara Button
+<p align="center">
+  <img src="/images/aqarabutton.jpg" width="200"/>
+</p>
+
+Xiaomi Aqara Door/Window Sensor
+<p align="center">
+  <img src="/images/aqaradoor.jpg" width="200"/>
+</p>
+
+Xiaomi Aqara Leak Sensor
+<p align="center">
+  <img src="/images/aqarawater.jpg" width="200"/>
+</p>
+
+Xiaomi Aqara Motion Sensor
+<p align="center">
+  <img src="/images/aqaramotion.jpg" width="200"/>
+</p>
+
+Xiaomi Aqara Temperature Humidity Sensor
+<p align="center">
+  <img src="/images/aqaratemp.jpg" width="200"/>
+</p>
+
+Xiaomi Button
+<p align="center">
+  <img src="/images/button.jpg" width="200"/>
+</p>
+
+Xiaomi Door/Window Sensor	
+<p align="center">
+  <img src="/images/door.jpg" width="200"/>
+</p>
+
+Xiaomi Motion Sensor
+<p align="center">
+  <img src="/images/motion.jpg" width="200"/>
+</p>
+
+Xiaomi Temperature Humidity Sensor
+<p align="center">
+  <img src="/images/temp.jpg" width="200"/>
+</p>
+
+Xiaomi Zigbee Outlet
+<p align="center">
+  <b>We personally do not recommend the outlets as they appear to make SmartThings less stable.<b>
+  <br> 
+  <img src="/images/outlet.jpg" width="200"/>
+</p>
