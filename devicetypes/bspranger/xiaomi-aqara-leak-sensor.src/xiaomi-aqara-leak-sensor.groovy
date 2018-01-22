@@ -34,6 +34,12 @@
  *  veeceeoh - added wet/dry override capability
  */
 
+preferences {
+	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
+} 
+
 metadata {
     definition (name: "Xiaomi Aqara Leak Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
@@ -104,7 +110,14 @@ def parse(String description) {
     log.debug "${device.displayName} Description:${description}"
 
     // send event for heartbeat
-    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+	else
+	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
@@ -150,9 +163,19 @@ private Map parseZoneStatusMessage(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+	def minVolts
+    def maxVolts
 
-    def minVolts = 2.5
-    def maxVolts = 3.0
+	if(voltsmin != null)
+	minVolts = voltsmin
+    else
+    minVolts = 2.5
+    
+    if(voltsmax != null)
+	maxVolts = voltsmax
+    else
+    maxVolts = 3.0
+    
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -233,15 +256,29 @@ def resetDry() {
 }
 
 def resetWet() {
-    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+   	def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+	else
+	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    
     def nowDate = new Date(now).getTime()
     sendEvent(name:"water", value:"wet")
-    sendEvent(name: "lastWet", value: now)
-    sendEvent(name: "lastWetDate", value: nowDate)
+    sendEvent(name: "lastWet", value: now, displayed: false)
+    sendEvent(name: "lastWetDate", value: nowDate, displayed: false)
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("MMM dd yyyy", location.timeZone)
+	def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("MMM dd yyyy", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("dd MMM yyyy", location.timeZone)
+	else
+	now = new Date().format("yyyy MMM dd", location.timeZone)
+    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
