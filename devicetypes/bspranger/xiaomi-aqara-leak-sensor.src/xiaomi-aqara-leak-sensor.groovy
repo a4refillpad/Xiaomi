@@ -166,12 +166,12 @@ private Map getBatteryResult(rawValue) {
 	def minVolts
     def maxVolts
 
-	if(voltsmin != null)
+	if(voltsmin != null || voltsmin == "")
 	minVolts = voltsmin
     else
     minVolts = 2.5
     
-    if(voltsmax != null)
+    if(voltsmax != null || voltsmin == "")
 	maxVolts = voltsmax
     else
     maxVolts = 3.0
