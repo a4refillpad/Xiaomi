@@ -1,7 +1,9 @@
 # Xiaomi Orginal & Aqara Device Handlers
 
 These are developed originally from a4refillpad
+
 Taken over by bspranger
+
 Contributions From veeceeoh, ronvandegraaf, tmleafs & gn0st1c
 
 Install Manally or GitHub integration by using these settings:
