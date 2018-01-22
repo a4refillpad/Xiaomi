@@ -1,18 +1,20 @@
 # Xiaomi Orginal & Aqara Device Handlers
 
-These are developed originally from a4refillpad
+Maintained by bspranger
+Forked from a4refillpad's Xiaomi repository.
+Contributions from veeceeoh, ronvandegraaf, tmleafs & gn0st1c
 
-Taken over by bspranger
-
-Contributions From veeceeoh, ronvandegraaf, tmleafs & gn0st1c
-
-Install Manally or GitHub integration by using these settings:
-
+Install manually or using GitHub integration by with these settings:
+```
 Owner: bspranger
 Name: Xiaomi
 Branch: master
+```
 
-The devices are difficult to get paired initially. More informaton and help available at <a href="https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1"> SmartThings Community Post</a>
+## Pairing
+These devices are not easy to pair initially. More information and help is available at <a href="https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1"> SmartThings Community Post</a>
+
+## Supported Xiaomi Devices
 
 Xiaomi Aqara Button
 <p align="center">
