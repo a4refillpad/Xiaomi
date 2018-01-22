@@ -393,7 +393,14 @@ private Map getBatteryResult(rawValue) {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("MMM dd yyyy", location.timeZone)
+    def now
+    if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("MMM dd yyyy", location.timeZone)
+    else if(dateformat == "UK")
+    now = new Date().format("dd MMM yyyy", location.timeZone)
+    else
+    now = new Date().format("yyyy MMM dd", location.timeZone)
+    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
