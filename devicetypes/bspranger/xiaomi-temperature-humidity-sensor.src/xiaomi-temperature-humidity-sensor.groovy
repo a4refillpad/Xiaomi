@@ -25,6 +25,7 @@
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *  bspranger - rewritting the DH to use Maps so it conforms with the other Xiaomi DHs.
  */
+
 metadata {
     definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Temperature Measurement"
@@ -57,6 +58,11 @@ metadata {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
+        }
+        section {
+        	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	        input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
+	        input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
         }
     }
     
@@ -134,7 +140,14 @@ metadata {
 def parse(String description) {
 
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+	else
+	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
@@ -286,9 +299,19 @@ private Map parseReadAttr(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+	def minVolts
+    def maxVolts
 
-    def minVolts = 2.5
-    def maxVolts = 3.0
+	if(voltsmin != null || voltsmin == "")
+	minVolts = voltsmin
+    else
+    minVolts = 2.5
+    
+    if(voltsmax != null || voltsmax == "")
+	maxVolts = voltsmax
+    else
+    maxVolts = 3.0
+    
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -310,7 +333,14 @@ private Map getBatteryResult(rawValue) {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("MMM dd yyyy", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("dd MMM yyyy", location.timeZone)
+	else
+	now = new Date().format("yyyy MMM dd", location.timeZone)
+    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
