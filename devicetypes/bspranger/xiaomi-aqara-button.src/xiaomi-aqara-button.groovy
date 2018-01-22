@@ -221,16 +221,16 @@ private Map parseCatchAllMessage(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
-	   def minVolts
+    def minVolts
     def maxVolts
 
-	   if(voltsmin != null)
-   	minVolts = voltsmin
+    if(voltsmin != null || voltsmin == "")
+    minVolts = voltsmin
     else
     minVolts = 2.5
     
-    if(voltsmax != null)
-	   maxVolts = voltmax
+    if(voltsmax != null || voltsmin == "")
+    maxVolts = voltsmax
     else
     maxVolts = 3.0
  
