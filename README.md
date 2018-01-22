@@ -1,6 +1,22 @@
-# Xiaomi
-Repository of my smartthings device handlers for Xiaomi Devices. Created them primarily for my own use but you are free to use if you so wish.
+# Xiaomi Orginal & Aqara Device Handlers
 
-The devices are difficult to get paired initially. Plenty of information https://community.smartthings.com/t/release-xiaomi-sensors-and-button-beta/77576
+These are developed originally from a4refillpad
 
-Great devices but I personally do not recommend the outlets as they appear to make my system less stable. However, other people do not seem to report this.
+Xiaomi Aqara Button
+
+
+Xiaomi Aqara Door/Window Sensor
+
+
+xiaomi-aqara-leak-sensor.src	
+xiaomi-aqara-motion-sensor.src	
+xiaomi-aqara-temperature-humidity-sensor.src	
+xiaomi-button.src
+xiaomi-door-window-sensor.src	
+xiaomi-motion-sensor.src	
+xiaomi-temperature-humidity-sensor.src	
+xiaomi-zigbee-outle
+
+The devices are difficult to get paired initially. Plenty of information https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1
+
+<b>Great devices but I personally do not recommend the outlets as they appear to make my system less stable. However, other people do not seem to report this.<b>
