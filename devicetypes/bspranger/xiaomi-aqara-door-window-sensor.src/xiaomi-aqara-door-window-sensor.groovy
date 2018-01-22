@@ -141,19 +141,19 @@ def parse(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
-	def minVolts
+    def minVolts
     def maxVolts
 
-	if(voltsmin != null || voltsmin == "")
-	minVolts = voltsmin
+    if(voltsmin != null || voltsmin == "")
+    minVolts = voltsmin
     else
     minVolts = 2.5
     
-    if(voltsmax != null || voltsmax == "")
-	maxVolts = voltmax
+    if(voltsmax != null || voltsmin == "")
+    maxVolts = voltsmax
     else
     maxVolts = 3.0
-    
+        
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
