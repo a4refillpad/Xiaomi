@@ -62,32 +62,31 @@ metadata {
     }
 
     tiles(scale: 2) {
-        multiAttributeTile(name:"water", type: "generic", width: 6, height: 4){
-            tileAttribute ("device.water", key: "PRIMARY_CONTROL") {
-                attributeState "dry", label:"Dry", icon:"st.alarm.water.dry"
-                attributeState "wet", label:"Wet", icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
+        multiAttributeTile(name:"water", type: "generic", width: 6, height: 4) {
+            tileAttribute("device.water", key: "PRIMARY_CONTROL") {
+                attributeState "dry", label:'Dry', icon:"st.alarm.water.dry", backgroundColor:"#ffffff"
+                attributeState "wet", label:'Wet', icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
             }
             tileAttribute("device.lastWet", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Wet: ${currentValue}')
+                attributeState "default", label:'Last Wet: ${currentValue}'
             }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"",
+            state "default", label:'${currentValue}%', unit:"%",
             backgroundColors:[
-                [value: 0, color: "#c0392b"],
-                [value: 25, color: "#f1c40f"],
-                [value: 50, color: "#e67e22"],
-                [value: 75, color: "#27ae60"]
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
             ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
         standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetWet", label: "Override Wet", icon:"st.alarm.water.wet"
+            state "default", action:"resetWet", label:'Override Wet', icon:"st.alarm.water.wet"
         }
         standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetDry", label: "Override Dry", icon:"st.alarm.water.dry"
+            state "default", action:"resetDry", label:'Override Dry', icon:"st.alarm.water.dry"
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
@@ -152,8 +151,8 @@ private Map parseZoneStatusMessage(String description) {
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    def minVolts = 2.5
+    def maxVolts = 3.0
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -229,17 +228,6 @@ private Map parseReadAttr(String description) {
     return [:]
 }
 
-def configure() {
-    state.battery = 0
-    log.debug "${device.displayName}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
-def refresh() {
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
 def resetDry() {
     sendEvent(name:"water", value:"dry")
 }
@@ -257,7 +245,19 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+}
+
 def installed() {
+    state.battery = 0
     checkIntervalEvent("installed");
 }
 

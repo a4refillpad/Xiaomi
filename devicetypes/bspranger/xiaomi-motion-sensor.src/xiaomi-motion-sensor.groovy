@@ -28,25 +28,25 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Motion Sensor", namespace: "bspranger", author: "bspranger") {
-		capability "Motion Sensor"
-		capability "Configuration"
-		capability "Battery"
-		capability "Sensor"
-		capability "Refresh"
+    definition (name: "Xiaomi Motion Sensor", namespace: "bspranger", author: "bspranger") {
+        capability "Motion Sensor"
+        capability "Configuration"
+        capability "Battery"
+        capability "Sensor"
+        capability "Refresh"
         capability "Health Check" 
         
         attribute "lastCheckin", "String"
         attribute "lastMotion", "String"
-	    attribute "batteryRuntime", "String"	
+        attribute "batteryRuntime", "String"	
 
-    	fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
+        fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005, 0019", manufacturer: "LUMI", model: "lumi.sensor_motion", deviceJoinName: "Xiaomi Motion"
         
-	    command "resetBatteryRuntime"	
+        command "resetBatteryRuntime"	
         command "reset"
         command "Refresh"
         
-	}
+    }
 
 	simulator {
 	}
@@ -55,51 +55,42 @@ metadata {
 		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
 	}
 
-	tiles(scale: 2) {
-		multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4){
-			tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
-				attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-				attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
-			}
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+    tiles(scale: 2) {
+        multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4) {
+            tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
+                attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+                attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
             }
-		}
-		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "battery", label:'${currentValue}% battery', unit:"",
-			backgroundColors:[
-				[value: 0, color: "#c0392b"],
-				[value: 25, color: "#f1c40f"],
-				[value: 50, color: "#e67e22"],
-				[value: 75, color: "#27ae60"]
-			]
-		}
-              
-	    standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            tileAttribute("device.lastMotion", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Motion: ${currentValue}')
+            }
+        }
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"",
+            backgroundColors: [
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
+            ]
+        }
+        standardTile("empty2x2", "null", width: 2, height: 2, decoration: "flat") {
+             state "emptySmall", label:'', defaultState: true
+        }
+        standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
+        }
+        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n ${currentValue}'
+        }
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("configure", "device.configure", inactiveLabel: false, width: 2, height: 2, decoration: "flat") {
-			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
-	    }       
-        
-		standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-			state "default", action:"reset", label: "Reset Motion"
-		}
-		standardTile("icon", "device.refresh", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-            state "default", label:'Last Motion:', icon:"st.Entertainment.entertainment15"
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
         }
-        valueTile("lastmotion", "device.lastMotion", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'${currentValue}'
-        }
-        standardTile("refresh", "command.refresh", inactiveLabel: false) {
-			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-	   }
-		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
-		} 
-		main(["motion"])
-		details(["motion", "battery", "icon", "lastmotion", "reset", "refresh","batteryRuntime"])
-	}
+        main(["motion"])
+        details(["motion", "battery", "empty2x2", "reset", "lastcheckin", "refresh", "batteryRuntime"])
+    }
 }
 
 def parse(String description) {
@@ -118,21 +109,15 @@ def parse(String description) {
 
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
-    
-    if (description?.startsWith('enroll request')) {
-    	List cmds = enrollResponse()
-        log.debug "${device.displayName} enroll response: ${cmds}"
-        result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-    }
 
-       return result
+    return result
 }
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    def minVolts = 2.5
+    def maxVolts = 3.0
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -201,43 +186,6 @@ private boolean shouldProcessMessage(cluster) {
 }
 
 
-def configure() {
-	state.battery = 0
-	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	log.debug "${device.displayName}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${device.displayName}: ${device.zigbeeId}"
-    log.debug "${device.displayName}: ${zigbeeEui}"
-	def configCmds = [
-			//battery reporting and heartbeat
-			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 1 0x20 0x20 600 3600 {01}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
-
-
-			// Writes CIE attribute on end device to direct reports to the hub's EUID
-			"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1", "delay 500",
-	]
-
-	log.debug "${device.displayName} configure: Write IAS CIE"
-	return configCmds
-}
-
-def enrollResponse() {
-    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
-	[
-			// Enrolling device into the IAS Zone
-			"raw 0x500 {01 23 00 00 00}", "delay 200",
-			"send 0x${device.deviceNetworkId} 1 1"
-	]
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
 private Map parseReportAttributeMessage(String description) {
 	Map descMap = (description - "read attr - ").split(",").inject([:]) { map, param ->
 		def nameAndValue = param.split(":")
@@ -275,11 +223,6 @@ private Map parseReportAttributeMessage(String description) {
 	return resultMap
 }
  
-private Map parseCustomMessage(String description) {
-	Map resultMap = [:]
-	return resultMap
-}
-
 private Map parseIasMessage(String description) {
     List parsedMsg = description.split(' ')
     String msgCode = parsedMsg[2]
@@ -321,7 +264,6 @@ private Map parseIasMessage(String description) {
     return resultMap
 }
 
-
 private Map getMotionResult(value) {
     //log.debug "${device.displayName}: motion"
 	String descriptionText = value == 'active' ? "${device.displayName} detected motion" : "${device.displayName} motion has stopped"
@@ -331,18 +273,6 @@ private Map getMotionResult(value) {
 		descriptionText: descriptionText
 	] 
     return commands
-}
-
-private byte[] reverseArray(byte[] array) {
-    byte tmp;
-    tmp = array[1];
-    array[1] = array[0];
-    array[0] = tmp;
-    return array
-}
-
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
 }
 
 def stopMotion() {
@@ -358,14 +288,28 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+}
+
 def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when installed()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    state.battery = 0
+    checkIntervalEvent("installed");
 }
 
 def updated() {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when updated()"
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
