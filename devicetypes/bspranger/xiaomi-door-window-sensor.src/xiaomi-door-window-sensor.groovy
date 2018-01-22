@@ -26,6 +26,10 @@
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *
  */
+preferences {
+   input name: "dateformat", type: "enum", title: "Set Date Format - US (MDY) - UK (DMY)", description: "Date Format", required: false, options:["US","UK"]
+}  
+
 metadata {
    definition (name: "Xiaomi Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
    capability "Configuration"
