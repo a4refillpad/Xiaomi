@@ -53,6 +53,9 @@ metadata {
 
 	preferences {
 		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+		input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
 	}
 
     tiles(scale: 2) {
@@ -107,7 +110,14 @@ def parse(String description) {
 	log.debug "${device.displayName} Parse returned: $map"
 	def result = map ? createEvent(map) : null
 
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now
+    if(dateformat == "US" || dateformat == "" || dateformat == null)
+    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    else if(dateformat == "UK")
+    now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    else
+    now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+
     sendEvent(name: "lastCheckin", value: now)
 
     return result
@@ -115,9 +125,19 @@ def parse(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+    def minVolts
+    def maxVolts
 
-    def minVolts = 2.5
-    def maxVolts = 3.0
+    if(voltsmin != null || voltsmin == "")
+    minVolts = voltsmin
+    else
+    minVolts = 2.5
+    
+    if(voltsmax != null || voltsmax == "")
+    maxVolts = voltsmax
+    else
+    maxVolts = 3.0
+	
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
