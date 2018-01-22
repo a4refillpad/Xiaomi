@@ -47,12 +47,12 @@ metadata {
         attribute "lastOpened", "String"
         attribute "lastOpenedDate", "Date"
         attribute "lastCheckinDate", "Date"
-	attribute "batteryRuntime", "String"
+        attribute "batteryRuntime", "String"
 
         fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_magnet.aq2", deviceJoinName: "Xiaomi Aqara Door Sensor"
 
-	command "resetBatteryRuntime"
-	command "resetClosed"
+        command "resetBatteryRuntime"
+        command "resetClosed"
         command "resetOpen"
     }
 
@@ -62,8 +62,8 @@ metadata {
     }
 
    tiles(scale: 2) {
-        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
-            tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
+        multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4) {
+            tileAttribute("device.contact", key: "PRIMARY_CONTROL") {
                 attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
                 attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
@@ -72,28 +72,28 @@ metadata {
             }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
+            state "default", label:'${currentValue}%', unit:"%",
+            backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"] 
+                [value: 51, color: "#44b621"]
             ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
         standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
+            state "default", action:"resetClosed", label:'Override Close', icon:"st.contact.contact.closed"
         }
         standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
+            state "default", action:"resetOpen", label:'Override Open', icon:"st.contact.contact.open"
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-	    state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
-	}
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
+        }
 
         main (["contact"])
         details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime","refresh"])
@@ -130,8 +130,8 @@ def parse(String description) {
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    def minVolts = 2.5
+    def maxVolts = 3.0
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -142,11 +142,11 @@ private Map getBatteryResult(rawValue) {
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
-    
+
     log.debug "${device.displayName}: ${result}"
     if (state.battery != result.value)
     {
-    	state.battery = result.value
+        state.battery = result.value
         resetBatteryRuntime()
     }
     return result
@@ -161,16 +161,16 @@ private Map parseCatchAllMessage(String description) {
     if (cluster) {
         switch(cluster.clusterId) {
             case 0x0000:
-            	def MsgLength = cluster.data.size();
-                for (i = 0; i < (MsgLength-3); i++)
+            def MsgLength = cluster.data.size();
+            for (i = 0; i < (MsgLength-3); i++)
+            {
+                if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                 {
-                    if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
-                    {
-                        // next two bytes are the battery voltage.
-                        resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                    }
+                    // next two bytes are the battery voltage.
+                    resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
                 }
-            	break
+            }
+            break
         }
     }
     return resultMap
@@ -191,7 +191,7 @@ private Map parseReadAttr(String description) {
     if (cluster == "0000" && attrId == "0005")  {
         def modelName = ""
         // Parsing the model
-        for (int i = 0; i < model.length(); i+=2) 
+        for (int i = 0; i < model.length(); i+=2)
         {
             def str = model.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
@@ -200,26 +200,9 @@ private Map parseReadAttr(String description) {
         log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}"
     }
     if (data[4..7] == "0121") {
-    	resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
+        resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
     }
-    return resultMap    
-}
-
-def configure() {
-    state.battery = 0
-    log.debug "${device.displayName}: configuring"
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-    zigbee.readAttribute(0x0006, 0x0000) 
-    // Read cluster 0x0006 (on/off status)
-}
-
-def refresh() {
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0006, 0x0000) +
-    // Read cluster 0x0006 (on/off status)
-    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    return resultMap
 }
 
 private Map getContactResult(result) {
@@ -233,8 +216,8 @@ private Map getContactResult(result) {
 }
 
 def resetClosed() {
-	sendEvent(name:"contact", value:"closed")
-} 
+    sendEvent(name:"contact", value:"closed")
+}
 
 def resetOpen() {
     def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
@@ -249,7 +232,27 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+    return zigbee.readAttribute(0x0006, 0x0000) +
+    // Read cluster 0x0006 (on/off status)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    zigbee.readAttribute(0x0006, 0x0000)
+    // Read cluster 0x0006 (on/off status)
+}
+
 def installed() {
+    state.battery = 0
     checkIntervalEvent("installed");
 }
 

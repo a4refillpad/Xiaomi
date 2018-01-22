@@ -56,7 +56,7 @@ metadata {
     preferences {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, defaultValue: 0, required: true
+            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
         }
     }
     
@@ -130,18 +130,6 @@ metadata {
     }
 }
 
-def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "Configured health checkInterval when installed()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-}
-
-def updated() {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "Configured health checkInterval when updated()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-}
-
 // Parse incoming device messages to generate events
 def parse(String description) {
 
@@ -172,22 +160,24 @@ def parse(String description) {
 private Map parseTemperature(String description){
     def temp = ((description - "temperature: ").trim()) as Float 
 
-    if (tempOffset == null || tempOffset == "" ) tempOffset = 0
-
+    if (!(settings.tempOffset)){
+        settings.tempOffset = 0
+    }
+    
     if (temp > 100)
     {
-      temp = 100.0 - temp
+        temp = 100.0 - temp
     }
     
     if (getTemperatureScale() == "C") {
-        if (tempOffset) {
-            temp = (Math.round(temp * 10))/ 10 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp = (Math.round(temp * 10))/ 10 + settings.tempOffset as Float
         } else {
             temp = (Math.round(temp * 10))/ 10 as Float
         }
     } else {
-        if (tempOffset) {
-            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + tempOffset as Float
+        if (settings.tempOffset) {
+            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + settings.tempOffset as Float
         } else {
             temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
         }
@@ -297,8 +287,8 @@ private Map parseReadAttr(String description) {
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    def minVolts = 2.5
+    def maxVolts = 3.0
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -319,23 +309,37 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0000, 0x0001) + zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
-}
-
-def configure() {
-    state.battery = 0
-    // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
-    // enrolls with default periodic reporting until newer 5 min interval is confirmed
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-
-    // temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
-    // battery minReport 30 seconds, maxReportTime 6 hrs by default
-    return zigbee.readAttribute(0x0000, 0x0001) + zigbee.configureReporting(0x0000, 0x0001, 0x21, 600, 21600, 0x01) + zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064)
-}
-
 def resetBatteryRuntime() {
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "batteryRuntime", value: now)
+}
+
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
+    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
+}
+
+def configure() {
+    log.debug "${device.displayName}: configure"
+    state.battery = 0
+    checkIntervalEvent("configure");
+    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
+    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
+}
+
+def installed() {
+    state.battery = 0
+    checkIntervalEvent("installed");
+}
+
+def updated() {
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
