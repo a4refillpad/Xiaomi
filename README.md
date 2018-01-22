@@ -1,6 +1,15 @@
 # Xiaomi Orginal & Aqara Device Handlers
 
 These are developed originally from a4refillpad
+Taken over by bspranger
+Contributions From veeceeoh, ronvandegraaf, tmleafs & gn0st1c
+
+Install Manally or GitHub integration by using these settings:
+Owner: bspranger
+Name: Xiaomi
+Branch: master
+
+The devices are difficult to get paired initially. More informaton and help available at <a href="https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1"> SmartThings Community Post</a>
 
 Xiaomi Aqara Button
 <p align="center">
@@ -49,9 +58,6 @@ Xiaomi Temperature Humidity Sensor
 
 Xiaomi Zigbee Outlet
 <p align="center">
+  <b>We personally do not recommend the outlets as they appear to make my system less stable. However, other people do not seem to report this.<b>
   <img src="/images/outlet.jpg" width="200"/>
 </p>
-
-The devices are difficult to get paired initially. Plenty of information https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1
-
-<b>Great devices but I personally do not recommend the outlets as they appear to make my system less stable. However, other people do not seem to report this.<b>
