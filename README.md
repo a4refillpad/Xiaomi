@@ -60,5 +60,6 @@ Xiaomi Temperature Humidity Sensor
 Xiaomi Zigbee Outlet
 <p align="center">
   <b>We personally do not recommend the outlets as they appear to make SmartThings less stable.<b>
+    
   <img src="/images/outlet.jpg" width="200"/>
 </p>
