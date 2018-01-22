@@ -229,7 +229,7 @@ private Map getBatteryResult(rawValue) {
     else
     minVolts = 2.5
     
-    if(voltsmax != null || voltsmin == "")
+    if(voltsmax != null || voltsmax == "")
     maxVolts = voltsmax
     else
     maxVolts = 3.0
