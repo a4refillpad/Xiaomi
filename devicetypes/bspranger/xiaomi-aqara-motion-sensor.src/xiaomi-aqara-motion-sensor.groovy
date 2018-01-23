@@ -244,7 +244,7 @@ private Map parseReportAttributeMessage(String description) {
     if ((cluster == "0406") && (attrId == "0000"))
     {
         def motion = (value == "01") ? "active" : "inactive"
-        sendEvent(name: "lastMotion", value: now, displayed: false)
+        sendEvent(name: "lastMotion", value: now)
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 120
         if (motion == "active") runIn(settings.motionReset, stopMotion)
         resultMap = getMotionResult(motion)
