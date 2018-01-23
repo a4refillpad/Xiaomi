@@ -276,6 +276,7 @@ private Map getContactResult(value) {
     return [
         name: 'button',
         value: value,
+        data: [buttonNumber: "1"],
         isStateChange: true,
         descriptionText: descriptionText
     ]
