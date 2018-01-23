@@ -35,6 +35,7 @@
  */
 preferences {
 	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input description: "Only change the below settings if you know what your doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 	input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
 	input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
 }
@@ -109,14 +110,7 @@ def parse(String description) {
     def result = zigbee.getEvent(description)
 
     // send event for heartbeat
-	def now
-	if(dateformat == "US" || dateformat == "" || dateformat == null)
-    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
-	else if(dateformat == "UK")
-	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
-	else
-	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
-
+    def now = formatDate()    
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
@@ -242,14 +236,7 @@ def resetClosed() {
 }
 
 def resetOpen() {
-    def now
-	if(dateformat == "US" || dateformat == "" || dateformat == null)
-    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
-	else if(dateformat == "UK")
-	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
-	else
-	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
-    
+    def now = formatDate() 
     def nowDate = new Date(now).getTime()
     sendEvent(name:"contact", value:"open")
     sendEvent(name: "lastOpened", value: now, displayed: false)
@@ -257,14 +244,7 @@ def resetOpen() {
 }
 
 def resetBatteryRuntime() {
-	def now
-	if(dateformat == "US" || dateformat == "" || dateformat == null)
-    now = new Date().format("MMM dd yyyy", location.timeZone)
-	else if(dateformat == "UK")
-	now = new Date().format("dd MMM yyyy", location.timeZone)
-	else
-	now = new Date().format("yyyy MMM dd", location.timeZone)
-    
+    def now = formatDate(true)    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
@@ -300,4 +280,25 @@ private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(Boolean) {
+	if(dateformat == "US" || dateformat == "" || dateformat == null){
+    	if(Boolean == false || Boolean == "" || Boolean == null)
+    	return (new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone))
+    	else
+   		return new Date().format("MMM dd yyyy", location.timeZone)
+	}
+	else if(dateformat == "UK"){
+		if(Boolean == false || Boolean == "" || Boolean == null)
+    	return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        else
+        return new Date().format("dd MMM yyyy", location.timeZone)
+    }
+	else{
+    	if(Boolean == false || Boolean == "" || Boolean == null)
+        return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+        else
+        return new Date().format("yyyy MMM dd", location.timeZone)
+	}
 }
