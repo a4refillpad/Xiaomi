@@ -57,8 +57,9 @@ metadata {
     preferences {
         input name: "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
         input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-	    input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
-	    input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
+	input description: "Only change the below settings if you know what your doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+	input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
     }
 
     tiles(scale: 2) {
@@ -107,14 +108,7 @@ def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
 
     // send event for heartbeat
-   	def now
-	if(dateformat == "US" || dateformat == "" || dateformat == null)
-    now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
-	else if(dateformat == "UK")
-	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
-	else
-	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
-    
+    def now = formatDate()    
     sendEvent(name: "lastCheckin", value: now)
 
     Map map = [:]
@@ -330,14 +324,7 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-	def now
-	if(dateformat == "US" || dateformat == "" || dateformat == null)
-    now = new Date().format("MMM dd yyyy", location.timeZone)
-	else if(dateformat == "UK")
-	now = new Date().format("dd MMM yyyy", location.timeZone)
-	else
-	now = new Date().format("yyyy MMM dd", location.timeZone)
-    
+    def now = formatDate(true)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
@@ -365,4 +352,25 @@ private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(Boolean) {
+	if(dateformat == "US" || dateformat == "" || dateformat == null){
+    	if(Boolean == false || Boolean == "" || Boolean == null)
+    	return (new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone))
+    	else
+   		return new Date().format("MMM dd yyyy", location.timeZone)
+	}
+	else if(dateformat == "UK"){
+		if(Boolean == false || Boolean == "" || Boolean == null)
+    	return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        else
+        return new Date().format("dd MMM yyyy", location.timeZone)
+    }
+	else{
+    	if(Boolean == false || Boolean == "" || Boolean == null)
+        return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+        else
+        return new Date().format("yyyy MMM dd", location.timeZone)
+	}
 }
