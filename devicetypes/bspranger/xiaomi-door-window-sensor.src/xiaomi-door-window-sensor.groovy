@@ -28,9 +28,9 @@
  */
 preferences {
 	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-	input description: "Only change the below settings if you know what your doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-	input name: "voltsmax", title: "Max Volts - Change the Maximum Voltage of the battery installed", type: "decimal", range: "2..4", defaultValue: 3, required: false
-	input name: "voltsmin", title: "Min Volts - Change the Minimum Voltage of the battery installed will work at", type: "decimal", range: "2..4", defaultValue: 2.5, required: false
+	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
 } 
 
 metadata {
