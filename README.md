@@ -1,68 +1,37 @@
-# Xiaomi Orginal & Aqara Device Handlers for SmartThings
+# Xiaomi Original & Aqara Device Handlers for SmartThings
 
 Maintained by bspranger
 Forked from a4refillpad's Xiaomi repository. Contributions from veeceeoh, ronvandegraaf, tmleafs & gn0st1c.
 
-Install manually or using GitHub integration by with these settings:
+Install manually or using GitHub integration with these settings:
 ```
 Owner: bspranger
 Name: Xiaomi
 Branch: master
 ```
 
+---
+
 ## Pairing
+
 These devices are not easy to pair initially. More information and help is available at <a href="https://community.smartthings.com/t/original-aqara-xiaomi-zigbee-sensors-contact-temp-motion-button-outlet-leak-etc/113253/1">this SmartThings Community Post</a>.
+
 
 ## Supported Xiaomi Devices
 
-Xiaomi Aqara Button
-<p align="left">
-  <img src="/images/aqarabutton.jpg" width="200"/>
-</p>
+|||
+|---|---|
+|![Xiaomi Button](images/button.jpg)|![Xiaomi Aqara Button](images/aqarabutton.jpg)|
+|**Xiaomi Button**|**Xiaomi Aqara Button**|
+|![Xiaomi Door/Window Sensor](images/door.jpg)|![Xiaomi Aqara Door/Window Sensor](images/aqaradoor.jpg)|
+|**Xiaomi Door/Window Sensor**|**Xiaomi Aqara Door/Window Sensor**|
+|![Xiaomi Motion Sensor](images/motion.jpg)|![Xiaomi Aqara Motion Sensor](images/aqaramotion.jpg)|
+|**Xiaomi Motion Sensor**|**Xiaomi Aqara Motion Sensor**|
+|![Xiaomi Temperature Humidity Sensor](images/temp.jpg)|![Xiaomi Aqara Temperature Humidity Sensor](images/aqaratemp.jpg)|
+|**Xiaomi Temperature Humidity Sensor**|**Xiaomi Aqara Temperature Humidity Sensor**|
+||![Xiaomi Aqara Leak Sensor](images/aqarawater.jpg)|
+||**Xiaomi Aqara Leak Sensor**|
+|![Xiaomi Zigbee Outlet](images/outlet.jpg)||
+|**Xiaomi Zigbee Outlet**||
 
-Xiaomi Aqara Door/Window Sensor
-<p align="left">
-  <img src="/images/aqaradoor.jpg" width="200"/>
-</p>
-
-Xiaomi Aqara Leak Sensor
-<p align="left">
-  <img src="/images/aqarawater.jpg" width="200"/>
-</p>
-
-Xiaomi Aqara Motion Sensor
-<p align="left">
-  <img src="/images/aqaramotion.jpg" width="200"/>
-</p>
-
-Xiaomi Aqara Temperature Humidity Sensor
-<p align="left">
-  <img src="/images/aqaratemp.jpg" width="200"/>
-</p>
-
-Xiaomi Button
-<p align="left">
-  <img src="/images/button.jpg" width="200"/>
-</p>
-
-Xiaomi Door/Window Sensor	
-<p align="left">
-  <img src="/images/door.jpg" width="200"/>
-</p>
-
-Xiaomi Motion Sensor
-<p align="left">
-  <img src="/images/motion.jpg" width="200"/>
-</p>
-
-Xiaomi Temperature Humidity Sensor
-<p align="left">
-  <img src="/images/temp.jpg" width="200"/>
-</p>
-
-Xiaomi Zigbee Outlet
-<p align="left">
-  <b>We personally do not recommend the outlets as they appear to make SmartThings less stable.<b>
-  <br> 
-  <img src="/images/outlet.jpg" width="200"/>
-</p>
+**We do not recommend the Xiaomi Zigbee outlet as they may make SmartThings less stable.**
