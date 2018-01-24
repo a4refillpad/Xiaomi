@@ -37,6 +37,7 @@ metadata {
         capability "Health Check" 
         
         attribute "lastCheckin", "String"
+	attribute "lastCheckinDate", "String"
         attribute "lastMotion", "String"
         attribute "batteryRuntime", "String"	
 
@@ -99,7 +100,13 @@ metadata {
 
 def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
-
+	
+	//  send event for heartbeat
+	def now = formatDate()    
+	def nowDate = new Date(now).getTime()
+	sendEvent(name: "lastCheckin", value: now)
+	sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
+	
 	Map map = [:]
 	if (description?.startsWith('catchall:')) {
 		map = parseCatchAllMessage(description)
@@ -111,10 +118,7 @@ def parse(String description) {
 	log.debug "${device.displayName} Parse returned: $map"
 	def result = map ? createEvent(map) : null
 
-    def now = formatDate()    
-    sendEvent(name: "lastCheckin", value: now)
-
-    return result
+	return result
 }
 
 private Map getBatteryResult(rawValue) {
@@ -334,23 +338,23 @@ private checkIntervalEvent(text) {
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
-def formatDate(Boolean) {
-	if(dateformat == "US" || dateformat == "" || dateformat == null){
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-    	return (new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone))
-    	else
-   		return new Date().format("MMM dd yyyy", location.timeZone)
-	}
-	else if(dateformat == "UK"){
-		if(Boolean == false || Boolean == "" || Boolean == null)
-    	return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
         else
-        return new Date().format("dd MMM yyyy", location.timeZone)
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     }
-	else{
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-        return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
         else
-        return new Date().format("yyyy MMM dd", location.timeZone)
-	}
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }
