@@ -40,7 +40,9 @@
  *
  */
 preferences {
-	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 4, displayDuringSetup: false)
+        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
+    	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
 	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
 	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
@@ -68,11 +70,6 @@ metadata {
     simulator {
           status "button 1 pressed": "on/off: 0"
           status "button 1 released": "on/off: 1"
-    }
-    
-    preferences{
-        input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 4, displayDuringSetup: false)
-        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
     }
     
     tiles(scale: 2) {
@@ -324,23 +321,23 @@ private checkIntervalEvent(text) {
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
-def formatDate(Boolean) {
-	if(dateformat == "US" || dateformat == "" || dateformat == null){
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-    	return (new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone))
-    	else
-   		return new Date().format("MMM dd yyyy", location.timeZone)
-	}
-	else if(dateformat == "UK"){
-		if(Boolean == false || Boolean == "" || Boolean == null)
-    	return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
         else
-        return new Date().format("dd MMM yyyy", location.timeZone)
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     }
-	else{
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-        return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
         else
-        return new Date().format("yyyy MMM dd", location.timeZone)
-	}
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }
