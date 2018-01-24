@@ -291,23 +291,23 @@ private checkIntervalEvent(text) {
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
-def formatDate(Boolean) {
-	if(dateformat == "US" || dateformat == "" || dateformat == null){
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-    	return (new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone))
-    	else
-   		return new Date().format("MMM dd yyyy", location.timeZone)
-	}
-	else if(dateformat == "UK"){
-		if(Boolean == false || Boolean == "" || Boolean == null)
-    	return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
         else
-        return new Date().format("dd MMM yyyy", location.timeZone)
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
     }
-	else{
-    	if(Boolean == false || Boolean == "" || Boolean == null)
-        return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
         else
-        return new Date().format("yyyy MMM dd", location.timeZone)
-	}
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }
