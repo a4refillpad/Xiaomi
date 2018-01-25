@@ -37,6 +37,7 @@ metadata {
         capability "Health Check" 
         
         attribute "lastCheckin", "String"
+	attribute "lastCheckinDate", "String"
         attribute "lastMotion", "String"
         attribute "batteryRuntime", "String"	
 
@@ -53,6 +54,10 @@ metadata {
 
 	preferences {
 		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+		input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
 	}
 
     tiles(scale: 2) {
@@ -95,7 +100,13 @@ metadata {
 
 def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
-
+	
+	//  send event for heartbeat
+	def now = formatDate()    
+	def nowDate = new Date(now).getTime()
+	sendEvent(name: "lastCheckin", value: now)
+	sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
+	
 	Map map = [:]
 	if (description?.startsWith('catchall:')) {
 		map = parseCatchAllMessage(description)
@@ -107,17 +118,24 @@ def parse(String description) {
 	log.debug "${device.displayName} Parse returned: $map"
 	def result = map ? createEvent(map) : null
 
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-    sendEvent(name: "lastCheckin", value: now)
-
-    return result
+	return result
 }
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+    def minVolts
+    def maxVolts
 
-    def minVolts = 2.5
-    def maxVolts = 3.0
+    if(voltsmin == null || voltsmin == "")
+    	minVolts = 2.5
+    else
+   	minVolts = voltsmin
+    
+    if(voltsmax == null || voltsmax == "")
+    	maxVolts = 3.0
+    else
+	maxVolts = voltsmax
+	
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -194,7 +212,13 @@ private Map parseReportAttributeMessage(String description) {
 	//log.debug "Desc Map: $descMap"
  
 	Map resultMap = [:]
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+	def now
+	if(dateformat == "US" || dateformat == "" || dateformat == null)
+        now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+	else if(dateformat == "UK")
+	now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+	else
+	now = new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
    
 	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
 		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
@@ -284,7 +308,7 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = formatDate(true)    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
@@ -312,4 +336,25 @@ private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
+        else
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    }
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
+        else
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }

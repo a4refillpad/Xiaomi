@@ -25,6 +25,7 @@
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *  bspranger - rewritting the DH to use Maps so it conforms with the other Xiaomi DHs.
  */
+
 metadata {
     definition (name: "Xiaomi Temperature Humidity Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Temperature Measurement"
@@ -35,6 +36,7 @@ metadata {
         capability "Health Check"
         
         attribute "lastCheckin", "String"
+	attribute "lastCheckinDate", "String"
         attribute "batteryRuntime", "String"
         
         fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
@@ -57,6 +59,12 @@ metadata {
         section {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true
+        }
+        section {
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+		input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
         }
     }
     
@@ -134,7 +142,7 @@ metadata {
 def parse(String description) {
 
     // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = formatDate()    
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
@@ -286,9 +294,19 @@ private Map parseReadAttr(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+	def minVolts
+    def maxVolts
 
-    def minVolts = 2.5
-    def maxVolts = 3.0
+    if(voltsmin == null || voltsmin == "")
+    	minVolts = 2.5
+    else
+   	minVolts = voltsmin
+    
+    if(voltsmax == null || voltsmax == "")
+    	maxVolts = 3.0
+    else
+	maxVolts = voltsmax
+    
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -310,7 +328,7 @@ private Map getBatteryResult(rawValue) {
 }
 
 def resetBatteryRuntime() {
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = formatDate(true)    
     sendEvent(name: "batteryRuntime", value: now)
 }
 
@@ -342,4 +360,25 @@ private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
     log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
+        else
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    }
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
+        else
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }
