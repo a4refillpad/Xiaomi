@@ -82,8 +82,8 @@ metadata {
     tiles(scale: 2) {
         multiAttributeTile(name:"button", type:"lighting", width: 6, height: 4, canChangeIcon: true) {
             tileAttribute("device.button", key: "PRIMARY_CONTROL") {
-                attributeState "pushed", label:'${name}', action: "momentary.VirtualPush", backgroundColor:"#00a0dc"
-                attributeState "released", label:'${name}', action: "momentary.VirtualPush", backgroundColor:"#ffffff"
+                attributeState "pushed", label:'${name}', action: "momentary.push", backgroundColor:"#00a0dc"
+                attributeState "released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff"
             }
             tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
                 attributeState "default", label:'Last Pressed: ${currentValue}'
@@ -116,7 +116,7 @@ metadata {
 }
 
 //adds functionality to press the centre tile as a virtualApp Button
-def VirtualPush() {
+def push() {
 	log.debug "Virtual App Button Pressed"
 	sendEvent(name: "button", value: "on", isStateChange: true, displayed: false)
 	sendEvent(name: "button", value: "off", isStateChange: true, displayed: false)
