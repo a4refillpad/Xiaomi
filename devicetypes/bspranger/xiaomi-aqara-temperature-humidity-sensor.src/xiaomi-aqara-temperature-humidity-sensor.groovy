@@ -34,8 +34,7 @@ metadata {
         capability "Relative Humidity Measurement"
         capability "Sensor"
         capability "Battery"
-        capability "Refresh"
-        capability "Health Check"
+	capability "Health Check"
 
         attribute "lastCheckin", "String"
         attribute "batteryRuntime", "String"
@@ -136,12 +135,9 @@ metadata {
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
 
         main(["temperature2"])
-        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime", "refresh"])
+        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime"])
     }
 }
 
@@ -392,19 +388,11 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
-    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
-    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
-}
-
 def configure() {
     log.debug "${device.displayName}: configure"
     state.battery = 0
     checkIntervalEvent("configure");
-    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
-    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
+    return
 }
 
 def installed() {
