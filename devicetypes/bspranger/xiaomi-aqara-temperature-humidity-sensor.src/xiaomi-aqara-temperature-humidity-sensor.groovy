@@ -68,6 +68,10 @@ metadata {
             input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
             input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true
         }
+	section {
+            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", displayDuringSetup: true, required: true
+        }
 	section {    
 	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
 	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
@@ -220,6 +224,15 @@ private Map parseHumidity(String description){
 
     if (pct.isNumber()) {
         pct =  Math.round(new BigDecimal(pct))
+	    
+		if (!(settings.humidOffset)){
+        settings.humidOffset = 0
+    }
+
+	if (settings.humidOffset) {
+            pct = (pct + settings.humidOffset)
+            pct = pct.round(2);
+        }
 
         def result = [
             name: 'humidity',
