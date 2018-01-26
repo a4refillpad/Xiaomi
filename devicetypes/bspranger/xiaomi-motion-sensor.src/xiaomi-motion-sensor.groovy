@@ -33,7 +33,6 @@ metadata {
         capability "Configuration"
         capability "Battery"
         capability "Sensor"
-        capability "Refresh"
         capability "Health Check" 
         
         attribute "lastCheckin", "String"
@@ -45,7 +44,6 @@ metadata {
         
         command "resetBatteryRuntime"	
         command "reset"
-        command "Refresh"
         
     }
 
@@ -87,14 +85,11 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n ${currentValue}'
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
              state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
         }
         main(["motion"])
-        details(["motion", "battery", "empty2x2", "reset", "lastcheckin", "refresh", "batteryRuntime"])
+        details(["motion", "battery", "empty2x2", "reset", "lastcheckin", "batteryRuntime"])
     }
 }
 
@@ -310,11 +305,6 @@ def reset() {
 def resetBatteryRuntime() {
     def now = formatDate(true)    
     sendEvent(name: "batteryRuntime", value: now)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
 }
 
 def configure() {

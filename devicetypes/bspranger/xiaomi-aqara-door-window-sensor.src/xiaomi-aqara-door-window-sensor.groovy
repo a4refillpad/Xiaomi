@@ -45,7 +45,6 @@ metadata {
         capability "Configuration"
         capability "Sensor"
         capability "Contact Sensor"
-        capability "Refresh"
         capability "Battery"
         capability "Health Check"
 
@@ -94,15 +93,12 @@ metadata {
         standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetOpen", label:'Override Open', icon:"st.contact.contact.open"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
 
         main (["contact"])
-        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime","refresh"])
+        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime"])
    }
 }
 
@@ -248,23 +244,11 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
-    return zigbee.readAttribute(0x0006, 0x0000) +
-    // Read cluster 0x0006 (on/off status)
-    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-}
-
 def configure() {
     log.debug "${device.displayName}: configuring"
     state.battery = 0
     checkIntervalEvent("configure");
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
-    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
-    zigbee.readAttribute(0x0006, 0x0000)
-    // Read cluster 0x0006 (on/off status)
+    return
 }
 
 def installed() {
