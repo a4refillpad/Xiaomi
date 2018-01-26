@@ -55,54 +55,63 @@ metadata {
     }
 
     preferences {
-        input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: false
+        input name: "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
+	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
     }
 
     tiles(scale: 2) {
-        multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4) {
+        multiAttributeTile(name:"motion", type:"generic", width: 6, height: 4) {
             tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
-                attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-                attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
+                attributeState "active", label:'Motion', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+                attributeState "inactive", label:'No Motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
             }
             tileAttribute("device.lastMotion", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'Last Motion: ${currentValue}')
             }
         }
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"",
-            backgroundColors: [
+        valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"%",
+            backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
                 [value: 51, color: "#44b621"]
             ]
         }
-        valueTile("light", "device.Light", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-            state "light", label:'Light\n${currentValue}\nlux', unit: ""
+        valueTile("illuminance", "device.illuminance", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
+            state "default", label:'${currentValue} lux', unit:"lux"
         }
-        standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
+        standardTile("reset", "device.reset", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
+            state "default", action:"reset", label:'Reset Motion', icon:"st.motion.motion.active"
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 5, height: 1) {
-            state "default", label:'Last Update:\n ${currentValue}'
+        valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Checkin:\n ${currentValue}'
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
+             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', action:"resetBatteryRuntime"
         }
-		standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-			state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap To Reset Date', unit:"", action:"resetBatteryRuntime"
-		}
+        standardTile("empty1x1", "null", width: 1, height: 1, decoration:"flat") {
+             state "emptySmall", label:"", defaultState: true
+        }
 
         main(["motion"])
-        details(["motion", "battery", "light", "reset", "lastcheckin", "refresh"])
+        details(["motion", "battery", "illuminance", "reset", "lastcheckin", "refresh", "batteryRuntime"])
     }
 }
 
 def parse(String description) {
-    def linkText = getLinkText(device)
-    log.debug "${linkText} Parsing: $description"
+    log.debug "${device.displayName} Parsing: $description"
+
+    //  send event for heartbeat
+    def now = formatDate()    
+    def nowDate = new Date(now).getTime()
+    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
     if (description?.startsWith('catchall:')) {
@@ -114,39 +123,47 @@ def parse(String description) {
     else if (description?.startsWith('illuminance:')) {
         map = parseIlluminanceMessage(description)
     }
-
-    log.debug "${linkText} Parse returned: $map"
-    def result = map ? createEvent(map) : null
-    // send event for heartbeat
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-    sendEvent(name: "lastCheckin", value: now)
-
-    if (description?.startsWith('enroll request')) {
+    else if (description?.startsWith('enroll request')) {
         List cmds = enrollResponse()
-        log.debug "${linkText} enroll response: ${cmds}"
+        log.debug "${device.displayName} enroll response: ${cmds}"
         result = cmds?.collect { new physicalgraph.device.HubAction(it) }
     }
+
+    log.debug "${device.displayName} Parse returned: $map"
+    def result = map ? createEvent(map) : null
+
     return result
 }
 
 private Map parseIlluminanceMessage(String description) {
-    def linkText = getLinkText(device)
+
+    def Lux = ((description - "illuminance: ").trim()) as Float
+
     def result = [
-        name: 'Light',
-        value: '--'
+        name: 'illuminance',
+        value: Lux,
+        unit: "lux",
+        isStateChange:true,
+        descriptionText : "${device.displayName} illuminance was ${Lux} lux"
     ]
-    def value = ((description - "illuminance: ").trim()) as Float
-    result.value = value
-    result.descriptionText = "${linkText} Light was ${result.value}"
     return result;
 }
 
-
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+	def minVolts
+    def maxVolts
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    if(voltsmin == null || voltsmin == "")
+    	minVolts = 2.5
+    else
+   	minVolts = voltsmin
+    
+    if(voltsmax == null || voltsmax == "")
+    	maxVolts = 3.0
+    else
+	maxVolts = voltsmax
+    
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -157,66 +174,60 @@ private Map getBatteryResult(rawValue) {
         isStateChange:true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
-    
+
     log.debug "${device.displayName}: ${result}"
     if (state.battery != result.value)
     {
-    	state.battery = result.value
+        state.battery = result.value
         resetBatteryRuntime()
     }
     return result
 }
 
 private Map parseCatchAllMessage(String description) {
-    def linkText = getLinkText(device)
-
+    def i
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
-    def i
     log.debug cluster
-    if (shouldProcessMessage(cluster)) {
-        switch(cluster.clusterId) {
+    if (cluster) {
+        switch(cluster.clusterId)
+        {
             case 0x0000:
-            	def MsgLength = cluster.data.size();
+            def MsgLength = cluster.data.size();
+
+            // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+            if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
+            {
+                for (i = 0; i < (MsgLength-3); i++)
+                {
+                    if (cluster.data.get(i) == 0x21) // check the data ID and data type
+                    {
+                        // next two bytes are the battery voltage.
+                        resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
+                        break
+                    }
+                }
+            }
+            else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF))
+            {
                 for (i = 0; i < (MsgLength-3); i++)
                 {
                     if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
                     {
                         // next two bytes are the battery voltage.
                         resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+                        break
                     }
                 }
-            	break
+            }
+            break
         }
     }
     return resultMap
 }
 
-private boolean shouldProcessMessage(cluster) {
-    // 0x0B is default response indicating message got through
-    // 0x07 is bind message
-    boolean ignoredMessage = cluster.profileId != 0x0104 ||
-    cluster.command == 0x0B ||
-    cluster.command == 0x07 ||
-    (cluster.data.size() > 0 && cluster.data.first() == 0x3e)
-    return !ignoredMessage
-}
-
-
-def configure() {
-	state.battery = 0
-    log.debug "${device.displayName}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
 def enrollResponse() {
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Enrolling device into the IAS Zone"
+    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
     [
         // Enrolling device into the IAS Zone
         "raw 0x500 {01 23 00 00 00}", "delay 200",
@@ -225,98 +236,85 @@ def enrollResponse() {
 }
 
 private Map parseReportAttributeMessage(String description) {
-    Map descMap = (description - "read attr - ").split(",").inject([:]) { map, param ->
-        def nameAndValue = param.split(":")
-        map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
-    }
-    //log.debug "Desc Map: $descMap"
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
     Map resultMap = [:]
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
 
-    if (descMap.cluster == "0001" && descMap.attrId == "0020") {
-        resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    }
-    else if (descMap.cluster == "0406" && descMap.attrId == "0000") {
-        def value = descMap.value.endsWith("01") ? "active" : "inactive"
+    if ((cluster == "0406") && (attrId == "0000"))
+    {
+        def motion = (value == "01") ? "active" : "inactive"
         sendEvent(name: "lastMotion", value: now)
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 120
-        if (value == "active") runIn(settings.motionReset, stopMotion)
-        resultMap = getMotionResult(value)
+        if (motion == "active") runIn(settings.motionReset, stopMotion)
+        resultMap = getMotionResult(motion)
     }
-    return resultMap
-}
-
-private Map parseCustomMessage(String description) {
-    Map resultMap = [:]
+    else if (cluster == "0000" && attrId == "0005")
+    {
+        def modelName = ""
+        // Parsing the model
+        for (int i = 0; i < value.length(); i+=2)
+        {
+            def str = value.substring(i, i+2);
+            def NextChar = (char)Integer.parseInt(str, 16);
+            modelName = modelName + NextChar
+        }
+        log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}"
+    }
     return resultMap
 }
 
 private Map parseIasMessage(String description) {
-    def linkText = getLinkText(device)
     List parsedMsg = description.split(' ')
     String msgCode = parsedMsg[2]
 
     Map resultMap = [:]
     switch(msgCode) {
         case '0x0020': // Closed/No Motion/Dry
-            resultMap = getMotionResult('inactive')
-            break
+        resultMap = getMotionResult('inactive')
+        break
 
         case '0x0021': // Open/Motion/Wet
-            resultMap = getMotionResult('active')
-            break
+        resultMap = getMotionResult('active')
+        break
 
         case '0x0022': // Tamper Alarm
-            log.debug '${linkText}: motion with tamper alarm'
-            resultMap = getMotionResult('active')
-            break
+        log.debug '${device.displayName}: motion with tamper alarm'
+        resultMap = getMotionResult('active')
+        break
 
         case '0x0023': // Battery Alarm
-            break
+        break
 
         case '0x0024': // Supervision Report
-            log.debug '${linkText}: no motion with tamper alarm'
-            resultMap = getMotionResult('inactive')
-            break
+        log.debug '${device.displayName}: no motion with tamper alarm'
+        resultMap = getMotionResult('inactive')
+        break
 
         case '0x0025': // Restore Report
-            break
+        break
 
         case '0x0026': // Trouble/Failure
-            log.debug '${linkText}: motion with failure alarm'
-            resultMap = getMotionResult('active')
-            break
+        log.debug '${device.displayName}: motion with failure alarm'
+        resultMap = getMotionResult('active')
+        break
 
         case '0x0028': // Test Mode
-            break
+        break
     }
     return resultMap
 }
 
-
 private Map getMotionResult(value) {
-    def linkText = getLinkText(device)
-    // log.debug "${linkText}: motion"
-    String descriptionText = value == 'active' ? "${linkText} detected motion" : "${linkText} motion has stopped"
+    String descriptionText = value == 'active' ? "${device.displayName} detected motion" : "${device.displayName} motion has stopped"
     def commands = [
         name: 'motion',
         value: value,
         descriptionText: descriptionText
     ]
     return commands
-}
-
-private byte[] reverseArray(byte[] array) {
-    byte tmp;
-    tmp = array[1];
-    array[1] = array[0];
-    array[0] = tmp;
-    return array
-}
-
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
 }
 
 def stopMotion() {
@@ -328,11 +326,23 @@ def reset() {
 }
 
 def resetBatteryRuntime() {
-   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = formatDate(true)
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+}
+
 def installed() {
+    state.battery = 0
     checkIntervalEvent("installed");
 }
 
@@ -342,7 +352,27 @@ def updated() {
 
 private checkIntervalEvent(text) {
     // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    def linkText = getLinkText(device)
-    log.debug "${linkText}: Configured health checkInterval when ${text}()"
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
+        else
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    }
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
+        else
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }

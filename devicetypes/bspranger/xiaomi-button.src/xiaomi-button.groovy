@@ -12,6 +12,7 @@
  * 
   * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
+ *  25.01.2018 added virtualApp button on tile
  *  added 100% battery max
  *  fixed battery parsing problem
  *  added lastcheckin attribute and tile
@@ -39,12 +40,21 @@
  *        deviceJoinName: whatever you want it to show in the app as a Thing
  *
  */
+preferences {
+	input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 4, displayDuringSetup: false)
+        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
+    	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+} 
+ 
 metadata {
     definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
         capability "Battery"
         capability "Button"
-		capability "Configuration"
-		capability "Sensor"
+        capability "Configuration"
+        capability "Sensor"
         capability "Refresh"
         
         attribute "lastPress", "string"
@@ -52,28 +62,23 @@ metadata {
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
-	    
+
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
-    
-	   command "resetBatteryRuntime"
+
+        command "resetBatteryRuntime"
 }
     
     simulator {
           status "button 1 pressed": "on/off: 0"
-      	status "button 1 released": "on/off: 1"
-    }
-    
-    preferences{
-        input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 4, displayDuringSetup: false)
-        input name: "PressType", type: "enum", options: ["Toggle", "Momentary"], description: "Effects how the button toggles", defaultValue: "Toggle", displayDuringSetup: true
+          status "button 1 released": "on/off: 1"
     }
     
     tiles(scale: 2) {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
-                attributeState("released", label:'${name}', backgroundColor:"#ffffff")
+                   attributeState("pushed", label:'${name}', action: "momentary.push", backgroundColor:"#53a7c0")
+                attributeState("released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
@@ -91,36 +96,45 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
+        valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+            state "default", label:'Last Pressed:\n${currentValue}'
         }
         standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
             state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
         }
-	standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
 	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
 	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastopened","refresh","batteryRuntime"])
+        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
    }
+}
+
+//adds functionality to press the centre tile as a virtualApp Button
+def push() {
+	log.debug "Virtual App Button Pressed"
+	sendEvent(name: "button", value: "on", isStateChange: true, displayed: false)
+	sendEvent(name: "button", value: "off", isStateChange: true, displayed: false)
+	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
+	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
 }
 
 def parse(String description) {
     log.debug "${device.displayName}: Parsing '${description}'"
 
     //  send event for heartbeat    
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = formatDate()	
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate) 
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false) 
 
     Map map = [:]
 
     if (description?.startsWith('on/off: ')) 
     {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastOpened", value: now)
-        sendEvent(name: "lastOpenedDate", value: nowDate) 
+        sendEvent(name: "lastpressed", value: now, displayed: false)
+        sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
     }
     else if (description?.startsWith('catchall:')) 
     {
@@ -134,18 +148,6 @@ def parse(String description) {
     def results = map ? createEvent(map) : null
 
     return results;
-}
-
-def configure(){
-	state.battery = 0
-    state.button = "released"
-    log.debug "${device.displayName}: configuring"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
 }
 
 private Map parseReadAttrMessage(String description) {
@@ -213,9 +215,19 @@ private Map parseCatchAllMessage(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+    def minVolts
+    def maxVolts
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    if(voltsmin == null || voltsmin == "")
+    	minVolts = 2.5
+    else
+   	minVolts = voltsmin
+    
+    if(voltsmax == null || voltsmax == "")
+    	maxVolts = 3.0
+    else
+	maxVolts = voltsmax
+	
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -280,11 +292,62 @@ private Map getContactResult(value) {
     return [
         name: 'button',
         value: value,
-        descriptionText: descriptionText
+	data: [buttonNumber: "1"],
+        descriptionText: descriptionText,
+	isStateChange: true
     ]
 }
 
 def resetBatteryRuntime() {
-   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = formatDate(true)
     sendEvent(name: "batteryRuntime", value: now)
+}
+
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    state.button = "released"
+    checkIntervalEvent("configure");
+}
+
+def installed() {
+    state.battery = 0
+    state.button = "released"
+    checkIntervalEvent("installed");
+}
+
+def updated() {
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
+        else
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    }
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
+        else
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }

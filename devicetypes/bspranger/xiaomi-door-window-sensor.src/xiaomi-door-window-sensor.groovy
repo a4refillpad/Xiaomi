@@ -26,6 +26,13 @@
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
  *
  */
+preferences {
+	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+} 
+
 metadata {
    definition (name: "Xiaomi Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
    capability "Configuration"
@@ -44,10 +51,8 @@ metadata {
    fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000, 0003, FFFF, 0019", outClusters: "0000, 0004, 0003, 0006, 0008, 0005 0019", manufacturer: "LUMI", model: "lumi.sensor_magnet", deviceJoinName: "Xiaomi Door Sensor"
    
    command "resetBatteryRuntime"
-   command "enrollResponse"
    command "resetClosed"
    command "resetOpen"
-   command "Refresh"
    }
     
    simulator {
@@ -61,36 +66,35 @@ metadata {
                 attributeState "open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
                 attributeState "closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00a0dc"
             }
+            tileAttribute("device.lastOpened", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Opened: ${currentValue}')
+            }
         }
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"",
-			backgroundColors:[
-				[value: 0, color: "#c0392b"],
-				[value: 25, color: "#f1c40f"],
-				[value: 50, color: "#e67e22"],
-				[value: 75, color: "#27ae60"]
-			]
+            backgroundColors: [
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"] 
+            ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastopened", "device.lastOpened", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Open:\n${currentValue}'
-        }
-        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetClosed", "device.resetClosed", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetClosed", label: "Override Close", icon:"st.contact.contact.closed"
         }
-        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("resetOpen", "device.resetOpen", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetOpen", label: "Override Open", icon:"st.contact.contact.open"
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-		  standardTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
-			   state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
-		  } 
+        valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
+        }
         main (["contact"])
-        details(["contact","battery","lastcheckin","lastopened","resetClosed","resetOpen","refresh","batteryRuntime"])
+        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime","refresh"])
    }
 }
 
@@ -98,18 +102,18 @@ def parse(String description) {
     log.debug "${device.displayName}: Parsing '${description}'"
 
     //  send event for heartbeat    
-    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    def now = formatDate()
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastCheckin", value: now)
-    sendEvent(name: "lastCheckinDate", value: nowDate) 
+    sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false) 
 
     Map map = [:]
 
     if (description?.startsWith('on/off: ')) 
     {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastOpened", value: now)
-        sendEvent(name: "lastOpenedDate", value: nowDate) 
+        sendEvent(name: "lastOpened", value: now, displayed: false)
+        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false) 
     }
     else if (description?.startsWith('catchall:')) 
     {
@@ -155,9 +159,19 @@ private Map parseReadAttrMessage(String description) {
 
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
+	 def minVolts
+    def maxVolts
 
-    def minVolts = 2.7
-    def maxVolts = 3.3
+    if(voltsmin == null || voltsmin == "")
+    	minVolts = 2.5
+    else
+   	minVolts = voltsmin
+    
+    if(voltsmax == null || voltsmax == "")
+    	maxVolts = 3.0
+    else
+	maxVolts = voltsmax  
+   
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -208,43 +222,6 @@ private Map parseCatchAllMessage(String description) {
 }
 
 
-def configure() {
-	state.battery = 0
-    String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-    log.debug "${device.displayName}: ${device.deviceNetworkId}"
-    def endpointId = 1
-    log.debug "${device.displayName}: ${device.zigbeeId}"
-    log.debug "${device.displayName}: ${zigbeeEui}"
-    def configCmds = [
-        //battery reporting and heartbeat
-        // send-me-a-report 3600 43200 is min and max reporting time range
-        "zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 1 {${device.zigbeeId}} {}", "delay 200",
-        "zcl global send-me-a-report 1 0x20 0x20 3600 43200 {01}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
-
-
-        // Writes CIE attribute on end device to direct reports to the hub's EUID
-        "zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 1", "delay 500",
-    ]
-
-    log.debug "${device.displayName}: configure: Write IAS CIE"
-    return configCmds
-}
-
-def enrollResponse() {
-    log.debug "${device.displayName}: Enrolling device into the IAS Zone"
-    [
-        // Enrolling device into the IAS Zone
-        "raw 0x500 {01 23 00 00 00}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 1"
-    ]
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    return zigbee.readAttribute(0x0001, 0x0020) + zigbee.configureReporting(0x0001, 0x0020, 0x21, 600, 21600, 0x01)
-}
 
 
 private Map parseCustomMessage(String description) {
@@ -267,27 +244,6 @@ private Map getContactResult(value) {
     ]
 }
 
-private String swapEndianHex(String hex) {
-    reverseArray(hex.decodeHex()).encodeHex()
-}
-
-
-private byte[] reverseArray(byte[] array) {
-    int i = 0;
-    int j = array.length - 1;
-    byte tmp;
-
-    while (j > i) {
-        tmp = array[j];
-        array[j] = array[i];
-        array[i] = tmp;
-        j--;
-        i++;
-    }
-
-    return array
-}
-
 def resetClosed() {
     sendEvent(name:"contact", value:"closed")
 } 
@@ -297,18 +253,61 @@ def resetOpen() {
 }
 
 def resetBatteryRuntime() {
-   	def now = new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+    def now = formatDate(true)   
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def refresh(){
+    log.debug "${device.displayName}: refreshing"
+    checkIntervalEvent("refresh");
+    return zigbee.readAttribute(0x0006, 0x0000) +
+    // Read cluster 0x0006 (on/off status)
+    zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null)
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+}
+
+def configure() {
+    log.debug "${device.displayName}: configuring"
+    state.battery = 0
+    checkIntervalEvent("configure");
+    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 1, 7200, null) +
+    // cluster 0x0006, attr 0x0000, datatype 0x10 (boolean), min 1 sec, max 7200 sec, reportableChange = null (because boolean)
+    zigbee.readAttribute(0x0006, 0x0000) 
+    // Read cluster 0x0006 (on/off status)
+}
+
 def installed() {
-// Device wakes up every 1 hour, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when installed()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+    state.battery = 0
+    checkIntervalEvent("installed");
 }
 
 def updated() {
-// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when updated()"
+    checkIntervalEvent("updated");
+}
+
+private checkIntervalEvent(text) {
+    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
+    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
     sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def formatDate(batteryReset) {
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        if (batteryReset)
+            return new Date().format("MMM dd yyyy", location.timeZone)
+        else
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+    }
+    else if (dateformat == "UK") {
+        if (batteryReset)
+            return new Date().format("dd MMM yyyy", location.timeZone)
+        else
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+        }
+    else {
+        if (batteryReset)
+            return new Date().format("yyyy MMM dd", location.timeZone)
+        else
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+    }
 }
