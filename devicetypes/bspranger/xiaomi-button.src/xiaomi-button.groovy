@@ -55,7 +55,6 @@ metadata {
         capability "Button"
         capability "Configuration"
         capability "Sensor"
-        capability "Refresh"
         
         attribute "lastPress", "string"
         attribute "batterylevel", "string"
@@ -99,14 +98,11 @@ metadata {
         valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Pressed:\n${currentValue}'
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-        }
 	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
 	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
 	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
+        details(["button","battery","lastcheckin","lastpressed","batteryRuntime"])
    }
 }
 
@@ -301,11 +297,6 @@ private Map getContactResult(value) {
 def resetBatteryRuntime() {
     def now = formatDate(true)
     sendEvent(name: "batteryRuntime", value: now)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
 }
 
 def configure() {
