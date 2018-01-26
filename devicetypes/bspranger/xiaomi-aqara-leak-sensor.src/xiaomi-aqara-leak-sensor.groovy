@@ -46,7 +46,6 @@ metadata {
         capability "Configuration"
         capability "Sensor"
         capability "Water Sensor"
-        capability "Refresh"
         capability "Battery"
         capability "Health Check"
 
@@ -95,15 +94,12 @@ metadata {
         standardTile("resetDry", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetDry", label:'Override Dry', icon:"st.alarm.water.dry"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
 
         main (["water"])
-        details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime","refresh"])
+        details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime"])
     }
 }
 
@@ -260,11 +256,6 @@ def resetWet() {
 def resetBatteryRuntime() {
     def now = formatDate(true)    
     sendEvent(name: "batteryRuntime", value: now)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
 }
 
 def configure() {

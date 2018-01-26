@@ -12,6 +12,7 @@
  * 
   * Based on original DH by Eric Maycock 2015 and Rave from Lazcad
  *  change log:
+ *  25.01.2018 added virtualApp button on tile
  *  added 100% battery max
  *  fixed battery parsing problem
  *  added lastcheckin attribute and tile
@@ -54,7 +55,6 @@ metadata {
         capability "Button"
         capability "Configuration"
         capability "Sensor"
-        capability "Refresh"
         
         attribute "lastPress", "string"
         attribute "batterylevel", "string"
@@ -76,8 +76,8 @@ metadata {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'${name}', backgroundColor:"#53a7c0")
-                attributeState("released", label:'${name}', backgroundColor:"#ffffff")
+                   attributeState("pushed", label:'${name}', action: "momentary.push", backgroundColor:"#53a7c0")
+                attributeState("released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
@@ -98,15 +98,21 @@ metadata {
         valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Pressed:\n${currentValue}'
         }
-        standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
-            state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh-icon"
-        }
 	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
 	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
 	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastpressed","refresh","batteryRuntime"])
+        details(["button","battery","lastcheckin","lastpressed","batteryRuntime"])
    }
+}
+
+//adds functionality to press the centre tile as a virtualApp Button
+def push() {
+	log.debug "Virtual App Button Pressed"
+	sendEvent(name: "button", value: "on", isStateChange: true, displayed: false)
+	sendEvent(name: "button", value: "off", isStateChange: true, displayed: false)
+	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
+	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
 }
 
 def parse(String description) {
@@ -291,11 +297,6 @@ private Map getContactResult(value) {
 def resetBatteryRuntime() {
     def now = formatDate(true)
     sendEvent(name: "batteryRuntime", value: now)
-}
-
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
 }
 
 def configure() {

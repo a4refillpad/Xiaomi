@@ -34,8 +34,7 @@ metadata {
         capability "Relative Humidity Measurement"
         capability "Sensor"
         capability "Battery"
-        capability "Refresh"
-        capability "Health Check"
+	capability "Health Check"
 
         attribute "lastCheckin", "String"
         attribute "batteryRuntime", "String"
@@ -59,14 +58,18 @@ metadata {
     preferences {
         section {
             input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type:"paragraph", element:"paragraph"
-            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", displayDuringSetup: true, required: true
+            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", displayDuringSetup: true, required: true, defaultValue: 0
         }
         section {
             input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported", defaultValue:"mbar", displayDuringSetup: true, required: true
         }
         section {
             input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
-            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true
+            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", displayDuringSetup: true, required: true, defaultValue: 0
+        }
+	section {
+            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", displayDuringSetup: true, required: true, defaultValue: 0
         }
 	section {    
 	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
@@ -136,12 +139,9 @@ metadata {
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
 
         main(["temperature2"])
-        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime", "refresh"])
+        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime"])
     }
 }
 
@@ -220,6 +220,15 @@ private Map parseHumidity(String description){
 
     if (pct.isNumber()) {
         pct =  Math.round(new BigDecimal(pct))
+	    
+		if (!(settings.humidOffset)){
+        settings.humidOffset = 0
+    }
+
+	if (settings.humidOffset) {
+            pct = (pct + settings.humidOffset)
+            pct = pct.round(2);
+        }
 
         def result = [
             name: 'humidity',
@@ -392,19 +401,11 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
-    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
-    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
-}
-
 def configure() {
     log.debug "${device.displayName}: configure"
     state.battery = 0
     checkIntervalEvent("configure");
-    // temperature minReportTime 1 minute, maxReportTime 15 min., reporting internal if no activity
-    return zigbee.configureReporting(0x0402, 0x0000, 0x29, 60, 900, 0x0064)
+    return
 }
 
 def installed() {
