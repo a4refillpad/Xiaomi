@@ -59,7 +59,6 @@ metadata {
         capability "Actuator"
         capability "Switch"
         capability "Momentary"
-        capability "Refresh"
         capability "Battery"
         capability "Health Check"
 
@@ -103,15 +102,12 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        standardTile("refresh", "device.refresh", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
         valueTile("batteryRuntime", "device.batteryRuntime", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
         }
 
         main (["button"])
-        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime","refresh"])
+        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime"])
    }
 }
 
@@ -312,18 +308,12 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def refresh(){
-    log.debug "${device.displayName}: refreshing"
-    checkIntervalEvent("refresh");
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
-}
-
 def configure() {
     log.debug "${device.displayName}: configuring"
     state.battery = 0
     state.button = "released"
     checkIntervalEvent("configure");
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
+    return
 }
 
 def installed() {
@@ -334,7 +324,7 @@ def installed() {
 
 def updated() {
     checkIntervalEvent("updated");
-    return zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)
+    return 
 }
 
 private checkIntervalEvent(text) {
