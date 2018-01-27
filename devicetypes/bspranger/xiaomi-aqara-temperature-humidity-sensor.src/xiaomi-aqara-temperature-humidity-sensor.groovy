@@ -424,22 +424,32 @@ private checkIntervalEvent(text) {
 }
 
 def formatDate(batteryReset) {
+    def correctedTimezone = ""
+
+    if (!(location.timeZone)) {
+        correctedTimezone = TimeZone.getTimeZone("GMT")
+        log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
+        sendEvent(name: "error", value: "", descriptionText: "ERROR: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app.")
+    } 
+    else {
+        correctedTimezone = location.timeZone
+    }
     if (dateformat == "US" || dateformat == "" || dateformat == null) {
         if (batteryReset)
-            return new Date().format("MMM dd yyyy", location.timeZone)
+            return new Date().format("MMM dd yyyy", correctedTimezone)
         else
-            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", correctedTimezone)
     }
     else if (dateformat == "UK") {
         if (batteryReset)
-            return new Date().format("dd MMM yyyy", location.timeZone)
+            return new Date().format("dd MMM yyyy", correctedTimezone)
         else
-            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", correctedTimezone)
         }
     else {
         if (batteryReset)
-            return new Date().format("yyyy MMM dd", location.timeZone)
+            return new Date().format("yyyy MMM dd", correctedTimezone)
         else
-            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", correctedTimezone)
     }
 }
