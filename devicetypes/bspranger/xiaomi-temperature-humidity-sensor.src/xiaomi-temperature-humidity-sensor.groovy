@@ -210,7 +210,7 @@ private Map parseHumidity(String description){
     }
     if (pct.isNumber()) {
         pct =  Math.round(new BigDecimal(pct + settings.humidOffset))
-        }
+        
         def result = [
             name: 'humidity',
             value: pct,
