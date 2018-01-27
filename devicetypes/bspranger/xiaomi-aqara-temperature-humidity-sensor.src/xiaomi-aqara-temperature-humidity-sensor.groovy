@@ -218,18 +218,12 @@ private Map parseTemperature(String description){
 private Map parseHumidity(String description){
     def pct = (description - "humidity: " - "%").trim()
 
-    if (pct.isNumber()) {
-        pct =  Math.round(new BigDecimal(pct))
-	    
-		if (!(settings.humidOffset)){
+    if (!(settings.humidOffset)) {
         settings.humidOffset = 0
     }
-
-	if (settings.humidOffset) {
-            pct = (pct + settings.humidOffset)
-            pct = pct.round(2);
+    if (pct.isNumber()) {
+        pct =  Math.round(new BigDecimal(pct + settings.humidOffset))
         }
-
         def result = [
             name: 'humidity',
             value: pct,
@@ -239,7 +233,6 @@ private Map parseHumidity(String description){
         ]
         return result
     }
-
     return [:]
 }
 
