@@ -243,11 +243,6 @@ private Map getBatteryResult(rawValue) {
     ]
 
     log.debug "${device.displayName}: ${result}"
-    if (state.battery != result.value)
-    {
-        state.battery = result.value
-        resetBatteryRuntime()
-    }
     return createEvent(result)
 }
 
