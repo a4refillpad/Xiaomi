@@ -53,7 +53,7 @@ metadata {
 
 		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-           		attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#53a7c0")
+           		attributeState("on", label:' push', action: "momentary.push", backgroundColor:"#00A0DC")
             	attributeState("off", label:' push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "on")   
  			}
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
