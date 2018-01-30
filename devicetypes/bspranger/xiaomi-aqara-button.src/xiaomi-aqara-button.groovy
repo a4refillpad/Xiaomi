@@ -96,9 +96,6 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
-        standardTile("empty2x2", "null", width: 2, height: 2, decoration: "flat") {
-             state "emptySmall", label:'', defaultState: true
-        }
         valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
@@ -107,13 +104,15 @@ metadata {
         }
 
         main (["button"])
-        details(["button","battery","empty2x2","empty2x2","lastcheckin","batteryRuntime"])
+        details(["button","battery","lastcheckin","batteryRuntime"])
    }
 }
 
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	log.debug "Virtual App Button Pressed"
+	def now = formatDate()
+	def nowDate = new Date(now).getTime()
 	sendEvent(name: "lastpressed", value: now, displayed: false)
         sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
