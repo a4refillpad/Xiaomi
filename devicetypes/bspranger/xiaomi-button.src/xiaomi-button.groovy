@@ -79,7 +79,7 @@ metadata {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc)
+                   attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc")
                 attributeState("released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
