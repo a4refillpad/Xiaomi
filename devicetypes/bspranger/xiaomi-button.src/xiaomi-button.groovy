@@ -112,6 +112,8 @@ metadata {
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	log.debug "Virtual App Button Pressed"
+	def now = formatDate()
+	def nowDate = new Date(now).getTime()
         sendEvent(name: "lastpressed", value: now, displayed: false)
         sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
