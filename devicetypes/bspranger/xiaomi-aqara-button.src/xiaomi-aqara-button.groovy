@@ -81,8 +81,8 @@ metadata {
     tiles(scale: 2) {
         multiAttributeTile(name:"button", type:"lighting", width: 6, height: 4, canChangeIcon: true) {
             tileAttribute("device.button", key: "PRIMARY_CONTROL") {
-                attributeState "pushed", label:'${name}', action: "momentary.push", backgroundColor:"#00a0dc"
-                attributeState "released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed"
+                attributeState "pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc"
+                attributeState "released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed"
             }
             tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
                 attributeState "default", label:'Last Pressed: ${currentValue}'
