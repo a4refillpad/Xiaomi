@@ -218,18 +218,12 @@ private Map parseTemperature(String description){
 private Map parseHumidity(String description){
     def pct = (description - "humidity: " - "%").trim()
 
-    if (pct.isNumber()) {
-        pct =  Math.round(new BigDecimal(pct))
-	    
-		if (!(settings.humidOffset)){
+    if (!(settings.humidOffset)) {
         settings.humidOffset = 0
     }
-
-	if (settings.humidOffset) {
-            pct = (pct + settings.humidOffset)
-            pct = pct.round(2);
-        }
-
+    if (pct.isNumber()) {
+        pct =  Math.round(new BigDecimal(pct + settings.humidOffset))
+        
         def result = [
             name: 'humidity',
             value: pct,
@@ -239,7 +233,6 @@ private Map parseHumidity(String description){
         ]
         return result
     }
-
     return [:]
 }
 
@@ -388,11 +381,6 @@ private Map getBatteryResult(rawValue) {
     ]
 
     log.debug "${device.displayName}: ${result}"
-    if (state.battery != result.value)
-    {
-        state.battery = result.value
-        resetBatteryRuntime()
-    }
     return result
 }
 
@@ -424,22 +412,32 @@ private checkIntervalEvent(text) {
 }
 
 def formatDate(batteryReset) {
+    def correctedTimezone = ""
+
+    if (!(location.timeZone)) {
+        correctedTimezone = TimeZone.getTimeZone("GMT")
+        log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
+        sendEvent(name: "error", value: "", descriptionText: "ERROR: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app.")
+    } 
+    else {
+        correctedTimezone = location.timeZone
+    }
     if (dateformat == "US" || dateformat == "" || dateformat == null) {
         if (batteryReset)
-            return new Date().format("MMM dd yyyy", location.timeZone)
+            return new Date().format("MMM dd yyyy", correctedTimezone)
         else
-            return new Date().format("EEE MMM dd yyyy h:mm:ss a", location.timeZone)
+            return new Date().format("EEE MMM dd yyyy h:mm:ss a", correctedTimezone)
     }
     else if (dateformat == "UK") {
         if (batteryReset)
-            return new Date().format("dd MMM yyyy", location.timeZone)
+            return new Date().format("dd MMM yyyy", correctedTimezone)
         else
-            return new Date().format("EEE dd MMM yyyy h:mm:ss a", location.timeZone)
+            return new Date().format("EEE dd MMM yyyy h:mm:ss a", correctedTimezone)
         }
     else {
         if (batteryReset)
-            return new Date().format("yyyy MMM dd", location.timeZone)
+            return new Date().format("yyyy MMM dd", correctedTimezone)
         else
-            return new Date().format("EEE yyyy MMM dd h:mm:ss a", location.timeZone)
+            return new Date().format("EEE yyyy MMM dd h:mm:ss a", correctedTimezone)
     }
 }
