@@ -82,8 +82,8 @@ metadata {
                    attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc")
                 attributeState("released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
              }
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+            tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
+                attributeState "default", label:'Last Pressed: ${currentValue}'
             }
         }        
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -98,20 +98,19 @@ metadata {
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
-        valueTile("lastpressed", "device.lastpressed", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Pressed:\n${currentValue}'
-        }
 	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
 	    state "batteryRuntime", label:'Battery Changed: ${currentValue} - Tap to reset Date', unit:"", action:"resetBatteryRuntime"
 	}  	    
         main (["button"])
-        details(["button","battery","lastcheckin","lastpressed","batteryRuntime"])
+        details(["button","battery","lastcheckin","batteryRuntime"])
    }
 }
 
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	log.debug "Virtual App Button Pressed"
+	def now = formatDate()
+	def nowDate = new Date(now).getTime()
         sendEvent(name: "lastpressed", value: now, displayed: false)
         sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
