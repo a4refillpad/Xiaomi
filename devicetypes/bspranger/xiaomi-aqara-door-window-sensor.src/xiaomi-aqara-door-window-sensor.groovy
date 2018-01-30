@@ -84,6 +84,8 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+	valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+        }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
@@ -98,7 +100,7 @@ metadata {
         }
 
         main (["contact"])
-        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime"])
+	details(["contact","battery","resetClosed","resetOpen","spacer","lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
    }
 }
 
