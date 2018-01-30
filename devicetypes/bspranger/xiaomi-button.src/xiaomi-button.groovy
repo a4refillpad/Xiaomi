@@ -55,8 +55,11 @@ metadata {
         capability "Button"
         capability "Configuration"
         capability "Sensor"
+	capability "Health Check"
+        capability "Momentary"
         
-        attribute "lastPress", "string"
+        attribute "lastpressed", "string"
+        attribute "lastpressedDate", "string"
         attribute "batterylevel", "string"
         attribute "lastCheckin", "string"
         attribute "lastCheckinDate", "Date"
@@ -76,8 +79,8 @@ metadata {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'${name}', action: "momentary.push", backgroundColor:"#53a7c0")
-                attributeState("released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff")
+                   attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc)
+                attributeState("released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
@@ -109,10 +112,10 @@ metadata {
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	log.debug "Virtual App Button Pressed"
-	sendEvent(name: "button", value: "on", isStateChange: true, displayed: false)
-	sendEvent(name: "button", value: "off", isStateChange: true, displayed: false)
-	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
+        sendEvent(name: "lastpressed", value: now, displayed: false)
+        sendEvent(name: "lastpressedDate", value: nowDate, displayed: false) 
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
+	sendEvent(name: "button", value: "released", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was released", isStateChange: true)
 }
 
 def parse(String description) {
