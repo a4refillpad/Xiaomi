@@ -102,13 +102,13 @@ metadata {
             }
         }
         standardTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12"
+            state "default", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/xiaomi-humidity-icn.png"
         }
         standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"
         }
         valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%",
+            state "default", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/xiaomi-battery-icn.png",
             backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
