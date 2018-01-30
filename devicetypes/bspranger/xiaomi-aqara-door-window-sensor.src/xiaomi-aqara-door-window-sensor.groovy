@@ -231,9 +231,9 @@ def resetClosed() {
 def resetOpen() {
     def now = formatDate() 
     def nowDate = new Date(now).getTime()
-    sendEvent(name:"contact", value:"open")
     sendEvent(name: "lastOpened", value: now, displayed: false)
     sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+    sendEvent(name:"contact", value:"open")
 }
 
 def resetBatteryRuntime() {
