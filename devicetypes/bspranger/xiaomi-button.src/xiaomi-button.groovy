@@ -79,8 +79,8 @@ metadata {
 
         multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-                   attributeState("pushed", label:'${name}', action: "momentary.push", backgroundColor:"#53a7c0")
-                attributeState("released", label:'${name}', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
+                   attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc)
+                attributeState("released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
              }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
