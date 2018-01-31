@@ -84,6 +84,8 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+	valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+        }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
@@ -98,7 +100,7 @@ metadata {
         }
 
         main (["contact"])
-        details(["contact","battery","resetClosed","resetOpen","lastcheckin","batteryRuntime"])
+	details(["contact","battery","resetClosed","resetOpen","spacer","lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
    }
 }
 
@@ -229,9 +231,9 @@ def resetClosed() {
 def resetOpen() {
     def now = formatDate() 
     def nowDate = new Date(now).getTime()
-    sendEvent(name:"contact", value:"open")
     sendEvent(name: "lastOpened", value: now, displayed: false)
     sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+    sendEvent(name:"contact", value:"open")
 }
 
 def resetBatteryRuntime() {
