@@ -208,10 +208,10 @@ private Map parseTemperature(String description){
     }
     def units = getTemperatureScale()
 
-    if(temp > maxtemp)
+    if(temp > maxTemp)
 	sendEvent(name: "maxTemp", value: temp, displayed: false)
 	
-    if(temp < mintemp)
+    if(temp < minTemp)
 	sendEvent(name: "minTemp", value: temp, displayed: false)	
 
     def result = [
