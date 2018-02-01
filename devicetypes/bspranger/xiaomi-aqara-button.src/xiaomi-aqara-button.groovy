@@ -48,6 +48,8 @@ preferences {
 	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
 	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+	input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
+	input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
 } 
 
 metadata {
@@ -100,7 +102,7 @@ metadata {
             state "default", label:'Last Checkin:\n${currentValue}'
         }
         valueTile("batteryRuntime", "device.batteryRuntime", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
-            state "batteryRuntime", label:'Battery Changed (tap to reset):\n ${currentValue}', unit:"", action:"resetBatteryRuntime"
+            state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
 
         main (["button"])
@@ -307,7 +309,6 @@ def configure() {
     state.battery = 0
     state.button = "released"
     checkIntervalEvent("configure");
-    return
 }
 
 def installed() {
@@ -318,7 +319,10 @@ def installed() {
 
 def updated() {
     checkIntervalEvent("updated");
-    return 
+    if(battReset){
+	resetBatteryRuntime()
+	device.updateSetting("battReset", false)
+    }
 }
 
 private checkIntervalEvent(text) {
