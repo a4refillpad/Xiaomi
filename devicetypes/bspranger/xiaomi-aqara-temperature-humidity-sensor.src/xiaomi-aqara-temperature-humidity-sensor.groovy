@@ -38,8 +38,8 @@ metadata {
 
         attribute "lastCheckin", "String"
 	attribute "lastCheckinDate", "String"
-        attribute "maxTemp", "decimal"
-	attribute "minTemp", "decimal"
+        attribute "maxTemp", "number"
+	attribute "minTemp", "number"
         attribute "batteryRuntime", "String"
 
         fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
@@ -399,7 +399,7 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def tempReset) {
+def tempReset() {
     sendEvent(name: "maxTemp", value: device.temperature, displayed: false)
     sendEvent(name: "minTemp", value: device.temperature, displayed: false)
 }
