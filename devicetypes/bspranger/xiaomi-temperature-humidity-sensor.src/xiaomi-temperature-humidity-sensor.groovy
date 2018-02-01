@@ -36,8 +36,8 @@ metadata {
         
         attribute "lastCheckin", "String"
 	attribute "lastCheckinDate", "String"
-        attribute "maxTemp", "decimal"
-	attribute "minTemp", "decimal"
+        attribute "maxTemp", "number"
+	attribute "minTemp", "number"
         attribute "batteryRuntime", "String"
         
         fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
@@ -338,7 +338,7 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
-def tempReset) {
+def tempReset() {
     sendEvent(name: "maxTemp", value: device.temperature, displayed: false)
     sendEvent(name: "minTemp", value: device.temperature, displayed: false)
 }
