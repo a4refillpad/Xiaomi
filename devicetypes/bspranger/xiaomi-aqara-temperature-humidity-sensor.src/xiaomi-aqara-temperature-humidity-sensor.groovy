@@ -37,11 +37,15 @@ metadata {
 	capability "Health Check"
 
         attribute "lastCheckin", "String"
+	attribute "lastCheckinDate", "String"
+        attribute "maxTemp", "decimal"
+	attribute "minTemp", "decimal"
         attribute "batteryRuntime", "String"
 
         fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
 
         command "resetBatteryRuntime"
+	command "tempReset"
     }
 
     // simulator metadata
@@ -205,6 +209,12 @@ private Map parseTemperature(String description){
         }
     }
     def units = getTemperatureScale()
+
+    if(temp > maxTemp)
+	sendEvent(name: "maxTemp", value: temp, displayed: false)
+	
+    if(temp < minTemp)
+	sendEvent(name: "minTemp", value: temp, displayed: false)	
 
     def result = [
         name: 'temperature',
@@ -391,6 +401,11 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+def tempReset) {
+    sendEvent(name: "maxTemp", value: device.temperature, displayed: false)
+    sendEvent(name: "minTemp", value: device.temperature, displayed: false)
+}
+
 def configure() {
     log.debug "${device.displayName}: configure"
     state.battery = 0
@@ -401,6 +416,7 @@ def configure() {
 def installed() {
     state.battery = 0
     checkIntervalEvent("installed");
+    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds (this is to not kill ST servers) of midnight 
 }
 
 def updated() {
@@ -409,6 +425,9 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
+    //set schedule for people that already had the device installed
+    unschedule()//not sure if need but dont want to make 100s of schedules
+    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds of midnight 
 }
 
 private checkIntervalEvent(text) {
