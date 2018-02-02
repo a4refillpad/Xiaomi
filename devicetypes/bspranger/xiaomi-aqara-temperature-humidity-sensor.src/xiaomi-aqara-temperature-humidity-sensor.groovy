@@ -108,7 +108,7 @@ metadata {
                 )
             }
         }
-        standardTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
+        valueTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12",
             backgroundColors:[
                 [value: 0, color: "#FFFCDF"],
