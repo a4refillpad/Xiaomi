@@ -57,6 +57,7 @@ metadata {
     preferences {
         input name: "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
 	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+	input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
 	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
 	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
@@ -351,6 +352,7 @@ private checkIntervalEvent(text) {
 
 def formatDate(batteryReset) {
     def correctedTimezone = ""
+    def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
 
     if (!(location.timeZone)) {
         correctedTimezone = TimeZone.getTimeZone("GMT")
@@ -364,18 +366,18 @@ def formatDate(batteryReset) {
         if (batteryReset)
             return new Date().format("MMM dd yyyy", correctedTimezone)
         else
-            return new Date().format("EEE MMM dd yyyy h:mm:ss a", correctedTimezone)
+            return new Date().format("EEE MMM dd yyyy ${timeString}", correctedTimezone)
     }
     else if (dateformat == "UK") {
         if (batteryReset)
             return new Date().format("dd MMM yyyy", correctedTimezone)
         else
-            return new Date().format("EEE dd MMM yyyy h:mm:ss a", correctedTimezone)
+            return new Date().format("EEE dd MMM yyyy ${timeString}", correctedTimezone)
         }
     else {
         if (batteryReset)
             return new Date().format("yyyy MMM dd", correctedTimezone)
         else
-            return new Date().format("EEE yyyy MMM dd h:mm:ss a", correctedTimezone)
+            return new Date().format("EEE yyyy MMM dd ${timeString}", correctedTimezone)
     }
 }
