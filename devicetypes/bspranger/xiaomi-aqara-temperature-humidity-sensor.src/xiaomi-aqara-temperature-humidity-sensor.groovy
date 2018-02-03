@@ -108,8 +108,17 @@ metadata {
                 )
             }
         }
-        standardTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12"
+        valueTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
+            state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12",
+            backgroundColors:[
+                [value: 0, color: "#FFFCDF"],
+                [value: 4, color: "#FDF789"],
+                [value: 20, color: "#A5CF63"],
+                [value: 23, color: "#6FBD7F"],
+                [value: 56, color: "#4CA98C"],
+                [value: 59, color: "#0072BB"],
+                [value: 76, color: "#085396"]
+            ]
         }
         standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", label:'${currentValue}', icon:"st.Weather.weather1"

@@ -104,8 +104,17 @@ metadata {
                 attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
             }
         }
-        standardTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}%', icon:"st.Weather.weather12"
+        valueTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", label:'${currentValue}%', icon:"st.Weather.weather12",
+            backgroundColors:[
+                [value: 0, color: "#FFFCDF"],
+                [value: 4, color: "#FDF789"],
+                [value: 20, color: "#A5CF63"],
+                [value: 23, color: "#6FBD7F"],
+                [value: 56, color: "#4CA98C"],
+                [value: 59, color: "#0072BB"],
+                [value: 76, color: "#085396"]
+            ]
         }
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
