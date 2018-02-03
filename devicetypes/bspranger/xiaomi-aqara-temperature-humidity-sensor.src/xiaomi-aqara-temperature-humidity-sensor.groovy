@@ -220,10 +220,10 @@ private Map parseTemperature(String description){
     }
     def units = getTemperatureScale()
 
-    if(temp > maxTemp)
+    if(temp > device.currentValue("maxTemp"))
 	sendEvent(name: "maxTemp", value: temp, displayed: false)
 	
-    if(temp < minTemp)
+    if(temp < device.currentValue("minTemp"))
 	sendEvent(name: "minTemp", value: temp, displayed: false)	
 
     def result = [
