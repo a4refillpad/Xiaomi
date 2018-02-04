@@ -59,21 +59,21 @@ metadata {
     
     preferences {
         section {
-            input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: true, required: true, defaultValue: 0
+            input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", type: "paragraph", element: "paragraph"
+            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", required: true, defaultValue: 0
         }
 	section {
-            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
-            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", displayDuringSetup: true, required: true, defaultValue: 0
+            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", type: "paragraph", element:"paragraph"
+            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", required: true, defaultValue: 0
         }
         section {
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
 		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-		input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input description: "Only change the settings below if you know what you're doing", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
 		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-        	input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-		input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false 
+        	input description: "Changed your battery? Reset the date", type: "paragraph", element: "paragraph", title: "Battery Changed"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: "" 
 	}
 	
     }
