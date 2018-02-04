@@ -29,24 +29,26 @@
  */
 
 metadata {
-    definition (name: "Xiaomi Aqara Temperature Humidity Sensor", namespace: "bspranger", author: "bspranger") {
-        capability "Temperature Measurement"
-        capability "Relative Humidity Measurement"
-        capability "Sensor"
-        capability "Battery"
+	definition (name: "Xiaomi Aqara Temperature Humidity Sensor", namespace: "bspranger", author: "bspranger") {
+	capability "Temperature Measurement"
+	capability "Relative Humidity Measurement"
+	capability "Sensor"
+	capability "Battery"
 	capability "Health Check"
 
-        attribute "lastCheckin", "String"
+	attribute "lastCheckin", "String"
 	attribute "lastCheckinDate", "String"
-        attribute "maxTemp", "number"
+	attribute "maxTemp", "number"
 	attribute "minTemp", "number"
-        attribute "batteryRuntime", "String"
+	attribute "minmaxTemps", "String"
+    attribute "currentDay", "String"
+	attribute "batteryRuntime", "String"
 
-        fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
 
-        command "resetBatteryRuntime"
+	command "resetBatteryRuntime"
 	command "tempReset"
-    }
+	}
 
     // simulator metadata
     simulator {
@@ -58,33 +60,6 @@ metadata {
             status "${i}%": "humidity: ${i}%"
         }
     }
-
-    preferences {
-        section {
-            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type:"paragraph", element:"paragraph"
-            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0
-        }
-        section {
-            input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported", displayDuringSetup: true
-        }
-        section {
-            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
-            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", defaultValue: 0
-        }
-	section {
-            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
-            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", defaultValue: 0
-        }
-	section {    
-	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-	input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-	input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-	input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
-	}
-	}
 
     tiles(scale: 2) {
         multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
@@ -107,31 +82,11 @@ metadata {
                     ]
                 )
             }
+            tileAttribute("device.minmaxTemps", key: "SECONDARY_CONTROL") {
+                attributeState("minmaxTemps", label:'${currentValue}')
+            }
         }
-        valueTile("humidity", "device.humidity", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12",
-            backgroundColors:[
-                [value: 0, color: "#FFFCDF"],
-                [value: 4, color: "#FDF789"],
-                [value: 20, color: "#A5CF63"],
-                [value: 23, color: "#6FBD7F"],
-                [value: 56, color: "#4CA98C"],
-                [value: 59, color: "#0072BB"],
-                [value: 76, color: "#085396"]
-            ]
-        }
-        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
-            state "default", label:'${currentValue}', icon:"st.Weather.weather1"
-        }
-        valueTile("battery", "device.battery", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%",
-            backgroundColors:[
-                [value: 10, color: "#bc2323"],
-                [value: 26, color: "#f1d801"],
-                [value: 51, color: "#44b621"]
-            ]
-        }
-        valueTile("temperature2", "device.temperature", decoration: "flat", inactiveLabel: false) {
+        valueTile("temperature2", "device.temperature", inactiveLabel: false) {
             state "temperature", label:'${currentValue}°', icon:"st.Weather.weather2",
             backgroundColors:[
                 [value: 0, color: "#153591"],
@@ -149,121 +104,112 @@ metadata {
                 [value: 96, color: "#bc2323"]
             ]
         }
-        valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Checkin:\n ${currentValue}'
+        valueTile("humidity", "device.humidity", inactiveLabel: false, width: 2, height: 2) {
+            state "humidity", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12",
+            backgroundColors:[
+                [value: 0, color: "#FFFCDF"],
+                [value: 4, color: "#FDF789"],
+                [value: 20, color: "#A5CF63"],
+                [value: 23, color: "#6FBD7F"],
+                [value: 56, color: "#4CA98C"],
+                [value: 59, color: "#0072BB"],
+                [value: 76, color: "#085396"]
+            ]
+        }
+        standardTile("pressure", "device.pressure", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
+            state "pressure", label:'${currentValue}', icon:"st.Weather.weather1"
+        }
+        valueTile("battery", "device.battery", inactiveLabel: false, width: 2, height: 2) {
+            state "battery", label:'${currentValue}%', unit:"%",
+            backgroundColors:[
+                [value: 10, color: "#bc2323"],
+                [value: 26, color: "#f1d801"],
+                [value: 51, color: "#44b621"]
+            ]
+        }
+        valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
+            state "lastcheckin", label:'Last Checkin:\n ${currentValue}'
         }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
 
-        main(["temperature2"])
+        main("temperature2")
         details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime"])
     }
+    preferences {
+        section {
+            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type:"paragraph", element:"paragraph"
+            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0
+        }
+        section {
+            input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported", displayDuringSetup: true
+        }
+        section {
+            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", defaultValue: 0
+        }
+        section {
+            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", defaultValue: 0
+        }
+        section {    
+            input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
+            input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
+            input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+            input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+            input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+            input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
+            input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
+        }
+	}
 }
 
 // Parse incoming device messages to generate events
 def parse(String description) {
     log.debug "${device.displayName}: Parsing description: ${description}"
-    //  send event for heartbeat
+
+    // Send event for heartbeat
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
-    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
-    Map map = [:]
+	// getEvent automatically retrieves temp and humidity in correct unit as integer
+	Map map = zigbee.getEvent(description)
 
-    if (description?.startsWith("temperature: ")) {
-        map = parseTemperature(description)
-    } else if (description?.startsWith("humidity: ")) {
-        map = parseHumidity(description)
-    } else if (description?.startsWith('catchall:')) {
-        map = parseCatchAllMessage(description)
-    } else if (description?.startsWith('read attr - raw:')) {
-        map = parseReadAttr(description)
-    }
-    def results = null
-    if (map)
-    {
-    	log.debug "${device.displayName}: Parse returned ${map}"
-    	results =createEvent(map)
-    }
-    else
-    {
-    	log.debug "${device.displayName}: was unable to parse ${description}"
-    }
-    return results
+	if (map.name == "temperature") {
+ 		if (tempOffset)
+			map.value = (int) map.value + (int) tempOffset
+		map.descriptionText = "${device.displayName} temperature is ${map.value}${temperatureScale}°"
+		map.translatable = true
+		updateMinMaxTemps(map.value)
+	} else if (map.name == "humidity") {
+		if (humidityOffset) {
+			map.value = (int) map.value + (int) humidityOffset
+		}
+	} else if (description?.startsWith('catchall:')) {
+		map = parseCatchAllMessage(description)
+	} else if (description?.startsWith('read attr - raw:')) {
+		map = parseReadAttr(description)
+	} else {
+		log.debug "${device.displayName}: was unable to parse ${description}"
+        sendEvent(name: "lastCheckin", value: now)
+	}
+
+	if (map)
+		log.debug "${device.displayName}: Parse returned ${map}"
+
+	return map ? createEvent(map) : [:]
 }
-
-
-private Map parseTemperature(String description){
-    def temp = ((description - "temperature: ").trim()) as Float
-
-    if (!(settings.tempOffset)){
-        settings.tempOffset = 0
-    }
-
-    if (temp > 100) {
-        temp = 100.0 - temp
-    }
-    if (getTemperatureScale() == "C") {
-        if (settings.tempOffset) {
-            temp = (Math.round(temp * 10))/ 10 + settings.tempOffset as Float
-        } else {
-            temp = (Math.round(temp * 10))/ 10 as Float
-        }
-    } else {
-        if (settings.tempOffset) {
-            temp =  (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 + settings.tempOffset as Float
-        } else {
-            temp = (Math.round((temp * 90.0)/5.0))/10.0 + 32.0 as Float
-        }
-    }
-    def units = getTemperatureScale()
-
-    if(temp > device.currentValue("maxTemp"))
-	sendEvent(name: "maxTemp", value: temp, displayed: false)
-	
-    if(temp < device.currentValue("minTemp"))
-	sendEvent(name: "minTemp", value: temp, displayed: false)	
-
-    def result = [
-        name: 'temperature',
-        value: temp,
-        unit: units,
-        isStateChange:true,
-        descriptionText : "${device.displayName} temperature is ${temp}${units}"
-    ]
-    return result
-}
-
-
-private Map parseHumidity(String description){
-    def pct = (description - "humidity: " - "%").trim()
-
-    if (!(settings.humidOffset)) {
-        settings.humidOffset = 0
-    }
-    if (pct.isNumber()) {
-        pct =  Math.round(new BigDecimal(pct + settings.humidOffset))
-        
-        def result = [
-            name: 'humidity',
-            value: pct,
-            unit: "%",
-            isStateChange:true,
-            descriptionText : "${device.displayName} Humidity is ${pct}%"
-        ]
-        return result
-    }
-    return [:]
-}
-
 
 private Map parseCatchAllMessage(String description) {
     def i
-    Map resultMap = [:]
     def cluster = zigbee.parse(description)
     log.debug cluster
+
+    Map resultMap = [:]
+
     if (cluster) {
         switch(cluster.clusterId)
         {
@@ -299,84 +245,74 @@ private Map parseCatchAllMessage(String description) {
 }
 
 
-// Parse raw data on reset button press to retrieve reported battery voltage
+// parseReadAttr handles pressure reports or battery report on reset button press
 private Map parseReadAttr(String description) {
-    Map resultMap = [:]
+	Map resultMap = [:]
 
-    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
-    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
-    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
-	log.debug "${device.displayName} parseReadAttr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+	log.debug "${device.displayName}: Parsing read attr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
 
-    if ((cluster == "0403") && (attrId == "0000")) {
-        def result = value[0..3]
-        float pressureval = Integer.parseInt(result, 16)
+	if ((cluster == "0403") && (attrId == "0000")) {
+		def result = value[0..3]
+		float pressureval = Integer.parseInt(result, 16)
 
-	if (!(settings.PressureUnits)){
-            settings.PressureUnits = "mbar"
-	}
-        log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
+		if (!(settings.PressureUnits)){
+			settings.PressureUnits = "mbar"
+		}
+		log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
 	
-        switch (PressureUnits) {
-            case "mbar":
-                pressureval = (pressureval/10) as Float
-                pressureval = pressureval.round(1);
-                break;
+		switch (PressureUnits) {
+			case "mbar":
+				pressureval = (pressureval/10) as Float
+				pressureval = pressureval.round(1);
+				break;
 
-            case "kPa":
-                pressureval = (pressureval/100) as Float
-                pressureval = pressureval.round(2);
-                break;
+			case "kPa":
+				pressureval = (pressureval/100) as Float
+				pressureval = pressureval.round(2);
+				break;
 
-            case "inHg":
-                pressureval = (((pressureval/10) as Float) * 0.0295300)
-                pressureval = pressureval.round(2);
-                break;
+			case "inHg":
+				pressureval = (((pressureval/10) as Float) * 0.0295300)
+				pressureval = pressureval.round(2);
+				break;
 
-            case "mmHg":
-                pressureval = (((pressureval/10) as Float) * 0.750062)
-                pressureval = pressureval.round(2);
-                break;
-        }
+			case "mmHg":
+				pressureval = (((pressureval/10) as Float) * 0.750062)
+				pressureval = pressureval.round(2);
+				break;
+		}
 
-        log.debug "${device.displayName}: ${pressureval} ${PressureUnits} before applying the pressure offset."
+		log.debug "${device.displayName}: Pressure is ${pressureval} ${PressureUnits} before applying the pressure offset."
 
-	if (!(settings.pressOffset)){
-        settings.pressOffset = 0
-    }
+		if (settings.pressOffset) {
+			pressureval = (pressureval + settings.pressOffset)
+		}
 
-	if (settings.pressOffset) {
-            pressureval = (pressureval + settings.pressOffset)
-            pressureval = pressureval.round(2);
-        }
+		pressureval = pressureval.round(2);
 
-        resultMap = [
-            name: 'pressure',
-            value: pressureval,
-            unit: "${PressureUnits}",
-            isStateChange:true,
-            descriptionText : "${device.displayName} Pressure is ${pressureval}${PressureUnits}"
-        ]
-    } else if (cluster == "0000" && attrId == "0005")  {
-        def model = value.split("01FF")[0]
-        def data = value.split("01FF")[1]
-
-        def modelName = ""
-        // Parsing the model
-        for (int i = 0; i < model.length(); i+=2)
-        {
-            def str = model.substring(i, i+2);
-            def NextChar = (char)Integer.parseInt(str, 16);
-            modelName = modelName + NextChar
-        }
-        log.debug "${device.displayName} reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}"
-
-        if (data[4..7] == "0121") {
-            resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
-        }
-    }
-    return resultMap
+		resultMap = [
+			name: 'pressure',
+			value: pressureval,
+			unit: "${PressureUnits}",
+			isStateChange: true,
+			descriptionText : "${device.displayName} Pressure is ${pressureval} ${PressureUnits}"
+		]
+	} else if (cluster == "0000" && attrId == "0005")  {
+		def modelName = ""
+	
+		// Parsing the model name
+		for (int i = 0; i < value.length(); i+=2) {
+			def str = value.substring(i, i+2);
+			def NextChar = (char)Integer.parseInt(str, 16);
+			modelName = modelName + NextChar
+		}
+		log.debug "${device.displayName}: Reported model: ${modelName}"
+	}
+	return resultMap
 }
 
 private Map getBatteryResult(rawValue) {
@@ -401,11 +337,10 @@ private Map getBatteryResult(rawValue) {
         name: 'battery',
         value: roundedPct,
         unit: "%",
-        isStateChange:true,
+        isStateChange: true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
 
-    log.debug "${device.displayName}: ${result}"
     return result
 }
 
@@ -414,23 +349,39 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+// Reset both of the daily min/max temp values to the current temp
 def tempReset() {
-    sendEvent(name: "maxTemp", value: device.temperature, displayed: false)
-    sendEvent(name: "minTemp", value: device.temperature, displayed: false)
+	def currentTemp = device.currentValue("temperature")
+	log.debug "${device.displayName}: Resetting daily min/max temp values to current temperature of ${currentTemp}"
+    sendEvent(name: "maxTemp", value: currentTemp, displayed: false)
+    sendEvent(name: "minTemp", value: currentTemp, displayed: false)
+    updateMinMaxTemps(currentTemp)
+}
+
+// Check new min or max temp for the day
+def updateMinMaxTemps(temp) {
+	if ((temp > device.currentValue("maxTemp")) || (device.currentValue("maxTemp") == null))
+		sendEvent(name: "maxTemp", value: temp, displayed: false)	
+	if ((temp < device.currentValue("minTemp")) || (device.currentValue("minTemp") == null))
+		sendEvent(name: "minTemp", value: temp, displayed: false)
+
+	// Update min and max temps in main tile
+	def minmaxTempReport = "Today's Highest: ${device.currentValue("maxTemp")}°  |  Lowest: ${device.currentValue("minTemp")}°"
+    sendEvent(name: "minmaxTemps", value: minmaxTempReport, displayed: false, isStateChange: true)
 }
 
 def configure() {
-    log.debug "${device.displayName}: configure"
+    log.debug "${device.displayName}: Configuring"
     state.battery = 0
-    schedule("60 0 0 * * ?", tempReset)
-    checkIntervalEvent("configure");
+    checkIntervalEvent("configured");
     return
 }
 
 def installed() {
     state.battery = 0
+    resetBatteryRuntime()
+    log.debug "${device.displayName}: Setting Battery Changed to current date for newly paired sensor"
     checkIntervalEvent("installed");
-    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds (this is to not kill ST servers) of midnight 
 }
 
 def updated() {
@@ -439,9 +390,6 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-    //set schedule for people that already had the device installed
-    unschedule()//not sure if need but dont want to make 100s of schedules
-    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds of midnight 
 }
 
 private checkIntervalEvent(text) {
@@ -454,6 +402,7 @@ def formatDate(batteryReset) {
     def correctedTimezone = ""
     def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
 
+	// If user's hub timezone is not set, display error messages in log and events log, and set timezone to GMT to avoid errors
     if (!(location.timeZone)) {
         correctedTimezone = TimeZone.getTimeZone("GMT")
         log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
@@ -462,6 +411,17 @@ def formatDate(batteryReset) {
     else {
         correctedTimezone = location.timeZone
     }
+
+	// If the day of month has changed from that of previous event, reset the daily min/max temp values
+	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
+	def newDay = new Date().format("dd", correctedTimezone)
+	log.debug "${device.displayName}: currentDay = ${device.currentValue("currentDay")}, oldDay = ${oldDay}, newDay = ${newDay}"
+
+	if (newDay != oldDay) {
+		tempReset()
+		sendEvent(name: "currentDay", value: newDay, displayed: false, isStateChange: true)
+	}
+
     if (dateformat == "US" || dateformat == "" || dateformat == null) {
         if (batteryReset)
             return new Date().format("MMM dd yyyy", correctedTimezone)
