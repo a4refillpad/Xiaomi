@@ -83,7 +83,7 @@ metadata {
                 )
             }
             tileAttribute("device.minmaxTemps", key: "SECONDARY_CONTROL") {
-                attributeState("minmaxTemps", label:'${currentValue}')
+                attributeState("minmaxTemps", label:'${currentValue}', icon: "https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/weather12white-icn.png")
             }
         }
         valueTile("temperature2", "device.temperature", inactiveLabel: false) {
@@ -139,18 +139,18 @@ metadata {
     }
     preferences {
         section {
-            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", displayDuringSetup: true, type:"paragraph", element:"paragraph"
+            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", type:"paragraph", element:"paragraph"
             input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0
         }
         section {
-            input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported", displayDuringSetup: true
+            input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported"
         }
         section {
-            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", type: "paragraph", element:"paragraph"
             input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", defaultValue: 0
         }
         section {
-            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", displayDuringSetup: true, type: "paragraph", element:"paragraph"
+            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", type: "paragraph", element:"paragraph"
             input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", defaultValue: 0
         }
         section {    
@@ -175,12 +175,16 @@ def parse(String description) {
     sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
+	// Check if the min/max temps should be reset
+    checkNewDay(now)
+
 	// getEvent automatically retrieves temp and humidity in correct unit as integer
 	Map map = zigbee.getEvent(description)
 
 	if (map.name == "temperature") {
- 		if (tempOffset)
+ 		if (tempOffset) {
 			map.value = (int) map.value + (int) tempOffset
+		}
 		map.descriptionText = "${device.displayName} temperature is ${map.value}${temperatureScale}°"
 		map.translatable = true
 		updateMinMaxTemps(map.value)
@@ -188,6 +192,7 @@ def parse(String description) {
 		if (humidityOffset) {
 			map.value = (int) map.value + (int) humidityOffset
 		}
+		refreshMultiAttributes(map.value)
 	} else if (description?.startsWith('catchall:')) {
 		map = parseCatchAllMessage(description)
 	} else if (description?.startsWith('read attr - raw:')) {
@@ -197,8 +202,9 @@ def parse(String description) {
         sendEvent(name: "lastCheckin", value: now)
 	}
 
-	if (map)
+	if (map) {
 		log.debug "${device.displayName}: Parse returned ${map}"
+	}
 
 	return map ? createEvent(map) : [:]
 }
@@ -253,7 +259,7 @@ private Map parseReadAttr(String description) {
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 
-	log.debug "${device.displayName}: Parsing read attr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+	// log.debug "${device.displayName}: Parsing read attr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
 
 	if ((cluster == "0403") && (attrId == "0000")) {
 		def result = value[0..3]
@@ -262,7 +268,7 @@ private Map parseReadAttr(String description) {
 		if (!(settings.PressureUnits)){
 			settings.PressureUnits = "mbar"
 		}
-		log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
+		// log.debug "${device.displayName}: Converting ${pressureval} to ${PressureUnits}"
 	
 		switch (PressureUnits) {
 			case "mbar":
@@ -286,7 +292,7 @@ private Map parseReadAttr(String description) {
 				break;
 		}
 
-		log.debug "${device.displayName}: Pressure is ${pressureval} ${PressureUnits} before applying the pressure offset."
+		// log.debug "${device.displayName}: Pressure is ${pressureval} ${PressureUnits} before applying the pressure offset."
 
 		if (settings.pressOffset) {
 			pressureval = (pressureval + settings.pressOffset)
@@ -349,13 +355,24 @@ def resetBatteryRuntime() {
     sendEvent(name: "batteryRuntime", value: now)
 }
 
+// If the day of month has changed from that of previous event, reset the daily min/max temp values
+def checkNewDay(now) {
+	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
+	def newDay = new Date(now).format("dd")
+	// log.debug "${device.displayName}: currentDay = ${device.currentValue("currentDay")}, oldDay = ${oldDay}, newDay = ${newDay}"
+	if (newDay != oldDay) {
+		tempReset()
+		sendEvent(name: "currentDay", value: newDay, displayed: false)
+	}
+}
+
 // Reset both of the daily min/max temp values to the current temp
 def tempReset() {
 	def currentTemp = device.currentValue("temperature")
 	log.debug "${device.displayName}: Resetting daily min/max temp values to current temperature of ${currentTemp}"
     sendEvent(name: "maxTemp", value: currentTemp, displayed: false)
     sendEvent(name: "minTemp", value: currentTemp, displayed: false)
-    updateMinMaxTemps(currentTemp)
+    refreshMultiAttributes(device.currentValue("humidity"))
 }
 
 // Check new min or max temp for the day
@@ -364,10 +381,13 @@ def updateMinMaxTemps(temp) {
 		sendEvent(name: "maxTemp", value: temp, displayed: false)	
 	if ((temp < device.currentValue("minTemp")) || (device.currentValue("minTemp") == null))
 		sendEvent(name: "minTemp", value: temp, displayed: false)
+	refreshMultiAttributes(device.currentValue("humidity"))
+}
 
-	// Update min and max temps in main tile
-	def minmaxTempReport = "Today's Highest: ${device.currentValue("maxTemp")}°  |  Lowest: ${device.currentValue("minTemp")}°"
-    sendEvent(name: "minmaxTemps", value: minmaxTempReport, displayed: false, isStateChange: true)
+	// Update current humidity, and min & max temps in main tile
+def refreshMultiAttributes(humidityValue) {
+    // log.debug "${device.displayName}: Device Humidity: ${device.currentValue("humidity")}, Secondary Tile Humidity = ${humidityValue}"
+    sendEvent(name: "minmaxTemps", value: "${humidityValue}%           Today's High: ${device.currentValue("maxTemp")}°  |  Low: ${device.currentValue("minTemp")}°", displayed: false)
 }
 
 def configure() {
@@ -390,6 +410,7 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
+	refreshMultiAttributes(device.currentValue("humidity"))
 }
 
 private checkIntervalEvent(text) {
@@ -411,16 +432,6 @@ def formatDate(batteryReset) {
     else {
         correctedTimezone = location.timeZone
     }
-
-	// If the day of month has changed from that of previous event, reset the daily min/max temp values
-	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
-	def newDay = new Date().format("dd", correctedTimezone)
-	log.debug "${device.displayName}: currentDay = ${device.currentValue("currentDay")}, oldDay = ${oldDay}, newDay = ${newDay}"
-
-	if (newDay != oldDay) {
-		tempReset()
-		sendEvent(name: "currentDay", value: newDay, displayed: false, isStateChange: true)
-	}
 
     if (dateformat == "US" || dateformat == "" || dateformat == null) {
         if (batteryReset)
