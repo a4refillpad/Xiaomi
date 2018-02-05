@@ -364,7 +364,7 @@ def configure() {
 def installed() {
     state.battery = 0
     checkIntervalEvent("installed");
-    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds of midnight
+    schedule("0 0 0 * * ?", tempReset)
 }
 
 def updated() {
@@ -375,7 +375,7 @@ def updated() {
   }
     //set schedule for people that already had the device installed
     unschedule()//not sure if need but dont want to make 100s of schedules
-    schedule("60 0 0 * * ?", tempReset) //reset within 60 seconds of midnight 
+    schedule("0 0 0 * * ?", tempReset)
 }
 
 private checkIntervalEvent(text) {
