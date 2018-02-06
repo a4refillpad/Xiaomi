@@ -99,7 +99,7 @@ metadata {
                 [value: 15, color: "#44b621"],
                 [value: 20, color: "#f1d801"],
                 [value: 25, color: "#d04e00"],
-                [value: 30, color: "#bc2323"],a
+                [value: 30, color: "#bc2323"],
                 [value: 44, color: "#1e9cbb"],
                 [value: 59, color: "#90d2a7"],
                 [value: 74, color: "#44b621"],
