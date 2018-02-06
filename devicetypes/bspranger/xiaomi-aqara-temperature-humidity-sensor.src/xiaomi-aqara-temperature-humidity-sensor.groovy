@@ -40,8 +40,12 @@ metadata {
 	attribute "lastCheckinDate", "String"
 	attribute "maxTemp", "number"
 	attribute "minTemp", "number"
-	attribute "minmaxTemps", "String"
-    attribute "currentDay", "String"
+	attribute "maxHumidity", "number"
+	attribute "minHumidity", "number"
+	attribute "currentHumidity", "number"
+	attribute "multiAttributesReport", "String"
+	attribute "multiAttributesIcon", "String"
+	attribute "currentDay", "String"
 	attribute "batteryRuntime", "String"
 
 	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
@@ -82,8 +86,8 @@ metadata {
                     ]
                 )
             }
-            tileAttribute("device.minmaxTemps", key: "SECONDARY_CONTROL") {
-                attributeState("minmaxTemps", label:'${currentValue}', icon: "https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/weather12white-icn.png")
+            tileAttribute("device.multiAttributesReport", key: "SECONDARY_CONTROL") {
+                attributeState("multiAttributesReport", label:'${currentValue}')
             }
         }
         valueTile("temperature2", "device.temperature", inactiveLabel: false) {
@@ -95,7 +99,7 @@ metadata {
                 [value: 15, color: "#44b621"],
                 [value: 20, color: "#f1d801"],
                 [value: 25, color: "#d04e00"],
-                [value: 30, color: "#bc2323"],
+                [value: 30, color: "#bc2323"],a
                 [value: 44, color: "#1e9cbb"],
                 [value: 59, color: "#90d2a7"],
                 [value: 74, color: "#44b621"],
@@ -139,28 +143,32 @@ metadata {
     }
     preferences {
         section {
-            input title:"Temperature Offset", description:"This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", type:"paragraph", element:"paragraph"
-            input "tempOffset", "number", title:"Degrees", description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0
+            input description: "The settings below customize additional infomation displayed in the main status tile.", type: "paragraph", element: "paragraph", title: "MAIN TILE DISPLAY"
+            input name: "displayTempInteger", type: "bool", title: "Display temperature as integer?", defaultValue: false
+            input name: "displayTempHighLow", type: "bool", title: "Display high/low temperature?", defaultValue: false
+            input name: "displayHumidHighLow", type: "bool", title: "Display high/low humidity?", defaultValue: false
         }
         section {
+            input description: "The settings below allow correction of variations in temperature, humidity, and pressure by setting an offset. Examples: If the sensor consistently reports temperature 5 degrees too warm, enter '-5' for the Temperature Offset. If it reports humidity 3% too low, enter ‘3' for the Humidity Offset. NOTE: Changes will take effect on the NEXT temperature / humidity / pressure report.", type: "paragraph", element: "paragraph", title: "OFFSETS & UNITS"
+            input "tempOffset", "number", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
+            input "humidOffset", "number", title:"Humidity Offset", description:"Adjust humidity by this many percent", range: "*..*"
+            input "pressOffset", "number", title:"Pressure Offset", description:"Adjust pressure by this many units", range: "*..*"
             input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported"
+            input description: "NOTE: The temperature unit (C / F) can be changed in the location settings for your hub.", type: "paragraph", element: "paragraph", title: ""
         }
         section {
-            input title:"Pressure Offset", description:"This feature allows you to correct any pressure variations by selecting an offset. Ex: If your sensor consistently reports a pressure that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT pressure change.", type: "paragraph", element:"paragraph"
-            input "pressOffset", "number", title:"Pressure", description:"Adjust pressure by this many units", range: "*..*", defaultValue: 0
+            input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+            input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+            input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
         }
         section {
-            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", type: "paragraph", element:"paragraph"
-            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", defaultValue: 0
+            input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+            input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
         }
-        section {    
-            input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-            input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-            input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-            input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-            input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-            input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-            input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
+        section {
+            input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+            input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
+            input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
         }
 	}
 }
@@ -192,7 +200,7 @@ def parse(String description) {
 		if (humidityOffset) {
 			map.value = (int) map.value + (int) humidityOffset
 		}
-		refreshMultiAttributes(map.value)
+		updateMinMaxHumidity(map.value)
 	} else if (description?.startsWith('catchall:')) {
 		map = parseCatchAllMessage(description)
 	} else if (description?.startsWith('read attr - raw:')) {
@@ -366,28 +374,41 @@ def checkNewDay(now) {
 	}
 }
 
-// Reset both of the daily min/max temp values to the current temp
+// Reset daily min/max temp and humidity values to the current temp/humidity values
 def tempReset() {
-	def currentTemp = device.currentValue("temperature")
+	def currentTemp = device.currentState('temperature')?.value
 	log.debug "${device.displayName}: Resetting daily min/max temp values to current temperature of ${currentTemp}"
-    sendEvent(name: "maxTemp", value: currentTemp, displayed: false)
-    sendEvent(name: "minTemp", value: currentTemp, displayed: false)
-    refreshMultiAttributes(device.currentValue("humidity"))
+    sendEvent(name: "maxTemp", value: device.currentValue("temperature"), displayed: false)
+    sendEvent(name: "minTemp", value: device.currentValue("temperature"), displayed: false)
+    sendEvent(name: "maxHumidity", value: device.currentValue("humidity"), displayed: false)
+    sendEvent(name: "minHumidity", value: device.currentValue("humidity"), displayed: false)
+    refreshMultiAttributes()
 }
 
 // Check new min or max temp for the day
 def updateMinMaxTemps(temp) {
-	if ((temp > device.currentValue("maxTemp")) || (device.currentValue("maxTemp") == null))
+	if ((temp > device.currentValue('maxTemp')) || (device.currentValue('maxTemp') == null))
 		sendEvent(name: "maxTemp", value: temp, displayed: false)	
-	if ((temp < device.currentValue("minTemp")) || (device.currentValue("minTemp") == null))
+	if ((temp < device.currentValue('minTemp')) || (device.currentValue('minTemp') == null))
 		sendEvent(name: "minTemp", value: temp, displayed: false)
-	refreshMultiAttributes(device.currentValue("humidity"))
+	refreshMultiAttributes()
 }
 
-	// Update current humidity, and min & max temps in main tile
-def refreshMultiAttributes(humidityValue) {
-    // log.debug "${device.displayName}: Device Humidity: ${device.currentValue("humidity")}, Secondary Tile Humidity = ${humidityValue}"
-    sendEvent(name: "minmaxTemps", value: "${humidityValue}%           Today's High: ${device.currentValue("maxTemp")}°  |  Low: ${device.currentValue("minTemp")}°", displayed: false)
+// Check new min or max humidity for the day and set new currentHumidity
+def updateMinMaxHumidity(humidity) {
+	if ((humidity > device.currentValue('maxHumidity')) || (device.currentValue('maxHumidity') == null))
+		sendEvent(name: "maxHumidity", value: humidity, displayed: false)
+	if ((humidity < device.currentValue('minHumidity')) || (device.currentValue('minHumidity') == null))
+		sendEvent(name: "minHumidity", value: humidity, displayed: false)
+	sendEvent(name: "currentHumidity", value: humidity, displayed: false)
+	refreshMultiAttributes()
+}
+
+	// Update display of multiattributes in main tile
+def refreshMultiAttributes() {
+	def temphiloAttributes = displayTempHighLow ? (displayHumidHighLow ? "Today's High/Low:  ${device.currentState('maxTemp')?.value}° / ${device.currentState('minTemp')?.value}°" : "Today's High: ${device.currentState('maxTemp')?.value}°  /  Low: ${device.currentState('minTemp')?.value}°") : ""
+	def humidhiloAttributes = displayHumidHighLow ? (displayTempHighLow ? "    ${device.currentState('maxHumidity')?.value}% / ${device.currentState('minHumidity')?.value}%" : "Today's High: ${device.currentState('maxHumidity')?.value}%  /  Low: ${device.currentState('minHumidity')?.value}%") : ""
+    sendEvent(name: "multiAttributesReport", value: "${temphiloAttributes}${humidhiloAttributes}", displayed: false)
 }
 
 def configure() {
@@ -410,7 +431,8 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	refreshMultiAttributes(device.currentValue("humidity"))
+	updateMinMaxTemps(device.currentValue('temperature'))
+	updateMinMaxHumidity(device.currentValue('humidity'))
 }
 
 private checkIntervalEvent(text) {
