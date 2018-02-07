@@ -50,17 +50,6 @@ metadata {
 	simulator {
 	}
 
-	preferences {
-		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
-		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-		input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-		input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-		input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false   
-	}
-
     tiles(scale: 2) {
         multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4) {
             tileAttribute ("device.motion", key: "PRIMARY_CONTROL") {
@@ -86,14 +75,33 @@ metadata {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Checkin:\n ${currentValue}'
+            state "default", label:'Last Event:\n ${currentValue}'
         }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
              state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
         main(["motion"])
         details(["motion", "battery", "empty2x2", "reset", "lastcheckin", "batteryRuntime"])
-    }
+   }
+   preferences {
+	section {
+	        input name: "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds). \n\n(The device will always remain blind to motion for 60seconds following first detected motion. This value just clears the 'active' status after the number of seconds you set here but the device will still remain blind for 60seconds in normal operation.)", description: "", value:120, displayDuringSetup: true
+		}	 
+	section {
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
+		}
+	section {
+            	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		}
+	section {
+	        input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+		}
+  }
 }
 
 def parse(String description) {
@@ -102,7 +110,7 @@ def parse(String description) {
 	//  send event for heartbeat
 	def now = formatDate()    
 	def nowDate = new Date(now).getTime()
-	sendEvent(name: "lastCheckin", value: now)
+	sendEvent(name: "lastCheckin", value: now, displayed: false)
 	sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 	
 	Map map = [:]
