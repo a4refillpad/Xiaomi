@@ -33,17 +33,6 @@
  *  veeceeoh - added battery parse on button press
  *  veeceeoh - added wet/dry override capability
  */
-
-preferences {
-	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-	input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-	input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-	input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
-} 
-
 metadata {
     definition (name: "Xiaomi Aqara Leak Sensor", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
@@ -53,9 +42,9 @@ metadata {
         capability "Health Check"
 
         attribute "lastCheckin", "String"
+        attribute "lastCheckinDate", "Date"
         attribute "lastWet", "String"
         attribute "lastWetDate", "Date"
-        attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
 
         fingerprint endpointId: "01", profileId: "0104", deviceId: "0402", inClusters: "0000,0003,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Xiaomi Leak Sensor"
@@ -89,7 +78,7 @@ metadata {
             ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Checkin:\n${currentValue}'
+            state "default", label:'Last Event:\n${currentValue}'
         }
         standardTile("resetWet", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"resetWet", label:'Override Wet', icon:"st.alarm.water.wet"
@@ -103,7 +92,23 @@ metadata {
 
         main (["water"])
         details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime"])
-    }
+   }
+   preferences {
+	section {
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
+		}
+	section {
+            	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		}
+	section {
+	        input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+		}
+  } 
 }
 
 def parse(String description) {
@@ -112,7 +117,7 @@ def parse(String description) {
     // send event for heartbeat
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
-    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
