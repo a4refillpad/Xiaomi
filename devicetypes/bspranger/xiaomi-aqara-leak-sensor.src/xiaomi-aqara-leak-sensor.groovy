@@ -270,6 +270,7 @@ def configure() {
 
 def installed() {
     state.battery = 0
+    resetBatteryRuntime()
     checkIntervalEvent("installed");
 }
 
