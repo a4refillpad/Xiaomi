@@ -40,19 +40,6 @@
  *        deviceJoinName: whatever you want it to show in the app as a Thing
  *
  */
-
-preferences {
-	input name:"ReleaseTime", type:"number", title:"Minimum time in seconds for a press to clear", defaultValue: 2, displayDuringSetup: false
-        input name:"PressType", type:"enum", options:["Toggle", "Momentary"], description:"Effects how the button toggles", defaultValue:"Toggle", displayDuringSetup: true
-	input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-	input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-	input description: "Only change the settings below if you know what you're doing", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-	input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-	input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-	input description: "Changed your battery? Reset the date", displayDuringSetup: false, type: "paragraph", element: "paragraph", title: "Battery Changed"
-	input name: "battReset", type: "bool", title: "Battery Changed?", description: "", displayDuringSetup: false
-} 
-
 metadata {
     definition (name: "Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {
         capability "Configuration"
@@ -66,9 +53,9 @@ metadata {
         capability "Health Check"
 
         attribute "lastCheckin", "string"
-        attribute "lastpressed", "string"
-        attribute "lastpressedDate", "string"
         attribute "lastCheckinDate", "Date"
+	attribute "lastpressed", "string"
+        attribute "lastpressedDate", "string"
         attribute "batteryRuntime", "String"
 
         command "resetBatteryRuntime"
@@ -100,7 +87,7 @@ metadata {
             ]
         }
         valueTile("lastcheckin", "device.lastCheckin", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
-            state "default", label:'Last Checkin:\n${currentValue}'
+            state "default", label:'Last Event:\n${currentValue}'
         }
         valueTile("batteryRuntime", "device.batteryRuntime", decoration:"flat", inactiveLabel: false, width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
@@ -109,6 +96,25 @@ metadata {
         main (["button"])
         details(["button","battery","lastcheckin","batteryRuntime"])
    }
+   preferences {
+	section {	
+		input name:"ReleaseTime", type:"number", title:"Minimum time in seconds for a press to clear", defaultValue: 2
+        	input name:"PressType", type:"enum", options:["Toggle", "Momentary"], description:"Effects how the button toggles", defaultValue:"Toggle"
+		}
+	section {
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
+		}
+	section {
+            	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		}
+	section {
+            	input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+		}
 }
 
 //adds functionality to press the centre tile as a virtualApp Button
@@ -135,7 +141,7 @@ def parse(String description) {
     //  send event for heartbeat
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
-    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
