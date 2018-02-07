@@ -371,6 +371,7 @@ def configure() {
 
 def installed() {
     state.battery = 0
+    resetBatteryRuntime()
     checkIntervalEvent("installed");
     schedule("0 0 0 * * ?", tempReset)
 }
