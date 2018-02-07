@@ -57,28 +57,6 @@ metadata {
         }
     }
     
-    preferences {
-        section {
-            input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'. Please note, any changes will take effect only on the NEXT temperature change.", type: "paragraph", element: "paragraph"
-            input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", required: true, defaultValue: 0
-        }
-	section {
-            input title:"Humidity Offset", description:"This feature allows you to correct any humidity variations by selecting an offset. Ex: If your sensor consistently reports a humidity that's 5 too high, you'd enter '-5'. If 3 too low, enter '+3'. Please note, any changes will take effect only on the NEXT humidity change.", type: "paragraph", element:"paragraph"
-            input "humidOffset", "number", title:"Humidity", description:"Adjust humidity by this many units", range: "*..*", required: true, defaultValue: 0
-        }
-        section {
-		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", required: false, options:["US","UK","Other"]
-		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false, required: false
-		input description: "Only change the settings below if you know what you're doing", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-        	input description: "Changed your battery? Reset the date", type: "paragraph", element: "paragraph", title: "Battery Changed"
-		input name: "battReset", type: "bool", title: "Battery Changed?", description: "" 
-	}
-	
-    }
-    
-    // UI tile definitions
     tiles(scale: 2) {
         multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
             tileAttribute("device.temperature", key:"PRIMARY_CONTROL"){
@@ -101,7 +79,7 @@ metadata {
             )
             }
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-                attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
+                attributeState("default", label:'Last Event: ${currentValue}', icon: "st.Health & Wellness.health9")
             }
         }
         valueTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
@@ -150,6 +128,36 @@ metadata {
         main(["temperature2"])
         details(["temperature", "battery", "humidity","batteryRuntime"])
     }
+    preferences {
+        section {
+            //input description: "The settings below customize additional infomation displayed in the main status tile.", type: "paragraph", element: "paragraph", title: "MAIN TILE DISPLAY"
+            //input name: "displayTempInteger", type: "bool", title: "Display temperature as integer?", defaultValue: false
+            //input name: "displayTempHighLow", type: "bool", title: "Display high/low temperature?", defaultValue: false
+            //input name: "displayHumidHighLow", type: "bool", title: "Display high/low humidity?", defaultValue: false
+        }
+        section {
+            input description: "The settings below allow correction of variations in temperature, humidity, and pressure by setting an offset. Examples: If the sensor consistently reports temperature 5 degrees too warm, enter '-5' for the Temperature Offset. If it reports humidity 3% too low, enter ‘3' for the Humidity Offset. NOTE: Changes will take effect on the NEXT temperature / humidity / pressure report.", type: "paragraph", element: "paragraph", title: "OFFSETS & UNITS"
+            input "tempOffset", "number", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
+            input "humidOffset", "number", title:"Humidity Offset", description:"Adjust humidity by this many percent", range: "*..*"
+            //input "pressOffset", "number", title:"Pressure Offset", description:"Adjust pressure by this many units", range: "*..*"
+            //input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported"
+            input description: "NOTE: The temperature unit (C / F) can be changed in the location settings for your hub.", type: "paragraph", element: "paragraph", title: ""
+        }
+        section {
+            input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+            input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+            input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
+        }
+        section {
+            input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+            input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+        }
+        section {
+            input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+            input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
+            input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
+        }
+	}
 }
 
 // Parse incoming device messages to generate events
@@ -158,7 +166,7 @@ def parse(String description) {
     // send event for heartbeat
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
-    sendEvent(name: "lastCheckin", value: now)
+    sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
