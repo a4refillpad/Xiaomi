@@ -316,6 +316,7 @@ def configure() {
 
 def installed() {
     state.battery = 0
+    resetBatteryRuntime()
     state.button = "released"
     checkIntervalEvent("installed");
 }
