@@ -95,7 +95,7 @@ metadata {
 		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
 		//Battery Reset Config
             	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
-		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		input name: "battReset", type: "bool", title: "Battery Changed?"
 		//Battery Voltage Offset
 	        input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
