@@ -44,7 +44,6 @@ metadata {
 	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000, 0003, FFFF, 0402, 0403, 0405", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.weather", deviceJoinName: "Xiaomi Aqara Temp Sensor"
 
 	command "resetBatteryRuntime"
-	command "resetMinMax"
 	}
 
     // simulator metadata
@@ -387,18 +386,20 @@ def checkNewDay(now) {
 
 // Reset daily min/max temp and humidity values to the current temp/humidity values
 def resetMinMax() {
-	def currentTemp = device.currentState('temperature')?.value
-	def currentHumidity = device.currentState('humidity')?.value
-	log.debug "${device.displayName}: Resetting daily min/max values to current temperature of ${currentTemp} and humidity of ${currentHumidity}%"
-    sendEvent(name: "maxTemp", value: device.currentValue("temperature"), displayed: false)
-    sendEvent(name: "minTemp", value: device.currentValue("temperature"), displayed: false)
-    sendEvent(name: "maxHumidity", value: device.currentValue("humidity"), displayed: false)
-    sendEvent(name: "minHumidity", value: device.currentValue("humidity"), displayed: false)
+	def currentTemp = device.currentValue('temperature')
+	def currentHumidity = device.currentValue('humidity')
+    currentTemp = currentTemp ? (int) currentTemp : currentTemp
+	log.debug "${device.displayName}: Resetting daily min/max values to current temperature of ${currentTemp}° and humidity of ${currentHumidity}%"
+    sendEvent(name: "maxTemp", value: currentTemp, displayed: false)
+    sendEvent(name: "minTemp", value: currentTemp, displayed: false)
+    sendEvent(name: "maxHumidity", value: currentHumidity, displayed: false)
+    sendEvent(name: "minHumidity", value: currentHumidity, displayed: false)
     refreshMultiAttributes()
 }
 
 // Check new min or max temp for the day
 def updateMinMaxTemps(temp) {
+	temp = temp ? (int) temp : temp
 	if ((temp > device.currentValue('maxTemp')) || (device.currentValue('maxTemp') == null))
 		sendEvent(name: "maxTemp", value: temp, displayed: false)	
 	if ((temp < device.currentValue('minTemp')) || (device.currentValue('minTemp') == null))
@@ -429,6 +430,7 @@ def configure() {
     return
 }
 
+// installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
     state.battery = 0
     resetBatteryRuntime()
