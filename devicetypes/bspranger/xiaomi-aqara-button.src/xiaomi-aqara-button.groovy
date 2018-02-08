@@ -98,7 +98,7 @@ metadata {
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
-		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
 		//Battery Reset Config
             	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
 		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
