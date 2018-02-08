@@ -311,6 +311,7 @@ def configure() {
     checkIntervalEvent("configure");
 }
 
+// installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
     state.battery = 0
     resetBatteryRuntime()
