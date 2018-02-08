@@ -1,5 +1,7 @@
 /**
- *  Copyright 2017 bspranger
+ *  Xiaomi Temperature Humidity Sensor
+ *  Version 1.0
+ *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -10,20 +12,14 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  2017-03 First release of the Xiaomi Temp/Humidity Device Handler
- *  2017-03 Includes battery level (hope it works, I've only had access to a device for a limited period, time will tell!)
- *  2017-03 Last checkin activity to help monitor health of device and multiattribute tile
- *  2017-03 Changed temperature to update on .1° changes - much more useful
- *  2017-03-08 Changed the way the battery level is being measured. Very different to other Xiaomi sensors.
- *  2017-03-23 Added Fahrenheit support
- *  2017-03-25 Minor update to display unknown battery as "--", added fahrenheit colours to main and device tiles
- *  2017-03-29 Temperature offset preference added to handler
+ *  Original device handler code by a4refillpad
+ *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh 
+ * 
+ *  Known issues:
+ *  Xiaomi sensors do not seem to respond to refresh requests
+ *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
+ *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub. See 
  *
- *  known issue: these devices do not seem to respond to refresh requests left in place in case things change
- *  known issue: tile formatting on ios and android devices vary a little due to smartthings app - again, nothing I can do about this
- *  known issue: there's nothing I can do about the pairing process with smartthings. it is indeed non standard, please refer to community forum for details
- *  bspranger - renamed to bspranger to remove confusion of a4refillpad
- *  bspranger - rewritting the DH to use Maps so it conforms with the other Xiaomi DHs.
  */
 
 metadata {
@@ -163,14 +159,17 @@ metadata {
 // Parse incoming device messages to generate events
 def parse(String description) {
 
-    // send event for heartbeat
+	// Determine current time and date in the user-selected date format and clock style
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
+	// Any report - temp, humidity, pressure, & battery - results in a lastCheckin event and update to Last Checkin tile
+	// However, only a non-parseable report results in lastCheckin being displayed in events log
     sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
 
+	// Send message data to appropriate parsing function based on the type of report
     if (description?.startsWith("temperature: ")) {
         map = parseTemperature(description)
     } else if (description?.startsWith("humidity: ")) {
@@ -252,7 +251,7 @@ private Map parseHumidity(String description){
     return [:]
 }
 
-
+// Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
     def i
     Map resultMap = [:]
@@ -294,7 +293,6 @@ private Map parseCatchAllMessage(String description) {
     return resultMap
 }
 
-
 // Parse raw data on reset button press to retrieve reported battery voltage
 private Map parseReadAttr(String description) {
     Map resultMap = [:]
@@ -322,7 +320,7 @@ private Map parseReadAttr(String description) {
     return resultMap
 }
 
-
+// Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
 	def minVolts
@@ -369,6 +367,7 @@ def configure() {
     checkIntervalEvent("configure");
 }
 
+// installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
     state.battery = 0
     resetBatteryRuntime()
@@ -376,6 +375,7 @@ def installed() {
     schedule("0 0 0 * * ?", tempReset)
 }
 
+// updated() will run twice every time user presses save in preference settings page
 def updated() {
     checkIntervalEvent("updated");
 	if(battReset){
@@ -397,6 +397,7 @@ def formatDate(batteryReset) {
     def correctedTimezone = ""
     def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
 
+	// If user's hub timezone is not set, display error messages in log and events log, and set timezone to GMT to avoid errors
     if (!(location.timeZone)) {
         correctedTimezone = TimeZone.getTimeZone("GMT")
         log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
