@@ -1,5 +1,6 @@
 /**
  *  Xiaomi Aqara Door/Window Sensor
+ *  Version 1.0
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -11,27 +12,14 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Based on original DH by Eric Maycock 2015 and Rave from Lazcad
+ *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
+ *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh 
+ * 
+ *  Known issues:
+ *  Xiaomi sensors do not seem to respond to refresh requests
+ *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
+ *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub. See 
  *
- *  Change log:
- *  Added DH Colours
- *  Added 100% battery max
- *  Fixed battery parsing problem
- *  Added lastcheckin attribute and tile
- *  Added extra tile to show when last opened
- *  Colours to confirm to new smartthings standards
- *  Added ability to force override current state to Open or Closed.
- *  Added experimental health check as worked out by rolled54.Why
- *  bspranger - Adding Aqara Support
- *  Rinkelk - added date-attribute support for Webcore
- *  Rinkelk - Changed battery percentage with code from cancrusher
- *  Rinkelk - Changed battery icon according to Mobile785
- *  sulee - Added endpointId copied from GvnCampbell's DH - Detects sensor when adding
- *  sulee - Track battery as average of min and max over time
- *  sulee - Clean up some of the code
- *  bspranger - renamed to bspranger to remove confusion of a4refillpad
- *  veeceeoh - added battery parse on button press
- *  veeceoh - added new refresh & configure code, fixed open/close override code
  */
 metadata {
     definition (name: "Xiaomi Aqara Door/Window Sensor", namespace: "bspranger", author: "bspranger") {
@@ -97,34 +85,35 @@ metadata {
 	details(["contact","battery","resetClosed","resetOpen","spacer","lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
    }
    preferences {
-	section {
+		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
-		input name: "clockformat", type: "bool", title: "Use 24 hour clock?", defaultValue: false
-		}
-	section {
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
+		//Battery Reset Config
             	input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
 		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
-		}
-	section {
+		//Battery Voltage Offset
 	        input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
 		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
-		}
   } 
 }
 
+// Parse incoming device messages to generate events
 def parse(String description) {
     def result = zigbee.getEvent(description)
 
-    // send event for heartbeat
+	// Determine current time and date in the user-selected date format and clock style
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
+	// Any report - contact sensor & Battery - results in a lastCheckin event and update to Last Checkin tile
+	// However, only a non-parseable report results in lastCheckin being displayed in events log
     sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
     Map map = [:]
 
+	// Send message data to appropriate parsing function based on the type of report	
     if (result) {
         log.debug "${device.displayName} Event: ${result}"
         map = getContactResult(result);
@@ -141,6 +130,7 @@ def parse(String description) {
     return results
 }
 
+// Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
 private Map getBatteryResult(rawValue) {
     def rawVolts = rawValue / 1000
     def minVolts
@@ -171,6 +161,7 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
+// Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
     Map resultMap = [:]
     def i
@@ -264,6 +255,7 @@ def installed() {
     checkIntervalEvent("installed");
 }
 
+// updated() will run twice every time user presses save in preference settings page
 def updated() {
     checkIntervalEvent("updated");
 	if(battReset){
@@ -282,6 +274,7 @@ def formatDate(batteryReset) {
     def correctedTimezone = ""
     def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
 
+	// If user's hub timezone is not set, display error messages in log and events log, and set timezone to GMT to avoid errors
     if (!(location.timeZone)) {
         correctedTimezone = TimeZone.getTimeZone("GMT")
         log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
