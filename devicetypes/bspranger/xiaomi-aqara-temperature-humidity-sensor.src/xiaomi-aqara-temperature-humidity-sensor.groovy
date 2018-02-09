@@ -133,7 +133,7 @@ metadata {
             state "lastcheckin", label:'Last Checkin:\n ${currentValue}'
         }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
-            state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
+            state "batteryRuntime", label:'Battery Changed: ${currentValue}'
         }
 
         main("temperature2")
