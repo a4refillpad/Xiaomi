@@ -37,7 +37,6 @@ metadata {
 	attribute "maxHumidity", "number"
 	attribute "minHumidity", "number"
 	attribute "multiAttributesReport", "String"
-	attribute "multiAttributesIcon", "String"
 	attribute "currentDay", "String"
 	attribute "batteryRuntime", "String"
 
