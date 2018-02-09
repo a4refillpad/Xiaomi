@@ -213,6 +213,15 @@ def parse(String description) {
 		return [:]
 }
 
+// Calculate temperature with 0.1 precision in C or F unit as set by hub location settings
+private parseTemperature(String description) {
+	def temp = ((description - "temperature: ").trim()) as Float
+	def offset = tempOffset ? tempOffset : 0
+	temp = (temp > 100) ? (100 - temp) : temp
+    temp = (temperatureScale == "F") ? ((temp * 1.8) + 32) + offset : temp + offset
+	return temp.round(1)
+}
+
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
     def i
@@ -253,15 +262,6 @@ private Map parseCatchAllMessage(String description) {
         }
     }
     return resultMap
-}
-
-// Calculate temperature with 0.1 precision in C or F unit as set by hub location settings
-private parseTemperature(String description) {
-	def temp = ((description - "temperature: ").trim()) as Float
-	def offset = tempOffset ? tempOffset : 0
-	temp = (temp > 100) ? (100 - temp) : temp
-    temp = (temperatureScale == "F") ? ((temp * 1.8) + 32) + offset : temp + offset
-	return temp.round(1)
 }
 
 // Parse pressure report or battery report on reset button press
