@@ -223,7 +223,9 @@ private Map parseCatchAllMessage(String description) {
 
 // Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
 private Map getBatteryResult(rawValue) {
-    def rawVolts = rawValue / 1000
+    // raw voltage is normally supplied as a 4 digit integer that needs to be divided by 1000
+    // but in the case the final zero is dropped then divide by 100 to get actual voltage value 
+    def rawVolts = (rawValue < 1000) ? (rawValue / 100) : (rawValue / 1000)
     def minVolts
     def maxVolts
 
