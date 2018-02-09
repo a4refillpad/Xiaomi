@@ -107,7 +107,7 @@ metadata {
 def parse(String description) {
     log.debug "${device.displayName} Parsing: $description"
 
-	// Determine current time and date in the user-selected date format and clock style
+    // Determine current time and date in the user-selected date format and clock style
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
 	// Any report - motion, lux & Battery - results in a lastCheckin event and update to Last Checkin tile
@@ -117,7 +117,7 @@ def parse(String description) {
 
     Map map = [:]
 	
-	// Send message data to appropriate parsing function based on the type of report	
+    // Send message data to appropriate parsing function based on the type of report	
     if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     }
@@ -154,8 +154,10 @@ private Map parseIlluminanceMessage(String description) {
 
 // Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
 private Map getBatteryResult(rawValue) {
-    def rawVolts = rawValue / 1000
-	def minVolts
+    // raw voltage is normally supplied as a 4 digit integer that needs to be divided by 1000
+    // but in the case the final zero is dropped then divide by 100 to get actual voltage value 
+    def rawVolts = (rawValue < 1000) ? (rawValue / 100) : (rawValue / 1000)
+    def minVolts
     def maxVolts
 
     if(voltsmin == null || voltsmin == "")
