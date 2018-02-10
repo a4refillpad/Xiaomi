@@ -86,7 +86,8 @@ metadata {
 	}
 	preferences {
 		//Reset to No Motion Config
-		input "motionreset", "number", title: "Enter the number of seconds of inactivity required before resetting to 'no motion'", description: "Range 1-60 (default is 7)", range: "1..60"
+		input description: "This setting only changes how long MOTION DETECTED is reported in SmartThings. The sensor hardware always remains blind to motion for 60 seconds after any activity.", type: "paragraph", element: "paragraph", title: "MOTION RESET"
+		input "motionreset", "number", title: "", description: "Enter number of seconds (default = 60)", range: "1..7200"
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
@@ -158,7 +159,7 @@ private Map parseReportAttributeMessage(String description) {
 	// The sensor only sends a motion detected message so the reset to no motion is performed in code
     if ((cluster == "0406") & (value == "01")) {
 		log.debug "${device.displayName} detected motion"
-		def seconds = motionreset ? motionreset : 7
+		def seconds = motionreset ? motionreset : 60
 		resultMap = [
 			name: 'motion',
 			value: 'active',
