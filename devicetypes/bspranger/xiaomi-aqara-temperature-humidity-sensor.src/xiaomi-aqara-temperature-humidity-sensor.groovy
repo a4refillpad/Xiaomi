@@ -150,7 +150,7 @@ metadata {
 		input name: "displayHumidHighLow", type: "bool", title: "Display high/low humidity?"
 		//Temp, Humidity, and Pressure Offsets and Pressure Units
 		input description: "The settings below allow correction of variations in temperature, humidity, and pressure by setting an offset. Examples: If the sensor consistently reports temperature 5 degrees too warm, enter '-5' for the Temperature Offset. If it reports humidity 3% too low, enter ‘3' for the Humidity Offset. NOTE: Changes will take effect on the NEXT temperature / humidity / pressure report.", type: "paragraph", element: "paragraph", title: "OFFSETS & UNITS"
-		input "tempOffset", "number", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
+		input "tempOffset", "decimal", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
 		input "humidOffset", "number", title:"Humidity Offset", description:"Adjust humidity by this many percent", range: "*..*"
 		input "pressOffset", "number", title:"Pressure Offset", description:"Adjust pressure by this many units", range: "*..*"
 		input name:"PressureUnits", type:"enum", title:"Pressure Units", options:["mbar", "kPa", "inHg", "mmHg"], description:"Sets the unit in which pressure will be reported"
