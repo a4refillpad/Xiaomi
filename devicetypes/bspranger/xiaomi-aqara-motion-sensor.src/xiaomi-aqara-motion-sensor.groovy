@@ -67,6 +67,9 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+        valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    state "default", label:''
+        }
         valueTile("illuminance", "device.illuminance", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
             state "default", label:'${currentValue} lux', unit:"lux"
         }
@@ -79,12 +82,9 @@ metadata {
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
              state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
-        standardTile("empty1x1", "null", width: 1, height: 1, decoration:"flat") {
-             state "emptySmall", label:"", defaultState: true
-        }
 
         main(["motion"])
-        details(["motion", "battery", "illuminance", "reset", "lastcheckin", "batteryRuntime"])
+        details(["motion", "battery", "illuminance", "reset", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
     }
    preferences {
 		//motion Time out
