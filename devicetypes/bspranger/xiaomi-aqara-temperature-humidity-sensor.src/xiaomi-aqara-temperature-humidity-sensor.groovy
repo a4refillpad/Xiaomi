@@ -75,7 +75,7 @@ metadata {
                         [value: 84, color: "#f1d801"],
                         [value: 95, color: "#d04e00"],
                         [value: 96, color: "#bc2323"]
-                        // Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
+						// Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
                         //[value: 0, color: "#153591"], [value: 7, color: "#1e9cbb"], [value: 15, color: "#90d2a7"], [value: 23, color: "#44b621"], [value: 28, color: "#f1d801"], [value: 35, color: "#d04e00"], [value: 37, color: "#bc2323"]
                     ]
                 )
@@ -375,8 +375,7 @@ def resetBatteryRuntime() {
 
 // If the day of month has changed from that of previous event, reset the daily min/max temp values
 def checkNewDay(now) {
-	def oldDay = ((device.currentValue("currentDay")) == null) 
-	"32" : (device.currentValue("currentDay"))
+	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
 	def newDay = new Date(now).format("dd")
 	if (newDay != oldDay) {
 		resetMinMax()
