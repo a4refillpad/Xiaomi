@@ -117,8 +117,7 @@ metadata {
                 [value: 59, color: "#0072BB"],
                 [value: 76, color: "#085396"]
             ]
-        }
-        
+        }        
         valueTile("battery", "device.battery", inactiveLabel: false, width: 2, height: 2) {
             state "battery", label:'${currentValue}%', unit:"%",
             backgroundColors:[
@@ -127,6 +126,12 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+        valueTile("spacer1", "spacer1", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    state "default", label:''
+        }
+        valueTile("spacer2", "spacer2", decoration: "flat", inactiveLabel: false, width: 1, height: 2) {
+	    state "default", label:''
+        }
         valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "lastcheckin", label:'Last Event:\n ${currentValue}'
         }     
@@ -134,7 +139,7 @@ metadata {
             state "batteryRuntime", label:'Battery Changed: ${currentValue}'
         }     
         main("temperature2")
-        details(["temperature", "battery", "humidity", "lastcheckin", "batteryRuntime"])
+        details(["temperature", "spacer2", "battery", "humidity", "spacer2", "spacer1", "lastcheckin",  "spacer1", "spacer1", "batteryRuntime", "spacer1"])
     }
     preferences {
 		//Button Config
