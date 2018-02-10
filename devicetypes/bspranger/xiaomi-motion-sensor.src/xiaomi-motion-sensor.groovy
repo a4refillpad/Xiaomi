@@ -63,8 +63,11 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
-        standardTile("empty2x2", "null", width: 2, height: 2, decoration: "flat") {
-             state "emptySmall", label:'', defaultState: true
+       valueTile("spacer1", "spacer1", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    state "default", label:''
+        }
+        valueTile("spacer2", "spacer2", decoration: "flat", inactiveLabel: false, width: 1, height: 2) {
+	    state "default", label:''
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"reset", label: "Reset Motion", icon:"st.motion.motion.active"
@@ -76,7 +79,7 @@ metadata {
              state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
         main(["motion"])
-        details(["motion", "battery", "empty2x2", "reset", "lastcheckin", "batteryRuntime"])
+        details(["motion", "spacer2", "battery", "reset", "spacer2", "spacer2", "lastcheckin", "spacer2", "spacer2", "batteryRuntime", "spacer2"])
    }
    preferences {
 		//motion Time out
