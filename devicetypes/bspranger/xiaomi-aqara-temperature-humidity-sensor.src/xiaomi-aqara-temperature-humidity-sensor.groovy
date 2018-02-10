@@ -129,6 +129,9 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+        valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    state "default", label:''
+        }
         valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "lastcheckin", label:'Last Event:\n ${currentValue}'
         }
@@ -137,7 +140,7 @@ metadata {
         }
 
         main("temperature2")
-        details(["temperature", "battery", "humidity", "pressure", "lastcheckin", "batteryRuntime"])
+        details(["temperature", "battery", "humidity", "pressure", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
     }
 	preferences {
 		//Button Config
