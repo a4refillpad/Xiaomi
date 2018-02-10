@@ -187,23 +187,23 @@ private Map parseCatchAllMessage(String description) {
     def i
     Map resultMap = [:]
     def catchall = zigbee.parse(description)
-    log.debug cluster
+    log.debug catchall
     if (catchall.clusterId == 0x0000) {
-		def MsgLength = cluster.data.size();
+		def MsgLength = catchall.data.size();
 		// Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-		if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF)) {
+		if ((catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
 			for (i = 0; i < (MsgLength-3); i++) {
-				if (cluster.data.get(i) == 0x21) { // check the data ID and data type
+				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
 					// next two bytes are the battery voltage
-					resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
+					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
 				}
 			}
 		}
-		else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF)) {
+		else if ((catchall.data.get(0) == 0x01) && (catchall.data.get(1) == 0xFF)) {
 			for (i = 0; i < (MsgLength-3); i++) {
-				if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21)) { // check the data ID and data type
+				if ((catchall.data.get(i) == 0x01) && (catchall.data.get(i+1) == 0x21)) { // check the data ID and data type
 					// next two bytes are the battery voltage.
-					resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
+					resultMap = getBatteryResult((catchall.data.get(i+3)<<8) + catchall.data.get(i+2))
 				}
 			}
 		}
