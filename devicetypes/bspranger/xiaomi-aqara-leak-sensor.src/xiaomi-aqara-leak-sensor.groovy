@@ -65,6 +65,9 @@ metadata {
                 [value: 51, color: "#44b621"]
             ]
         }
+        valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    state "default", label:''
+        }
         valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
             state "default", label:'Last Event:\n${currentValue}'
         }
@@ -79,7 +82,7 @@ metadata {
         }
 
         main (["water"])
-        details(["water","battery","resetDry","resetWet","lastcheckin","batteryRuntime"])
+        details(["water","battery","resetDry","resetWet", "spacer", "lastcheckin", "spacer", "spacer","batteryRuntime", "spacer"])
    }
    preferences {
 		//Date & Time Config
