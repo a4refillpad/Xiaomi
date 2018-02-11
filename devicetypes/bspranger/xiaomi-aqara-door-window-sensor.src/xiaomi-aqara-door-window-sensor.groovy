@@ -220,8 +220,9 @@ private Map parseReadAttr(String description) {
     return resultMap
 }
 
-private Map getContactResult(value) {
-    def descriptionText = "${device.displayName} was ${value == 'open' ? 'opened' : 'closed'}"
+private Map getContactResult(result) {
+    def value = result.value == "on" ? "open" : "closed"
+    def descriptionText = "${device.displayName} was ${value == "open" ? value + "ed" : value}"
     return [
         name: 'contact',
         value: value,
