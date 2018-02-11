@@ -447,7 +447,7 @@ def updated() {
 		if(battReset) {
 			resetBatteryRuntime()
 			device.updateSetting("battReset", false)
-	}
+		}
 }
 
 private checkIntervalEvent(text) {
