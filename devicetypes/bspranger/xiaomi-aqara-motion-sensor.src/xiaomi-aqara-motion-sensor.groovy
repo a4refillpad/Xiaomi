@@ -69,7 +69,7 @@ metadata {
             state "default", label:''
         }
         valueTile("illuminance", "device.illuminance", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}\nlux', unit:"lux"
+            state "default", label:'${currentValue}\nlux', unit:"lux",
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", action:"stopMotion", label:'Reset Motion', icon:"st.motion.motion.active"
@@ -80,10 +80,10 @@ metadata {
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
              state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
-
 		main(["motion"])
 		details(["motion", "battery", "illuminance", "reset", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
 	}
+
 	preferences {
 		//Reset to No Motion Config
 		input description: "This setting only changes how long MOTION DETECTED is reported in SmartThings. The sensor hardware always remains blind to motion for 60 seconds after any activity.", type: "paragraph", element: "paragraph", title: "MOTION RESET"
@@ -110,7 +110,7 @@ def parse(String description) {
     def now = formatDate()    
     def nowDate = new Date(now).getTime()
 
-	// Any report - motion, lux & Battery - results in a lastCheckin event and update to Last Checkin tile
+	// Any report - motion, lux & Battery - results in a lastCheckin event and update to Last Event tile
 	// However, only a non-parseable report results in lastCheckin being displayed in events log
     sendEvent(name: "lastCheckin", value: now, displayed: false)
     sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
@@ -147,7 +147,7 @@ private Map parseIlluminance(String description) {
     ]
     return result
 }
-// Parse motion active/inactive report or battery report on reset button press
+// Parse motion active report or model name message on reset button press
 private Map parseReportAttributeMessage(String description) {
     def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
     def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
@@ -157,7 +157,7 @@ private Map parseReportAttributeMessage(String description) {
     def now = formatDate()
 
 	// The sensor only sends a motion detected message so the reset to no motion is performed in code
-    if ((cluster == "0406") & (value == "01")) {
+    if (cluster == "0406" & value == "01") {
 		log.debug "${device.displayName} detected motion"
 		def seconds = motionreset ? motionreset : 60
 		resultMap = [
@@ -171,8 +171,7 @@ private Map parseReportAttributeMessage(String description) {
 	else if (cluster == "0000" && attrId == "0005") {
         def modelName = ""
         // Parsing the model
-        for (int i = 0; i < value.length(); i+=2)
-        {
+        for (int i = 0; i < value.length(); i+=2) {
             def str = value.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
             modelName = modelName + NextChar
@@ -184,13 +183,13 @@ private Map parseReportAttributeMessage(String description) {
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
-    def i
-    Map resultMap = [:]
+	Map resultMap = [:]
     def catchall = zigbee.parse(description)
+    def i
     log.debug catchall
     if (catchall.clusterId == 0x0000) {
 		def MsgLength = catchall.data.size();
-		// Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+		// Xiaomi Aqara CatchAll does not have identifiers, first UINT16 is Battery
 		if ((catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
 			for (i = 0; i < (MsgLength-3); i++) {
 				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
@@ -219,12 +218,12 @@ private Map getBatteryResult(rawValue) {
 	def minVolts
     def maxVolts
 
-    if(voltsmin == null || voltsmin == "")
+    if (voltsmin == null || voltsmin == "")
     	minVolts = 2.5
     else
    	minVolts = voltsmin
     
-    if(voltsmax == null || voltsmax == "")
+    if (voltsmax == null || voltsmax == "")
     	maxVolts = 3.0
     else
 	maxVolts = voltsmax
@@ -236,8 +235,8 @@ private Map getBatteryResult(rawValue) {
         name: 'battery',
         value: roundedPct,
         unit: "%",
-        isStateChange:true,
-        descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
+        isStateChange: true,
+        descriptionText: "${device.displayName} raw battery is ${rawVolts}v"
     ]
 
     return result
@@ -246,9 +245,9 @@ private Map getBatteryResult(rawValue) {
 // If currently in 'active' motion detected state, stopMotion() resets to 'inactive' state and displays 'no motion'
 def stopMotion() {
 	if (device.currentState('motion')?.value == "active") {
-		def seconds = motionreset ? motionreset : 7
+		def seconds = motionreset ? motionreset : 60
 		sendEvent(name:"motion", value:"inactive", isStateChange: true)
-		log.debug "${device.displayName} reset to no motion after ${seconds} seconds of inactivity"
+		log.debug "${device.displayName} reset to no motion after ${seconds}"
 	}
 }
 
