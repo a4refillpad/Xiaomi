@@ -116,9 +116,11 @@ def parse(String description) {
 	// Send message data to appropriate parsing function based on the type of report	
     if (result) {
         log.debug "${device.displayName} Event: ${result}"
-        map = getContactResult(result);
-        sendEvent(name: "lastOpened", value: now, displayed: false)
-        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+        map = getContactResult(result)
+        if (map.value == "open") {
+            sendEvent(name: "lastOpened", value: now, displayed: false)
+            sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+        }
     } else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     } else if (description?.startsWith('read attr - raw:')) {
@@ -191,7 +193,7 @@ private Map parseCatchAllMessage(String description) {
 
 // Parse raw data on reset button press to retrieve reported battery voltage
 private Map parseReadAttr(String description) {
-    log.debug "${device.displayName}: button press detected"
+    log.debug "${device.displayName}: reset button press detected"
     def buttonRaw = (description - "read attr - raw:")
     Map resultMap = [:]
 
@@ -237,32 +239,37 @@ def resetOpen() {
     def nowDate = new Date(now).getTime()
     sendEvent(name: "lastOpened", value: now, displayed: false)
     sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
-    sendEvent(name:"contact", value:"open")
+    sendEvent(name: "contact", value:"open")
 }
 
-def resetBatteryRuntime() {
-    def now = formatDate(true)    
-    sendEvent(name: "batteryRuntime", value: now)
-}
-
-def configure() {
-    log.debug "${device.displayName}: configuring"
-    state.battery = 0
-    checkIntervalEvent("configure");
-    return
+//Reset the date displayed in Battery Changed tile to current date
+def resetBatteryRuntime(paired) {
+	def now = formatDate(true)
+	def newlyPaired = paired ? " for newly paired sensor" : ""
+	sendEvent(name: "batteryRuntime", value: now)
+	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
-    state.battery = 0
-    resetBatteryRuntime()
-    checkIntervalEvent("installed");
+	state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("installed")
+}
+
+// configure() runs after installed() when a sensor is paired
+def configure() {
+	log.debug "${device.displayName}: configuring"
+		state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("configured")
+	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
-    checkIntervalEvent("updated");
-	if(battReset){
+		checkIntervalEvent("updated")
+		if(battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
