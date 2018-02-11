@@ -219,7 +219,7 @@ private Map getBatteryResult(rawValue) {
 // If currently in 'active' motion detected state, stopMotion() resets to 'inactive' state and displays 'no motion'
 def stopMotion() {
 	if (device.currentState('motion')?.value == "active") {
-		def seconds = motionreset ? motionreset : 7
+		def seconds = motionreset ? motionreset : 60
 		sendEvent(name:"motion", value:"inactive", isStateChange: true)
 		log.debug "${device.displayName} reset to no motion after ${seconds}"
 	}
