@@ -358,11 +358,6 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
-def resetBatteryRuntime() {
-    def now = formatDate(true)   
-    sendEvent(name: "batteryRuntime", value: now)
-}
-
 // If the day of month has changed from that of previous event, reset the daily min/max temp values
 def checkNewDay(now) {
 	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
@@ -411,34 +406,37 @@ def refreshMultiAttributes() {
     sendEvent(name: "multiAttributesReport", value: "${temphiloAttributes}${humidhiloAttributes}", displayed: false)
 }
 
-def configure() {
-    log.debug "${device.displayName}: Configuring"
-    state.battery = 0
-    checkIntervalEvent("configured");
-    return
+//Reset the date displayed in Battery Changed tile to current date
+def resetBatteryRuntime(paired) {
+	def now = formatDate(true)
+	def newlyPaired = paired ? " for newly paired sensor" : ""
+	sendEvent(name: "batteryRuntime", value: now)
+	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
+// installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
-    state.battery = 0
-    resetBatteryRuntime()
-    log.debug "${device.displayName}: Setting Battery Changed to current date for newly paired sensor"
-    checkIntervalEvent("installed");
+	state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("installed")
 }
 
+// configure() runs after installed() when a sensor is paired
+def configure() {
+	log.debug "${device.displayName}: configuring"
+		state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("configured")
+	return
+}
+
+// updated() will run twice every time user presses save in preference settings page
 def updated() {
-    checkIntervalEvent("updated");
-	if(battReset){
+		checkIntervalEvent("updated")
+		if(battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	updateMinMaxTemps(device.currentValue('temperature'))
-	updateMinMaxHumidity(device.currentValue('humidity'))
-}
-
-private checkIntervalEvent(text) {
-    // Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-    log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
-    sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
 def formatDate(batteryReset) {
