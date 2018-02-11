@@ -113,18 +113,17 @@ def parse(String description) {
     Map map = [:]
 
 	// Send message data to appropriate parsing function based on the type of report
-    if (description?.startsWith('on/off: ')) 
-    {
+    if (description?.startsWith('on/off: ')) {
         map = parseCustomMessage(description) 
-        sendEvent(name: "lastOpened", value: now, displayed: false)
-        sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false) 
+        if (map.value == "open") {
+            sendEvent(name: "lastOpened", value: now, displayed: false)
+            sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
+        }
     }
-    else if (description?.startsWith('catchall:')) 
-    {
+    else if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     }
-    else if (description?.startsWith("read attr - raw: "))
-    {
+    else if (description?.startsWith("read attr - raw: ")) {
         map = parseReadAttrMessage(description)  
     }
     log.debug "${device.displayName}: Parse returned $map"
@@ -133,31 +132,23 @@ def parse(String description) {
     return results;
 }
 
-private Map parseReadAttrMessage(String description) {
+private Map parseReadAttrMessage(String description) {   
+    def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+    def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+    def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
     def result = [
         name: 'Model',
         value: ''
     ]
-    def cluster
-    def attrId
-    def value
-        
-    cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
-    attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
-    value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-    //log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
     
-    if (cluster == "0000" && attrId == "0005") 
-    {
+    if (cluster == "0000" && attrId == "0005") {
         // Parsing the model
-        for (int i = 0; i < value.length(); i+=2) 
-        {
+        for (int i = 0; i < value.length(); i+=2) {
             def str = value.substring(i, i+2);
             def NextChar = (char)Integer.parseInt(str, 16);
             result.value = result.value + NextChar
         }
     }
-    //log.debug "Result: ${result}"
     return result
 }
 
@@ -186,7 +177,7 @@ private Map getBatteryResult(rawValue) {
         name: 'battery',
         value: roundedPct,
         unit: "%",
-        isStateChange:true,
+        isStateChange: true,
         descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
     ]
     
@@ -204,13 +195,10 @@ private Map parseCatchAllMessage(String description) {
         switch(cluster.clusterId) {
             case 0x0000:
                 def MsgLength = cluster.data.size();
-                for (i = 0; i < (MsgLength-3); i++)
-                {
+                for (i = 0; i < (MsgLength-3); i++) {
                     // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF))
-                    {
-                        if (cluster.data.get(i) == 0x21) // check the data ID and data type
-                        {
+                    if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF)) {
+			    if (cluster.data.get(i) == 0x21) { // check the data ID and data type
                             // next two bytes are the battery voltage.
                             resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
                             return resultMap
@@ -240,12 +228,13 @@ private Map getContactResult(value) {
     return [
         name: 'contact',
         value: value,
+        isStateChange: true,
         descriptionText: descriptionText
     ]
 }
 
 def resetClosed() {
-    sendEvent(name:"contact", value:"closed")
+    sendEvent(name: "contact", value: "closed", descriptionText: "${device.displayName} was manually reset to closed")
 } 
 
 def resetOpen() {
@@ -253,7 +242,7 @@ def resetOpen() {
 	def nowDate = new Date(now).getTime()
 	sendEvent(name: "lastOpened", value: now, displayed: false)
 	sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false) 
-	sendEvent(name:"contact", value:"open")
+	sendEvent(name: "contact", value: "open", descriptionText: "${device.displayName} was manually reset to open")
 }
 
 def resetBatteryRuntime() {
