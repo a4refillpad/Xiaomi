@@ -44,7 +44,52 @@ metadata {
         command "enrollResponse"
         command "resetBatteryRuntime"
  
-		    fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500", outClusters: "0019", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
-        
+	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_motion.aq2", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
+     	}       
+
+    	// simulator metadata
+	simulator {
+		for (int i = 0; i <= 100; i += 10) {
+			status "${i}F": "temperature: $i F"
+		}
+		for (int i = 0; i <= 100; i += 10) {
+            		status "${i}%": "humidity: ${i}%"
+        	}
+    	}
+	
+	tiles(scale: 2) {
+		multiAttributeTile(name:"smoke", type: "generic", width: 6, height: 4) {
+			tileAttribute ("device.smoke", key: "PRIMARY_CONTROL") {
+           			attributeState("clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
+            			attributeState("detected", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#e86d13")   
+ 			}
+		}
+        	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+            		state "default", label:'${currentValue}%', unit:"%", 
+			backgroundColors:[
+                		[value: 10, color: "#bc2323"],
+                		[value: 26, color: "#f1d801"],
+                		[value: 51, color: "#44b621"]
+            		]
+        	}
+		standardTile("icon", "", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            		state "default", label:'Last Tested', icon:"st.alarm.smoke.test"
+		}
+		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 2) {
+            		state "default", label:'${currentValue}'
+		}
+		valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
+	    		state "default", label:''
+		}
+		valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
+            		state "lastcheckin", label:'Last Event:\n ${currentValue}'
+        	}
+        	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
+            		state "batteryRuntime", label:'Battery Changed: ${currentValue}'
+        	}
+		
+		main (["smoke"])
+		details(["smoke", "battery", "icon", "lastTested", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
+	}
 }
   
