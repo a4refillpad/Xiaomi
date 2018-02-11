@@ -144,12 +144,12 @@ metadata {
     preferences {
 		//Button Config
 		input description: "The settings below customize additional infomation displayed in the main status tile.", type: "paragraph", element: "paragraph", title: "MAIN TILE DISPLAY"
-		input name: "displayTempInteger", type: "bool", title: "Display temperature as integer?"
+		input name: "displayTempInteger", type: "bool", title: "Display temperature as integer?", description:"NOTE: Takes effect on the next temperature report. High/Low temperatures are always displayed as integers."
 		input name: "displayTempHighLow", type: "bool", title: "Display high/low temperature?"
 		input name: "displayHumidHighLow", type: "bool", title: "Display high/low humidity?"
 		//Temp and Humidity Offsets
 		input description: "The settings below allow correction of variations in temperature and humidity by setting an offset. Examples: If the sensor consistently reports temperature 5 degrees too warm, enter '-5' for the Temperature Offset. If it reports humidity 3% too low, enter ‘3' for the Humidity Offset. NOTE: Changes will take effect on the NEXT temperature / humidity / pressure report.", type: "paragraph", element: "paragraph", title: "OFFSETS & UNITS"
-		input "tempOffset", "number", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
+		input "tempOffset", "decimal", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*"
 		input "humidOffset", "number", title:"Humidity Offset", description:"Adjust humidity by this many percent", range: "*..*"
 		input description: "NOTE: The temperature unit (C / F) can be changed in the location settings for your hub.", type: "paragraph", element: "paragraph", title: ""
 		//Date & Time Config
@@ -317,11 +317,6 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
-def resetBatteryRuntime() {
-    def now = formatDate(true)    
-    sendEvent(name: "batteryRuntime", value: now)
-}
-
 // If the day of month has changed from that of previous event, reset the daily min/max temp values
 def checkNewDay(now) {
 	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
@@ -371,30 +366,37 @@ def refreshMultiAttributes() {
 	sendEvent(name: "multiAttributesReport", value: "${temphiloAttributes}${humidhiloAttributes}", displayed: false)
 }
 
-def configure() {
-    log.debug "${device.displayName}: configure"
-    state.battery = 0
-    checkIntervalEvent("configure");
-    return
+//Reset the date displayed in Battery Changed tile to current date
+def resetBatteryRuntime(paired) {
+	def now = formatDate(true)
+	def newlyPaired = paired ? " for newly paired sensor" : ""
+	sendEvent(name: "batteryRuntime", value: now)
+	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
-    state.battery = 0
-    resetBatteryRuntime()
-    log.debug "${device.displayName}: Setting Battery Changed to current date for newly paired sensor"
-    checkIntervalEvent("installed");
+	state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("installed")
+}
+
+// configure() runs after installed() when a sensor is paired
+def configure() {
+	log.debug "${device.displayName}: configuring"
+		state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("configured")
+	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
-    checkIntervalEvent("updated");
-	if(battReset){
+		checkIntervalEvent("updated")
+		if(battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
-  }
-	updateMinMaxTemps(device.currentValue('temperature'))
-	updateMinMaxHumidity(device.currentValue('humidity'))
+	}
 }
 
 private checkIntervalEvent(text) {

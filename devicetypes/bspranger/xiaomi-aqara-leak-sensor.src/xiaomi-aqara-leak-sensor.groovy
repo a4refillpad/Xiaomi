@@ -253,28 +253,34 @@ def resetWet() {
     sendEvent(name: "lastWetDate", value: nowDate, displayed: false)
 }
 
-def resetBatteryRuntime() {
-    def now = formatDate(true)    
-    sendEvent(name: "batteryRuntime", value: now)
-}
-
-def configure() {
-    log.debug "${device.displayName}: configuring"
-    state.battery = 0
-    checkIntervalEvent("configure");
+//Reset the date displayed in Battery Changed tile to current date
+def resetBatteryRuntime(paired) {
+	def now = formatDate(true)
+	def newlyPaired = paired ? " for newly paired sensor" : ""
+	sendEvent(name: "batteryRuntime", value: now)
+	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
-    state.battery = 0
-    resetBatteryRuntime()
-    checkIntervalEvent("installed");
+	state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("installed")
+}
+
+// configure() runs after installed() when a sensor is paired
+def configure() {
+	log.debug "${device.displayName}: configuring"
+		state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("configured")
+	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
-    checkIntervalEvent("updated");
-	if(battReset){
+		checkIntervalEvent("updated")
+		if(battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
