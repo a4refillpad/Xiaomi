@@ -220,26 +220,26 @@ private Map parseReadAttr(String description) {
     return resultMap
 }
 
-private Map getContactResult(result) {
-    def value = result.value == "on" ? "open" : "closed"
-    def descriptionText = "${device.displayName} was ${value == "open" ? value + "ed" : value}"
+private Map getContactResult(value) {
+    def descriptionText = "${device.displayName} was ${value == 'open' ? 'opened' : 'closed'}"
     return [
         name: 'contact',
         value: value,
+        isStateChange: true,
         descriptionText: descriptionText
     ]
 }
 
 def resetClosed() {
-    sendEvent(name:"contact", value:"closed")
-}
+    sendEvent(name: "contact", value: "closed", descriptionText: "${device.displayName} was manually reset to closed")
+} 
 
 def resetOpen() {
-    def now = formatDate() 
-    def nowDate = new Date(now).getTime()
-    sendEvent(name: "lastOpened", value: now, displayed: false)
-    sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false)
-    sendEvent(name: "contact", value:"open")
+	def now = formatDate()
+	def nowDate = new Date(now).getTime()
+	sendEvent(name: "lastOpened", value: now, displayed: false)
+	sendEvent(name: "lastOpenedDate", value: nowDate, displayed: false) 
+	sendEvent(name: "contact", value: "open", descriptionText: "${device.displayName} was manually reset to open")
 }
 
 //Reset the date displayed in Battery Changed tile to current date
