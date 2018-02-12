@@ -54,38 +54,52 @@
 
 metadata {
 	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "foz333", author: "foz333") {
-		
-        capability "Configuration"
-        capability "Smoke Detector"
-        capability "Sensor"
-        capability "Battery"
-        capability "Health Check"
+		capability "Battery"
+		capability "Configuration"
+		capability "Smoke Detector"
+		capability "Health Check"		
+		capability "Sensor"
 
-        attribute "lastTested", "String"
-        attribute "lastTestedDate", "Date"
-	attribute "lastCheckinDate", "Date"		
-        attribute "lastCheckin", "string"
-        attribute "lastSmoke", "String"
-	attribute "lastSmokeDate", "Date"		
-        attribute "batteryRuntime", "String"
+		command "resetClear"
+		command "resetSmoke"
+		command "resetBatteryRuntime"
+		command "enrollResponse"
+
+		attribute "lastTested", "String"
+		attribute "lastTestedDate", "Date"
+		attribute "lastCheckinDate", "Date"		
+		attribute "lastCheckin", "string"
+		attribute "lastSmoke", "String"
+		attribute "lastSmokeDate", "Date"		
+		attribute "batteryRuntime", "String"
 	
-	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
-		
-	command "resetClear"
-	command "resetSmoke"
-        command "resetBatteryRuntime"	
- 
-}       
+		fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
+		fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500", outClusters: "0019", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
+	}       
 
     	// simulator metadata
 	simulator {
     	}
 	
+	preferences {
+		//Date & Time Config
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
+		//Battery Reset Config
+		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		//Battery Voltage Offset
+		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
+	}
+	
 	tiles(scale: 2) {
-		multiAttributeTile(name:"smoke", type: "generic", width: 6, height: 4) {
-			tileAttribute ("device.smoke", key: "PRIMARY_CONTROL") {
-           			attributeState("clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
-            			attributeState("smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920")   
+		multiAttributeTile(name:"fire", type: "generic", width: 6, height: 4) {
+			tileAttribute ("device.fire", key: "PRIMARY_CONTROL") {
+           			attributeState "clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff"
+            		attributeState "smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920"   
  			}
            		 tileAttribute("device.lastSmoke", key: "SECONDARY_CONTROL") {
                 		attributeState "default", label:'Smoke last detected: ${currentValue}'
@@ -121,22 +135,8 @@ metadata {
             		state "batteryRuntime", label:'Battery Changed: ${currentValue}'
         	}
 		
-		main (["smoke"])
-		details(["smoke", "battery",  "lastTested", "lastcheckin", "spacer", "batteryRuntime", "spacer"])
-	}
-	
-	preferences {
-		//Date & Time Config
-		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
-		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
-		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
-		//Battery Reset Config
-		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
-		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
-		//Battery Voltage Offset
-		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
-		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
+		main (["fire"])
+		details(["fire", "battery",  "lastTested", "lastcheckin", "spacer", "batteryRuntime", "spacer"])
 	}
 }
 
@@ -172,6 +172,10 @@ def parse(String description) {
 		map = parseCatchAllMessage(description)
 	} else if (description?.startsWith('read attr - raw:')) {
 		map = parseReadAttr(description)
+	} else if (description?.startsWith('enroll request')) {
+		List cmds = zigbee.enrollResponse()
+		log.debug "enroll response: ${cmds}"
+		result = cmds?.collect { new physicalgraph.device.HubAction(it) }
 	} else {
 		log.debug "${device.displayName}: was unable to parse ${description}"
 		sendEvent(name: "lastCheckin", value: now) 
@@ -187,7 +191,7 @@ def parse(String description) {
 // Parse the IAS messages
 private Map parseZoneStatusMessage(String description) {
 	def result = [
-		name: 'smoke',
+		name: 'fire',
 		value: value,
 		descriptionText: 'smoke detected'
 	]
@@ -370,5 +374,3 @@ def formatDate(batteryReset) {
 		}
 	}
 }
-
-  
