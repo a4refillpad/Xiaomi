@@ -99,11 +99,11 @@ metadata {
         	}
 /*
 		// For now would only override applications settings not physical device
-		standardTile("resetClear", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            		state "default", action:"resetWet", label:'Override Clear', icon:"st.alarm.smoke.smoke"
+		standardTile("resetClear", "device.resetSmoke", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            		state "default", action:"resetSmoke", label:'Override Clear', icon:"st.alarm.smoke.smoke"
         	}
-        	standardTile("resetSmoke", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            		state "default", action:"resetDry", label:'Override Smoke', icon:"st.alarm.smoke.clear"
+        	standardTile("resetSmoke", "device.resetClear", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            		state "default", action:"resetClear", label:'Override Smoke', icon:"st.alarm.smoke.clear"
 		}
 */		
 		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
