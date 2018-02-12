@@ -11,30 +11,42 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
+ *  Contributions to code from alecm, alixjg, bspranger, gn0st1c, Inpier, foz333, jmagnuson, KennethEvers, rinkek, ronvandegraaf, snalee, tmleaf  
  *  Useful Links:
  *	Review in english photos dimensions etc... https://blog.tlpa.nl/2017/11/12/xiaomi-also-mijia-and-honeywell-smart-fire-detector/
  *	Device purchased here (€20.54)... https://www.gearbest.com/alarm-systems/pp_615081.html
  *	RaspBee packet sniffer... https://github.com/dresden-elektronik/deconz-rest-plugin/issues/152
  *	Instructions in English.. http://files.xiaomi-mi.com/files/MiJia_Honeywell/MiJia_Honeywell_Smoke_Detector_EN.pdf
+ *	Fire Certification is CCCF... https://www.china-certification.com/en/ccc-certification-for-fire-safety-products-cccf/
+ *	... in order to be covered by your insurance and for piece of mind, please also use correctly certified detectors if CCCF is not accepted in your country  
  *  
- *  Contributions to code from alecm, alixjg, bspranger, gn0st1c, Inpier, foz333, jmagnuson, KennethEvers, rinkek, ronvandegraaf, snalee, tmleaf 
+ *  Battery: The device is powered by a CR123a 
+ *  ... battery life circa 5 years
+ *
+ *  Todo:
+ *	Possible to force alarm test from application?
+ *	... manual simulation mode activated by holding physical button for 3 seconds
+ *	Possible to set installation site
+ *	... apparently with MiApp you can choose from 3 sites to adjust sensitivity
+ *	... Screenshot of app option here: http://www.cooltechbox.com/review-xiaomi-mijia-honeywell-smoke-detector/
  *
  *  Known issues:
  *  Xiaomi sensors do not seem to respond to refresh requests
  *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
  *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub, for this one, normally just tap main button 3 times
  *
+ *  Fingerprint Endpoint data:
+ *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 0402 01 03 0000 0003 0012 0500 01 0019","application":"03","manufacturer":"LUMI","model":"lumi.sensor_smoke"}],"parent":"0000","joinType":1}
  *        01 - endpoint id
  *        0104 - profile id
  *        0402 - device id
  *        01 - ignored
- *        03 - number of in clusters
- *        0000 0003 0012 0500 - inClusters
+ *        06 - number of in clusters
+ *        0000 0003 0012 0500 000C 0001 - inClusters
  *        01 - number of out clusters
  *        0019 - outClusters
  *        manufacturer "LUMI" - must match manufacturer field in fingerprint
  *        model "lumi.sensor_smoke" - must match model in fingerprint
- *        deviceJoinName: whatever you want it to show in the app as a Thing
  *
  *
  *  Change Log:
@@ -56,10 +68,11 @@ metadata {
         attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
 
-        command "enrollResponse"
-        command "resetBatteryRuntime"
+	command "resetClear"
+	command "resetSmoke"
+        command "resetBatteryRuntime"	
  
-	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
+	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
      	}       
 
     	// simulator metadata
@@ -84,6 +97,15 @@ metadata {
                 		[value: 51, color: "#44b621"]
             		]
         	}
+/*
+		// For now would only override applications settings not physical device
+		standardTile("resetClear", "device.resetWet", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            		state "default", action:"resetWet", label:'Override Clear', icon:"st.alarm.smoke.smoke"
+        	}
+        	standardTile("resetSmoke", "device.resetDry", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            		state "default", action:"resetDry", label:'Override Smoke', icon:"st.alarm.smoke.clear"
+		}
+*/		
 		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             		state "default", label:'Last Tested:\n ${currentValue}'
 		}
