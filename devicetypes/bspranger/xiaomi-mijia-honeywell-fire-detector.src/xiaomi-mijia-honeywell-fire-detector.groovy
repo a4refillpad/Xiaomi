@@ -72,6 +72,9 @@ metadata {
            			attributeState("clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
             			attributeState("smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920")   
  			}
+           		 tileAttribute("device.lastSmoke", key: "SECONDARY_CONTROL") {
+                		attributeState "default", label:'Last Smoke Detected: ${currentValue}'
+			}	
 		}
         	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
             		state "default", label:'${currentValue}%', unit:"%", 
@@ -256,6 +259,18 @@ metadata {
     		]
 		
 		return result
+	}
+
+	def resetClear() {
+    		sendEvent(name:"smoke", value:"clear")
+	}
+
+	def resetSmoke() {
+    		def now = formatDate()    
+    		def nowDate = new Date(now).getTime()
+    		sendEvent(name:"smoke", value:"smoke")
+		sendEvent(name: "lastSmoke", value: now, displayed: false)
+		sendEvent(name: "lastSmokeDate", value: nowDate, displayed: false)
 	}
 		
 	//Reset the date displayed in Battery Changed tile to current date
