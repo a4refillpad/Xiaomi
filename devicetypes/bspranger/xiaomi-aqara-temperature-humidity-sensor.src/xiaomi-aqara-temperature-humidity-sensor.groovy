@@ -424,10 +424,10 @@ def configure() {
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 		checkIntervalEvent("updated")
-		if(battReset){
-		resetBatteryRuntime()
-		device.updateSetting("battReset", false)
-	}
+		if(battReset) {
+			resetBatteryRuntime()
+			device.updateSetting("battReset", false)
+		}
 }
 
 private checkIntervalEvent(text) {
