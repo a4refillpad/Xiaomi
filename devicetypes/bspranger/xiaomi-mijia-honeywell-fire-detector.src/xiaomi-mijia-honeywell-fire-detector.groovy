@@ -73,7 +73,7 @@ metadata {
             			attributeState("smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920")   
  			}
            		 tileAttribute("device.lastSmoke", key: "SECONDARY_CONTROL") {
-                		attributeState "default", label:'Last Smoke Detected: ${currentValue}'
+                		attributeState "default", label:'Smoke last detected: ${currentValue}'
 			}	
 		}
         	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -84,10 +84,7 @@ metadata {
                 		[value: 51, color: "#44b621"]
             		]
         	}
-		standardTile("icon", "", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            		state "default", label:'Last Tested', icon:"st.alarm.smoke.test"
-		}
-		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 2) {
+		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             		state "default", label:'${currentValue}'
 		}
 		valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
@@ -101,7 +98,7 @@ metadata {
         	}
 		
 		main (["smoke"])
-		details(["smoke", "battery", "icon", "lastTested", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
+		details(["smoke", "battery",  "lastTested", "lastcheckin", "spacer", "batteryRuntime", "spacer"])
 	}
 	
 	preferences {
