@@ -240,22 +240,28 @@ def resetOpen() {
 	sendEvent(name: "contact", value: "open", descriptionText: "${device.displayName} was manually reset to open")
 }
 
-def resetBatteryRuntime() {
-    def now = formatDate(true)   
-    sendEvent(name: "batteryRuntime", value: now)
+//Reset the date displayed in Battery Changed tile to current date
+def resetBatteryRuntime(paired) {
+	def now = formatDate(true)
+	def newlyPaired = paired ? " for newly paired sensor" : ""
+	sendEvent(name: "batteryRuntime", value: now)
+	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
+// configure() runs after installed() when a sensor is paired
 def configure() {
-    log.debug "${device.displayName}: configuring"
-    state.battery = 0
-    checkIntervalEvent("configure");
+	log.debug "${device.displayName}: configuring"
+		state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("configured")
+	return
 }
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
-    state.battery = 0
-    resetBatteryRuntime()
-    checkIntervalEvent("installed");
+	state.battery = 0
+	if (!batteryRuntime) resetBatteryRuntime(true)
+	checkIntervalEvent("installed")
 }
 
 // updated() will run twice every time user presses save in preference settings page
