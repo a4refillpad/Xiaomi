@@ -167,17 +167,18 @@ private Map parseReportAttributeMessage(String description) {
 private Map parseCatchAllMessage(String description) {
 	Map resultMap = [:]
 	def catchall = zigbee.parse(description)
-    def i
 	log.debug catchall
-	if  (catchall.clusterId == 0x0000) {
-		def MsgLength = catchall.data.size();
-		// Xiaomi Aqara CatchAll does not have identifiers, first UINT16 is Battery
-		if ((catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
-			for (i = 0; i < (MsgLength-3); i++) {
+
+	if (catchall.clusterId == 0x0000) {
+		def MsgLength = catchall.data.size()
+		// Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+		if ((catchall.data.get(0) == 0x01 || catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
+			for (int i = 4; i < (MsgLength-3); i++) {
 				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
 					// next two bytes are the battery voltage
 					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
 				}
+			break
 			}
 		}
 	}
