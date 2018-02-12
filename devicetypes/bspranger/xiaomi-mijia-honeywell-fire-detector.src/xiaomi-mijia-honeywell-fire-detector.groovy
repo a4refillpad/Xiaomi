@@ -114,6 +114,7 @@ metadata {
 		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
 		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
 	}
+}
 
 	// Parse incoming device messages to generate events
 	def parse(String description) {
@@ -329,7 +330,6 @@ metadata {
             			return new Date().format("EEE yyyy MMM dd ${timeString}", correctedTimezone)
 			}
 		}
-	}	
-}
+	}
 
   
