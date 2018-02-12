@@ -1,5 +1,6 @@
 /**
  *  Xiaomi Aqara Zigbee Button
+ *  Version 0.5
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -10,10 +11,19 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Review in english photos dimensions etc... https://blog.tlpa.nl/2017/11/12/xiaomi-also-mijia-and-honeywell-smart-fire-detector/
- *  Device purchased here (€20.54)... https://www.gearbest.com/alarm-systems/pp_615081.html
- *  RaspBee packet sniffer... https://github.com/dresden-elektronik/deconz-rest-plugin/issues/152
+ *  Useful Links:
+ *	Review in english photos dimensions etc... https://blog.tlpa.nl/2017/11/12/xiaomi-also-mijia-and-honeywell-smart-fire-detector/
+ *	Device purchased here (€20.54)... https://www.gearbest.com/alarm-systems/pp_615081.html
+ *	RaspBee packet sniffer... https://github.com/dresden-elektronik/deconz-rest-plugin/issues/152
+ *	Instructions in English.. http://files.xiaomi-mi.com/files/MiJia_Honeywell/MiJia_Honeywell_Smoke_Detector_EN.pdf
  *  
+ *  Contributions to code from alecm, alixjg, bspranger, gn0st1c, Inpier, foz333, jmagnuson, KennethEvers, rinkek, ronvandegraaf, snalee, tmleaf 
+ *
+ *  Known issues:
+ *  Xiaomi sensors do not seem to respond to refresh requests
+ *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
+ *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub, for this one, normally just tap main button 3 times
+ *
  *        01 - endpoint id
  *        0104 - profile id
  *        0402 - device id
@@ -26,6 +36,9 @@
  *        model "lumi.sensor_smoke" - must match model in fingerprint
  *        deviceJoinName: whatever you want it to show in the app as a Thing
  *
+ *
+ *  Change Log:
+ *	12.02.2018 - foz333 - Version 0.5 Released
  */
 
 metadata {
@@ -38,6 +51,8 @@ metadata {
 
         attribute "lastTested", "String"
         attribute "lastCheckin", "string"
+        attribute "lastSmoke", "String"
+	attribute "lastSmokeDate", "Date"		
         attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
 
@@ -49,19 +64,13 @@ metadata {
 
     	// simulator metadata
 	simulator {
-		for (int i = 0; i <= 100; i += 10) {
-			status "${i}F": "temperature: $i F"
-		}
-		for (int i = 0; i <= 100; i += 10) {
-            		status "${i}%": "humidity: ${i}%"
-        	}
     	}
 	
 	tiles(scale: 2) {
 		multiAttributeTile(name:"smoke", type: "generic", width: 6, height: 4) {
 			tileAttribute ("device.smoke", key: "PRIMARY_CONTROL") {
            			attributeState("clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
-            			attributeState("detected", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#e86d13")   
+            			attributeState("smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920")   
  			}
 		}
         	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -91,5 +100,236 @@ metadata {
 		main (["smoke"])
 		details(["smoke", "battery", "icon", "lastTested", "spacer", "lastcheckin", "spacer", "spacer", "batteryRuntime", "spacer"])
 	}
+	
+	preferences {
+		//Date & Time Config
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
+		//Battery Reset Config
+		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
+		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
+		//Battery Voltage Offset
+		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
+		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
+	}
+
+	// Parse incoming device messages to generate events
+	def parse(String description) {
+		log.debug "${device.displayName}: Parsing description: ${description}"
+	
+		// Determine current time and date in the user-selected date format and clock style
+		def now = formatDate()    
+		def nowDate = new Date(now).getTime()
+
+		// Any report - test, smoke, clear in a lastCheckin event and update to Last Checkin tile
+		// However, only a non-parseable report results in lastCheckin being displayed in events log
+		sendEvent(name: "lastCheckin", value: now, displayed: false)
+		sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
+
+		// Check if the min/max temp and min/max humidity should be reset
+		checkNewDay(now)
+
+		// getEvent automatically retrieves temp and humidity in correct unit as integer
+		Map map = zigbee.getEvent(description)
+	
+		if (description?.startsWith('zone status')) {
+        		map = parseZoneStatusMessage(description)
+        		if (map.value == "smoke") {
+            			sendEvent(name: "lastSmoke", value: now, displayed: false)
+            			sendEvent(name: "lastSmokeDate", value: nowDate, displayed: false)
+			}
+    		} else if (description?.startsWith('catchall:')) {
+        		map = parseCatchAllMessage(description)
+    		} else if (description?.startsWith('read attr - raw:')) {
+        		map = parseReadAttr(description)
+		} else {
+			log.debug "${device.displayName}: was unable to parse ${description}"
+			sendEvent(name: "lastCheckin", value: now) 
+		}
+		if (map) {
+			log.debug "${device.displayName}: Parse returned ${map}"
+			return createEvent(map)
+		} else {
+			return [:]
+		}
+	}
+
+	// Parse the IAS messages
+	private Map parseZoneStatusMessage(String description) {
+		def result = [
+			name: 'smoke',
+			value: value,
+			descriptionText: 'smoke detected'
+		]
+		if (description?.startsWith('zone status')) {
+			if (description?.startsWith('zone status 0x0002')) { // User Test
+				result.value = "test"
+				result.descriptionText = "${device.displayName} has been tested"
+			} else if (description?.startsWith('zone status 0x0001')) { // smoke detected
+				result.value = "smoke"
+				result.descriptionText = "${device.displayName} has detected smoke"
+			} else if (description?.startsWith('zone status 0x0000')) { // situation normal... no smoke
+				result.value = "clear"
+				result.descriptionText = "${device.displayName} is all clear"
+			}
+        		return result
+		}
+		return [:]
+	}
+		
+	// Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
+	private Map parseCatchAllMessage(String description) {
+		Map resultMap = [:]
+		def catchall = zigbee.parse(description)
+		log.debug catchall
+
+		if (catchall.clusterId == 0x0000) {
+			def MsgLength = catchall.data.size()
+			// Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+			if ((catchall.data.get(0) == 0x01 || catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
+				for (int i = 4; i < (MsgLength-3); i++) {
+					if (catchall.data.get(i) == 0x21) { // check the data ID and data type
+						// next two bytes are the battery voltage
+						resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
+						break
+					}
+				}
+			}
+		}
+		return resultMap
+	}
+		
+	// Parse raw data on reset button press
+	private Map parseReadAttr(String description) {
+		Map resultMap = [:]
+		
+		def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
+		def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
+		def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+
+		log.debug "${device.displayName}: Parsing read attr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
+
+		if (cluster == "0000" && attrId == "0005") {
+			// Parsing the model name
+			for (int i = 0; i < value.length(); i+=2) {
+				def str = value.substring(i, i+2);
+				def NextChar = (char)Integer.parseInt(str, 16);
+				modelName = modelName + NextChar
+			}
+			log.debug "${device.displayName}: Reported model: ${modelName}"
+		}
+		return resultMap
+	}
+	
+	// Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
+	private Map getBatteryResult(rawValue) {
+    		// raw voltage is normally supplied as a 4 digit integer that needs to be divided by 1000
+    		// but in the case the final zero is dropped then divide by 100 to get actual voltage value 
+    		def rawVolts = rawValue / 1000
+    		def minVolts
+    		def maxVolts
+		
+		if (voltsmin == null || voltsmin == ""){
+    			minVolts = 2.5
+		} else {
+			minVolts = voltsmin
+		}
+
+		if (voltsmax == null || voltsmax == "") {
+    			maxVolts = 3.0
+		} else {
+			maxVolts = voltsmax
+		}
+    		
+		def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
+		def roundedPct = Math.min(100, Math.round(pct * 100))
+
+    		def result = [
+			name: 'battery',
+			value: roundedPct,
+			unit: "%",
+			isStateChange: true,	
+			descriptionText : "${device.displayName} raw battery is ${rawVolts}v"
+    		]
+		
+		return result
+	}
+		
+	//Reset the date displayed in Battery Changed tile to current date
+	def resetBatteryRuntime(paired) {
+		def now = formatDate(true)
+		def newlyPaired = paired ? " for newly paired sensor" : ""
+		sendEvent(name: "batteryRuntime", value: now)
+		log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
+	}
+		
+	// installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
+	def installed() {
+		state.battery = 0
+		if (!batteryRuntime) resetBatteryRuntime(true){
+			checkIntervalEvent("installed")
+		}
+	}	
+		
+	// configure() runs after installed() when a sensor is paired
+	def configure() {
+		log.debug "${device.displayName}: configuring"
+		state.battery = 0
+		if (!batteryRuntime) resetBatteryRuntime(true){
+			checkIntervalEvent("configured")
+		}
+		return
+	}
+		
+	// updated() will run twice every time user presses save in preference settings page
+	def updated() {
+		checkIntervalEvent("updated")
+		if(battReset){
+			resetBatteryRuntime()
+			device.updateSetting("battReset", false)
+		}
+	}
+	
+	// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline	
+	private checkIntervalEvent(text) {
+    		log.debug "${device.displayName}: Configured health checkInterval when ${text}()"
+    		sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	}
+	
+	def formatDate(batteryReset) {
+		def correctedTimezone = ""
+    		def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
+
+		// If user's hub timezone is not set, display error messages in log and events log, and set timezone to GMT to avoid errors
+    		if (!(location.timeZone)) {
+        		correctedTimezone = TimeZone.getTimeZone("GMT")
+        		log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
+        		sendEvent(name: "error", value: "", descriptionText: "ERROR: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app.")
+		} else {
+        		correctedTimezone = location.timeZone
+    		}
+		if (dateformat == "US" || dateformat == "" || dateformat == null) {
+			if (batteryReset){
+            			return new Date().format("MMM dd yyyy", correctedTimezone)
+			} else {
+            			return new Date().format("EEE MMM dd yyyy ${timeString}", correctedTimezone)
+			}
+    		} else if (dateformat == "UK") {
+			if (batteryReset) {
+            			return new Date().format("dd MMM yyyy", correctedTimezone)
+			} else {
+				return new Date().format("EEE dd MMM yyyy ${timeString}", correctedTimezone)
+			}
+		} else {
+			if (batteryReset) {
+            			return new Date().format("yyyy MMM dd", correctedTimezone)
+			} else {
+            			return new Date().format("EEE yyyy MMM dd ${timeString}", correctedTimezone)
+			}
+		}
+	}	
 }
+
   
