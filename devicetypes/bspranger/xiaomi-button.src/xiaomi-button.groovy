@@ -203,8 +203,8 @@ private Map parseCatchAllMessage(String description) {
 				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
 					// next two bytes are the battery voltage
 					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
+					break
 				}
-			break
 			}
 		}
 	}
@@ -215,7 +215,7 @@ private Map parseCatchAllMessage(String description) {
 private Map getBatteryResult(rawValue) {
     // raw voltage is normally supplied as a 4 digit integer that needs to be divided by 1000
     // but in the case the final zero is dropped then divide by 100 to get actual voltage value 
-    def rawVolts = (rawValue < 1000) ? (rawValue / 100) : (rawValue / 1000)
+    def rawVolts = rawValue / 1000
     def minVolts
     def maxVolts
 
