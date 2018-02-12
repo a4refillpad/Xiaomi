@@ -168,27 +168,24 @@ private Map getBatteryResult(rawValue) {
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
-    Map resultMap = [:]
-    def i
-    def cluster = zigbee.parse(description)
-    log.debug "${device.displayName}: Parsing CatchAll: '${cluster}'"
+	Map resultMap = [:]
+	def catchall = zigbee.parse(description)
+	log.debug catchall
 
-    if (cluster) {
-        switch(cluster.clusterId) {
-            case 0x0000:
-            def MsgLength = cluster.data.size();
-            for (i = 0; i < (MsgLength-3); i++)
-            {
-                if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
-                {
-                    // next two bytes are the battery voltage.
-                    resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                }
-            }
-            break
-        }
-    }
-    return resultMap
+	if (catchall.clusterId == 0x0000) {
+		def MsgLength = catchall.data.size()
+		// Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+		if ((catchall.data.get(0) == 0x01 || catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
+			for (int i = 4; i < (MsgLength-3); i++) {
+				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
+					// next two bytes are the battery voltage
+					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
+				}
+			break
+			}
+		}
+	}
+	return resultMap
 }
 
 // Parse raw data on reset button press to retrieve reported battery voltage
