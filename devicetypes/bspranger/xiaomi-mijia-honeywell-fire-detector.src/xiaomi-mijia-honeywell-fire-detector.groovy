@@ -54,6 +54,7 @@
 
 metadata {
 	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "foz333", author: "foz333") {
+		
         capability "Configuration"
         capability "Smoke Detector"
         capability "Sensor"
@@ -67,13 +68,14 @@ metadata {
         attribute "lastSmoke", "String"
 	attribute "lastSmokeDate", "Date"		
         attribute "batteryRuntime", "String"
-
+	
+	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
+		
 	command "resetClear"
 	command "resetSmoke"
         command "resetBatteryRuntime"	
  
-	fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
-     	}       
+}       
 
     	// simulator metadata
 	simulator {
