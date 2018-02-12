@@ -153,9 +153,6 @@ def parse(String description) {
 	sendEvent(name: "lastCheckin", value: now, displayed: false)
 	sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
 
-	// Check if the min/max temp and min/max humidity should be reset
-	checkNewDay(now)
-
 	// getEvent automatically retrieves temp and humidity in correct unit as integer
 	Map map = zigbee.getEvent(description)
 
