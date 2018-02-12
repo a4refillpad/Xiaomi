@@ -85,7 +85,7 @@ metadata {
             		]
         	}
 		valueTile("lastTested", "device.lastTested", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-            		state "default", label:'${currentValue}'
+            		state "default", label:'Last Tested:\n ${currentValue}'
 		}
 		valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
 	    		state "default", label:''
