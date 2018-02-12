@@ -31,12 +31,11 @@
  *	... Screenshot of app option here: http://www.cooltechbox.com/review-xiaomi-mijia-honeywell-smoke-detector/
  *
  *  Known issues:
- *  Xiaomi sensors do not seem to respond to refresh requests
- *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
- *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub, for this one, normally just tap main button 3 times
+ *	Xiaomi sensors do not seem to respond to refresh requests
+ *	Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
+ *	Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub, for this one, normally just tap main button 3 times
  *
  *  Fingerprint Endpoint data:
- *  zbjoin: {"dni":"xxxx","d":"xxxxxxxxxxx","capabilities":"80","endpoints":[{"simple":"01 0104 0402 01 03 0000 0003 0012 0500 01 0019","application":"03","manufacturer":"LUMI","model":"lumi.sensor_smoke"}],"parent":"0000","joinType":1}
  *        01 - endpoint id
  *        0104 - profile id
  *        0402 - device id
@@ -59,13 +58,14 @@ metadata {
         capability "Smoke Detector"
         capability "Sensor"
         capability "Battery"
-        capability "Refresh"
+        capability "Health Check"
 
         attribute "lastTested", "String"
+        attribute "lastTestedDate", "Date"
+	attribute "lastCheckinDate", "Date"		
         attribute "lastCheckin", "string"
         attribute "lastSmoke", "String"
 	attribute "lastSmokeDate", "Date"		
-        attribute "lastCheckinDate", "Date"
         attribute "batteryRuntime", "String"
 
 	command "resetClear"
@@ -162,7 +162,10 @@ metadata {
         		if (map.value == "smoke") {
             			sendEvent(name: "lastSmoke", value: now, displayed: false)
             			sendEvent(name: "lastSmokeDate", value: nowDate, displayed: false)
-			}
+			} else if (map.value == "test") {
+				sendEvent(name: "lastTested", value: now, displayed: false)
+            			sendEvent(name: "lastTestedDate", value: nowDate, displayed: false)
+			}	
     		} else if (description?.startsWith('catchall:')) {
         		map = parseCatchAllMessage(description)
     		} else if (description?.startsWith('read attr - raw:')) {
