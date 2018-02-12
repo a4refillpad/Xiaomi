@@ -79,7 +79,7 @@ metadata {
              state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
         }
         main(["motion"])
-        details(["motion", "spacer2", "battery", "reset", "spacer2", "spacer2", "lastcheckin", "spacer2", "spacer2", "batteryRuntime", "spacer2"])
+        details(["motion", "spacer2", "battery", "reset", "spacer2", "spacer1", "lastcheckin", "spacer1", "spacer1", "batteryRuntime", "spacer1"])
    }
 
    preferences {
