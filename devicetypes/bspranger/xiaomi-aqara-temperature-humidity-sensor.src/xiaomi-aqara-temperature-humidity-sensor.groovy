@@ -227,44 +227,24 @@ private parseTemperature(String description) {
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
-    def i
-    def cluster = zigbee.parse(description)
-    log.debug cluster
+	Map resultMap = [:]
+	def catchall = zigbee.parse(description)
+	log.debug catchall
 
-    Map resultMap = [:]
-
-    if (cluster) {
-        switch(cluster.clusterId)
-        {
-            case 0x0000:
-                def MsgLength = cluster.data.size();
-
-                // Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-                if ((cluster.data.get(0) == 0x02) && (cluster.data.get(1) == 0xFF)) {
-                    for (i = 0; i < (MsgLength-3); i++)
-                    {
-                        if (cluster.data.get(i) == 0x21) // check the data ID and data type
-                        {
-                            // next two bytes are the battery voltage.
-                            resultMap = getBatteryResult((cluster.data.get(i+2)<<8) + cluster.data.get(i+1))
-                            break
-                        }
-                    }
-                } else if ((cluster.data.get(0) == 0x01) && (cluster.data.get(1) == 0xFF)) {
-                    for (i = 0; i < (MsgLength-3); i++)
-                    {
-                        if ((cluster.data.get(i) == 0x01) && (cluster.data.get(i+1) == 0x21))  // check the data ID and data type
-                        {
-                            // next two bytes are the battery voltage.
-                            resultMap = getBatteryResult((cluster.data.get(i+3)<<8) + cluster.data.get(i+2))
-                            break
-                        }
-                    }
-                }
-            break
-        }
-    }
-    return resultMap
+	if (catchall.clusterId == 0x0000) {
+		def MsgLength = catchall.data.size()
+		// Original Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
+		if ((catchall.data.get(0) == 0x01 || catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
+			for (int i = 4; i < (MsgLength-3); i++) {
+				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
+					// next two bytes are the battery voltage
+					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
+				}
+			break
+			}
+		}
+	}
+	return resultMap
 }
 
 // Parse pressure report or battery report on reset button press
