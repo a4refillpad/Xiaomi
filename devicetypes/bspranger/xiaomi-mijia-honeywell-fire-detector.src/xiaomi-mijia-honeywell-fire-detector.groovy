@@ -51,7 +51,7 @@
  *
  *
  *  Change Log:
- *	12.02.2018 - foz333 - Version 0.5 Released
+ *	14.02.2018 - foz333 - Version 0.5 Released
  */
 
 metadata {
@@ -104,7 +104,7 @@ metadata {
             		attributeState "smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920"   
  			}
            		 tileAttribute("device.lastSmoke", key: "SECONDARY_CONTROL") {
-                		attributeState "default", label:'Smoke last detected: ${currentValue}'
+                		attributeState "default", label:'Smoke last detected:\n ${currentValue}'
 			}	
 		}
         	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -116,7 +116,7 @@ metadata {
             		]
         	}
 /*
-		// For now would only override applications settings not physical device
+		// Will only override applications settings not physical device
 		standardTile("resetClear", "device.resetSmoke", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             		state "default", action:"resetSmoke", label:'Override Clear', icon:"st.alarm.smoke.smoke"
         	}
@@ -243,6 +243,7 @@ private Map parseReadAttr(String description) {
 	log.debug "${device.displayName}: Parsing read attr: cluster: ${cluster}, attrId: ${attrId}, value: ${value}"
 
 	if (cluster == "0000" && attrId == "0005") {
+		def modelName = ""
 		// Parsing the model name
 		for (int i = 0; i < value.length(); i+=2) {
 			def str = value.substring(i, i+2);
@@ -329,7 +330,7 @@ def configure() {
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 	checkIntervalEvent("updated")
-	if(battReset){
+	if(battReset) {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
