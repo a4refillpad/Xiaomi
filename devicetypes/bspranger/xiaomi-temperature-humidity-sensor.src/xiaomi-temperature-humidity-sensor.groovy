@@ -13,12 +13,12 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  *  Original device handler code by a4refillpad
- *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh 
- * 
+ *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
+ *
  *  Known issues:
  *  Xiaomi sensors do not seem to respond to refresh requests
  *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
- *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub. See 
+ *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub.
  *
  */
 
@@ -39,7 +39,7 @@ metadata {
 	attribute "multiAttributesReport", "String"
 	attribute "currentDay", "String"
 	attribute "batteryRuntime", "String"
-    
+
 	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
 
 	command "resetBatteryRuntime"
@@ -55,7 +55,7 @@ metadata {
             status "${i}%": "humidity: ${i}%"
         }
     }
-    
+
     tiles(scale: 2) {
         multiAttributeTile(name:"temperature", type:"generic", width:6, height:4) {
             tileAttribute("device.temperature", key:"PRIMARY_CONTROL"){
@@ -75,7 +75,7 @@ metadata {
                         [value: 84, color: "#f1d801"],
                         [value: 95, color: "#d04e00"],
                         [value: 96, color: "#bc2323"]
-                        // Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
+                        // Celsius color set (to switch, delete the 13 lines above and remove the two slashes at the beginning of the line below)
                         //[value: 0, color: "#153591"], [value: 7, color: "#1e9cbb"], [value: 15, color: "#90d2a7"], [value: 23, color: "#44b621"], [value: 28, color: "#f1d801"], [value: 35, color: "#d04e00"], [value: 37, color: "#bc2323"]
 					]
                 )
@@ -102,7 +102,7 @@ metadata {
                     [value: 84, color: "#f1d801"],
                     [value: 95, color: "#d04e00"],
                     [value: 96, color: "#bc2323"]
-                    // Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
+                    // Celsius color set (to switch, delete the 13 lines above and remove the two slashes at the beginning of the line below)
                     //[value: 0, color: "#153591"], [value: 7, color: "#1e9cbb"], [value: 15, color: "#90d2a7"], [value: 23, color: "#44b621"], [value: 28, color: "#f1d801"], [value: 35, color: "#d04e00"], [value: 37, color: "#bc2323"]
                 ]
         }
@@ -117,7 +117,7 @@ metadata {
                 [value: 59, color: "#0072BB"],
                 [value: 76, color: "#085396"]
             ]
-        }        
+        }
         valueTile("battery", "device.battery", inactiveLabel: false, width: 2, height: 2) {
             state "battery", label:'${currentValue}%', unit:"%",
             backgroundColors:[
@@ -134,10 +134,10 @@ metadata {
         }
         valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 1) {
             state "lastcheckin", label:'Last Event:\n ${currentValue}'
-        }     
+        }
         valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
             state "batteryRuntime", label:'Battery Changed: ${currentValue}'
-        }     
+        }
         main("temperature2")
         details(["temperature", "spacer2", "battery", "humidity", "spacer2", "spacer1", "lastcheckin",  "spacer1", "spacer1", "batteryRuntime", "spacer1"])
     }
@@ -153,7 +153,7 @@ metadata {
 		input "humidOffset", "number", title:"Humidity Offset", description:"Adjust humidity by this many percent", range: "*..*"
 		input description: "NOTE: The temperature unit (C / F) can be changed in the location settings for your hub.", type: "paragraph", element: "paragraph", title: ""
 		//Date & Time Config
-		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
 		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
 		//Battery Reset Config
@@ -171,7 +171,7 @@ def parse(String description) {
     log.debug "${device.displayName}: Parsing description: ${description}"
 
 	// Determine current time and date in the user-selected date format and clock style
-    def now = formatDate()    
+    def now = formatDate()
     def nowDate = new Date(now).getTime()
 
 	// Any report - temp, humidity, pressure, & battery - results in a lastCheckin event and update to Last Checkin tile
@@ -203,7 +203,7 @@ def parse(String description) {
 		map = parseReadAttr(description)
 	} else {
 		log.debug "${device.displayName}: was unable to parse ${description}"
-        sendEvent(name: "lastCheckin", value: now) 
+        sendEvent(name: "lastCheckin", value: now)
 	}
 
 	if (map) {
@@ -268,7 +268,7 @@ private Map parseReadAttr(String description) {
 // Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
 private Map getBatteryResult(rawValue) {
     // raw voltage is normally supplied as a 4 digit integer that needs to be divided by 1000
-    // but in the case the final zero is dropped then divide by 100 to get actual voltage value 
+    // but in the case the final zero is dropped then divide by 100 to get actual voltage value
     def rawVolts = rawValue / 1000
     def minVolts
     def maxVolts
@@ -277,12 +277,12 @@ private Map getBatteryResult(rawValue) {
     	minVolts = 2.5
     else
    	minVolts = voltsmin
-    
+
     if(voltsmax == null || voltsmax == "")
     	maxVolts = 3.0
     else
 	maxVolts = voltsmax
-    
+
     def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
     def roundedPct = Math.min(100, Math.round(pct * 100))
 
@@ -324,7 +324,7 @@ def resetMinMax() {
 def updateMinMaxTemps(temp) {
 	temp = temp ? (int) temp : temp
 	if ((temp > device.currentValue('maxTemp')) || (device.currentValue('maxTemp') == null))
-		sendEvent(name: "maxTemp", value: temp, displayed: false)	
+		sendEvent(name: "maxTemp", value: temp, displayed: false)
 	if ((temp < device.currentValue('minTemp')) || (device.currentValue('minTemp') == null))
 		sendEvent(name: "minTemp", value: temp, displayed: false)
 	refreshMultiAttributes()
@@ -394,7 +394,7 @@ def formatDate(batteryReset) {
         correctedTimezone = TimeZone.getTimeZone("GMT")
         log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
         sendEvent(name: "error", value: "", descriptionText: "ERROR: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app.")
-    } 
+    }
     else {
         correctedTimezone = location.timeZone
     }
