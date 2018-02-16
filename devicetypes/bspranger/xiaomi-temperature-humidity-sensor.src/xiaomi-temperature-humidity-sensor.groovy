@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Temperature Humidity Sensor
- *  Version 1.0.1
+ *  Version 1.0.2
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -41,6 +41,8 @@ metadata {
 	attribute "batteryRuntime", "String"
 
 	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
 
 	command "resetBatteryRuntime"
 }
