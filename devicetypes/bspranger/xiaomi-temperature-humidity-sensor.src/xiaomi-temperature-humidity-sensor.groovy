@@ -42,7 +42,7 @@ metadata {
 
 	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
 	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF"
-	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF", outClusters: "0000, 0004, FFFF", manufacturer: "LUMI", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF", manufacturer: "LUMI", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
 
 	command "resetBatteryRuntime"
 }
