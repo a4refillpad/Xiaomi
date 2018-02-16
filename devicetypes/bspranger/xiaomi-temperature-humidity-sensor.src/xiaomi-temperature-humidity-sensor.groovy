@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Temperature Humidity Sensor
- *  Version 1.0
+ *  Version 1.0.1
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -297,10 +297,10 @@ private Map getBatteryResult(rawValue) {
     return result
 }
 
-// If the day of month has changed from that of previous event, reset the daily min/max temp values
+// If the day of month has changed from that of previous event, reset the daily min/max temp and humidity values
 def checkNewDay(now) {
 	def oldDay = ((device.currentValue("currentDay")) == null) ? "32" : (device.currentValue("currentDay"))
-	def newDay = new Date(now).format("mm")
+	def newDay = new Date(now).format("dd")
 	if (newDay != oldDay) {
 		resetMinMax()
 		sendEvent(name: "currentDay", value: newDay, displayed: false)
