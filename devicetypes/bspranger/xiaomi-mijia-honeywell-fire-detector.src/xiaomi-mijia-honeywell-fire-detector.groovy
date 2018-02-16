@@ -55,7 +55,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "foz333", author: "foz333") {
+	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "bspranger", author: "bspranger") {
 		capability "Battery"
 		capability "Configuration"
 		capability "Smoke Detector"
