@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Mijia Honeywell Fire Detector
- *  Version 0.5
+ *  Version 0.51
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -52,13 +52,14 @@
  *
  *  Change Log:
  *	14.02.2018 - foz333 - Version 0.5 Released
+ *	19.02.2018 - test state tile added, smoke replaces fire for SHM support
  */
 
 metadata {
-	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "foz333", author: "foz333") {
-		capability "Battery"
-		capability "Configuration"
-		capability "Smoke Detector"
+	definition (name: "Xiaomi Mijia Honeywell Fire Detector", namespace: "bspranger", author: "bspranger") {
+		capability "Battery" //attributes: battery
+		capability "Configuration" //commands: configure()
+		capability "Smoke Detector" //attributes: smoke ("detected","clear","tested")
 		capability "Health Check"		
 		capability "Sensor"
 
@@ -76,7 +77,6 @@ metadata {
 		attribute "batteryRuntime", "String"
 	
 		fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500,000C,0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_smoke", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
-		fingerprint endpointId: "01", profileID: "0104", deviceID: "0402", inClusters: "0000,0003,0012,0500", outClusters: "0019", deviceJoinName: "Xiaomi Honeywell Smoke Detector"
 	}       
 
     	// simulator metadata
@@ -98,10 +98,11 @@ metadata {
 	}
 	
 	tiles(scale: 2) {
-		multiAttributeTile(name:"fire", type: "generic", width: 6, height: 4) {
-			tileAttribute ("device.fire", key: "PRIMARY_CONTROL") {
-           			attributeState "clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff"
-            		attributeState "smoke", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920"   
+		multiAttributeTile(name:"smoke", type: "lighting", width: 6, height: 4) {
+			tileAttribute ("device.smoke", key: "PRIMARY_CONTROL") {
+           			attributeState( "clear", label:'CLEAR', icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
+				attributeState( "tested", label:"TEST", icon:"st.alarm.smoke.test", backgroundColor:"#e86d13")
+				attributeState( "detected", label:'SMOKE', icon:"st.alarm.smoke.smoke", backgroundColor:"#ed0920")   
  			}
            		 tileAttribute("device.lastSmoke", key: "SECONDARY_CONTROL") {
                 		attributeState "default", label:'Smoke last detected:\n ${currentValue}'
@@ -137,8 +138,10 @@ metadata {
             		state "batteryRuntime", label:'Battery Changed: ${currentValue}'
         	}
 		
-		main (["fire"])
-		details(["fire", "battery",  "lastTested", "lastcheckin", "spacer", "batteryRuntime", "spacer"])
+		main (["smoke"])
+		details(["smoke", "battery",  
+//			"resetClear", "resetSmoke",	 
+			 "lastTested", "lastcheckin", "spacer", "batteryRuntime", "spacer"])
 	}
 }
 
@@ -160,10 +163,10 @@ def parse(String description) {
 
 	if (description?.startsWith('zone status')) {
 		map = parseZoneStatusMessage(description)
-		if (map.value == "smoke") {
+		if (map.value == "detected") {
 			sendEvent(name: "lastSmoke", value: now, displayed: false)
 			sendEvent(name: "lastSmokeDate", value: nowDate, displayed: false)
-		} else if (map.value == "test") {
+		} else if (map.value == "tested") {
 			sendEvent(name: "lastTested", value: now, displayed: false)
 			sendEvent(name: "lastTestedDate", value: nowDate, displayed: false)
 		}	
@@ -190,16 +193,16 @@ def parse(String description) {
 // Parse the IAS messages
 private Map parseZoneStatusMessage(String description) {
 	def result = [
-		name: 'fire',
+		name: 'smoke',
 		value: value,
 		descriptionText: 'smoke detected'
 	]
 	if (description?.startsWith('zone status')) {
 		if (description?.startsWith('zone status 0x0002')) { // User Test
-			result.value = "test"
+			result.value = "tested"
 			result.descriptionText = "${device.displayName} has been tested"
 		} else if (description?.startsWith('zone status 0x0001')) { // smoke detected
-			result.value = "smoke"
+			result.value = "detected"
 			result.descriptionText = "${device.displayName} has detected smoke"
 		} else if (description?.startsWith('zone status 0x0000')) { // situation normal... no smoke
 			result.value = "clear"
@@ -294,11 +297,7 @@ def resetClear() {
 }
 
 def resetSmoke() {
-	def now = formatDate()    
-	def nowDate = new Date(now).getTime()
 	sendEvent(name:"smoke", value:"smoke")
-	sendEvent(name: "lastSmoke", value: now, displayed: false)
-	sendEvent(name: "lastSmokeDate", value: nowDate, displayed: false)
 }
 
 //Reset the date displayed in Battery Changed tile to current date
