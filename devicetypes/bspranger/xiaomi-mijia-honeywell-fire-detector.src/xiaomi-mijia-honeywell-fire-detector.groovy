@@ -60,6 +60,7 @@ metadata {
 		capability "Battery" //attributes: battery
 		capability "Configuration" //commands: configure()
 		capability "Smoke Detector" //attributes: smoke ("detected","clear","tested")
+
 		capability "Health Check"		
 		capability "Sensor"
 
