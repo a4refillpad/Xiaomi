@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Temperature Humidity Sensor
- *  Version 1.0.2
+ *  Version 1.1
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -109,7 +109,7 @@ metadata {
                 ]
         }
         valueTile("humidity", "device.humidity", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}%', unit:"%", icon:"st.Weather.weather12",
+            state "humidity", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiHumidity.png",
             backgroundColors:[
                 [value: 0, color: "#FFFCDF"],
                 [value: 4, color: "#FDF789"],
@@ -121,7 +121,7 @@ metadata {
             ]
         }
         valueTile("battery", "device.battery", inactiveLabel: false, width: 2, height: 2) {
-            state "battery", label:'${currentValue}%', unit:"%",
+            state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
             backgroundColors:[
                 [value: 10, color: "#bc2323"],
                 [value: 26, color: "#f1d801"],
