@@ -33,7 +33,7 @@
  *	... Screenshot of app option here: http://www.cooltechbox.com/review-xiaomi-mijia-honeywell-smoke-detector/
  *
  *  Known issues:
- *	Xiaomi sensors do not seem to respond to refresh requests
+ *	Xiaomi sensors do not seem to respond to refresh requests // workaround... push physical button 1 time for refresh
  *	Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
  *	Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub, for this one, normally just tap main button 3 times
  *
@@ -53,6 +53,7 @@
  *  Change Log:
  *	14.02.2018 - foz333 - Version 0.5 Released
  *	19.02.2018 - test state tile added, smoke replaces fire for SHM support
+ *	23.02.2018 - new battery icon introdused, default volatge set to 3.25
  */
 
 metadata {
@@ -94,7 +95,7 @@ metadata {
 		input name: "battReset", type: "bool", title: "Battery Changed?", description: ""
 		//Battery Voltage Offset
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3
+		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts.\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3.25
 		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing)\nat __ volts.  Range 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5
 	}
 	
@@ -110,13 +111,13 @@ metadata {
 			}	
 		}
         	valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-        		state "humidity", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiHumidity.png",
-        		backgroundColors:[
-        			[value: 10, color: "#bc2323"],
-        			[value: 26, color: "#f1d801"],
-        			[value: 51, color: "#44b621"]
-        		]
-        	}
+            		state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
+			backgroundColors:[
+                		[value: 10, color: "#bc2323"],
+                		[value: 26, color: "#f1d801"],
+                		[value: 51, color: "#44b621"]
+			]
+		}
 /*
 		// Will only override applications settings not physical device
 		standardTile("resetClear", "device.resetSmoke", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
