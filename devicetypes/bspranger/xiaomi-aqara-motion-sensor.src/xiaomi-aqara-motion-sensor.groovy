@@ -69,7 +69,20 @@ metadata {
             state "default", label:''
         }
         valueTile("illuminance", "device.illuminance", decoration:"flat", inactiveLabel: false, width: 2, height: 2) {
-            state "default", label:'${currentValue}\nlux', unit:"lux"
+            state "default", label:'${currentValue}\nlux', unit:"lux",
+		backgroundColors: [
+            	[value:0, color:"#000000"],
+            	[value:1, color:"#07212c"],
+            	[value:25, color:"#0f4357"],
+            	[value:50, color:"#12536d"],
+		[value:100, color:"#1a7599"],
+		[value:150, color:"#2196c4"],
+            	[value:250, color:"#3bb0de"],
+		[value:500, color:"#51b8e1"],
+            	[value:750, color:"#66c1e5"],
+            	[value:1000, color:"#7ccae9"],
+            	[value:1500, color: "#92d3ed"] 
+           ]
         }
         standardTile("reset", "device.reset", inactiveLabel: false, decoration:"flat", width: 2, height: 2) {
             state "default", action:"stopMotion", label:'Reset Motion', icon:"st.motion.motion.active"
