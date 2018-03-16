@@ -172,7 +172,7 @@ private Map parseReportAttributeMessage(String description) {
 	// The sensor only sends a motion detected message so the reset to no motion is performed in code
     if (cluster == "0406" & value == "01") {
 		log.debug "${device.displayName} detected motion"
-		def seconds = motionreset ? motionreset : 60
+		def seconds = motionreset ? motionreset : 120
 		resultMap = [
 			name: 'motion',
 			value: 'active',
@@ -251,7 +251,7 @@ private Map getBatteryResult(rawValue) {
 // If currently in 'active' motion detected state, stopMotion() resets to 'inactive' state and displays 'no motion'
 def stopMotion() {
 	if (device.currentState('motion')?.value == "active") {
-		def seconds = motionreset ? motionreset : 60
+		def seconds = motionreset ? motionreset : 120
 		sendEvent(name:"motion", value:"inactive", isStateChange: true)
 		log.debug "${device.displayName} reset to no motion after ${seconds} seconds"
 	}
