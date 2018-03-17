@@ -39,6 +39,7 @@ metadata {
 				attribute "lastPressedDate", "string"
 				attribute "lastReleased", "string"
 				attribute "lastReleasedDate", "string"
+				attribute "lastButtonMssg", "string"
 				attribute "batteryRuntime", "string"
 
 				fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
@@ -82,7 +83,7 @@ metadata {
 	 preferences {
 		//Button Config
 		input name: "PressType", type: "enum", options: ["Momentary", "Toggle"], title: "Momentary or Toggle mode? ", defaultValue: "Momentary"
-		input "waittoHeld", "number", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Enter number of seconds (default = 3)"
+		input "waittoHeld", "number", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Enter number of seconds (default = 2)"
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
@@ -131,15 +132,15 @@ def parse(String description) {
 	} else if (description?.startsWith("read attr - raw: ")) {
 		result = parseReadAttrMessage(description)
 	}
-	log.debug "${device.displayName}: Parse returned $map"
+	log.debug "${device.displayName}: Parse returned $result"
 	return createEvent(result)
 }
 
 private parseButtonMessage(description) {
 	def result = [:]
 	def onOff = (description - "on/off: ")
+	def nowDate = now()
 	def now = formatDate()
-	def nowDate = new Date(now).getTime()
 
 	// in toggle mode only toggle when button is pressed
 	if (PressType == "Toggle") {
@@ -153,27 +154,31 @@ private parseButtonMessage(description) {
 	// momentary mode
 	else {
 		if (onOff == '0') {
-			// on button pressed update lastPressed to current date/time
+			// on button pressed update lastPressed and lastButtonMssg to current date/time
 			log.debug "${device.displayName}: Button pressed, setting Last Pressed to current date/time"
 			sendEvent(name: "lastPressed", value: now, displayed: false)
 			sendEvent(name: "lastPressedDate", value: nowDate, displayed: false)
-		} else
-			// on button released created buttton pushed or held event based on held timer
+			sendEvent(name: "lastButtonMssg", value: nowDate, displayed: false)
+		} else if (onOff == '1') {
+			// on button released create map for buttton pushed or held event based on held time setting
 			log.debug "${device.displayName}: Button released, setting Last Released to current date/time"
 			sendEvent(name: "lastReleased", value: now, displayed: false)
 			sendEvent(name: "lastReleasedDate", value: nowDate, displayed: false)
 			result = createButtonEvent()
+			sendEvent(name: "lastButtonMssg", value: nowDate, displayed: false)
+		}
 	}
 	return result
 }
 
 private createButtonEvent() {
-	def timeDif = now() - device.latestState('lastPressed').date.getTime()
-	def holdTimeMillisec = (settings.waittoHeld?:3).toInteger() * 1000
+	def timeDif = now() - device.latestState('lastButtonMssg').date.getTime()
+	def holdTimeMillisec = (settings.waittoHeld?:2).toInteger() * 1000
 	def value = "held"
 
-	// compare waittoHeld setting with difference between current time and lastPressed 
-	log.debug "${device.displayName}: Comparing time difference between this button release and Last Pressed"
+	// compare waittoHeld setting with difference between current time and lastPressed
+	log.debug "${device.displayName}: Comparing time difference between this button release and last button message"
+	log.debug "${device.displayName}: Time difference = $timeDif ms, Hold time setting = $holdTimeMillisec"
 	if (timeDif < 0)
 		return [:]	// If there is an issue with message sequence do not parse this button release
 	else if (timeDif < holdTimeMillisec) 
