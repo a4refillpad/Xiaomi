@@ -28,8 +28,8 @@ metadata {
 				capability "Battery"
 				capability "Sensor"
 				capability "Button"
+				capability "Holdable Button"
 				capability "Actuator"
-				capability "Momentary"
 				capability "Configuration"
 				capability "Health Check"
 
@@ -53,37 +53,36 @@ metadata {
 		}
 
 		tiles(scale: 2) {
-
-				multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-									 attributeState("pushed", label:'Push', action: "momentary.push", backgroundColor:"#00a0dc")
-								attributeState("released", label:'Push', action: "momentary.push", backgroundColor:"#ffffff", nextState: "pushed")
-						 }
-						tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
-								attributeState "default", label:'Last Pressed: ${currentValue}'
-						}
+			multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+				tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
+					attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
+					attributeState("held", label:'Held', action: "momentary.push", backgroundColor:"#00a0dc")
 				}
-				valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-						state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
-			backgroundColors:[
-								[value: 10, color: "#bc2323"],
-								[value: 26, color: "#f1d801"],
-								[value: 51, color: "#44b621"]
-			]
+				tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
+					attributeState "default", label:'Last Pressed: ${currentValue}'
 				}
-				valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-						state "default", label:'Last Event:\n${currentValue}'
-				}
-	valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
-	}
-				main (["button"])
-				details(["button","battery","lastcheckin","batteryRuntime"])
+			}
+			valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+				state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
+				backgroundColors:[
+					[value: 10, color: "#bc2323"],
+					[value: 26, color: "#f1d801"],
+					[value: 51, color: "#44b621"]
+				]
+			}
+			valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+				state "default", label:'Last Event:\n${currentValue}'
+			}
+			valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+				state "batteryRuntime", label:'Battery Changed: ${currentValue}'
+		}
+		main (["button"])
+		details(["button","battery","lastcheckin","batteryRuntime"])
 	 }
 	 preferences {
 		//Button Config
 		input name: "PressType", type: "enum", options: ["Momentary", "Toggle"], title: "Momentary or Toggle mode? ", defaultValue: "Momentary"
-		input "waittoHeld", "number", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Enter number of seconds (default = 2)"
+		input name: "waittoHeld", type: "decimal", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Number of seconds (default = 2.0)", range: "0.1..120"
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
@@ -93,8 +92,8 @@ metadata {
 		input name: "battReset", type: "bool", title: "Battery Changed?"
 		//Battery Voltage Offset
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", type: "decimal", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", type: "decimal", range: "2..2.7", defaultValue: 2.5, required: false
+		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
 		}
 }
 
@@ -108,7 +107,6 @@ def push() {
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
 	sendEvent(name: "lastReleased", value: now, displayed: false)
 	sendEvent(name: "lastReleasedDate", value: nowDate, displayed: false)
-	sendEvent(name: "button", value: "released", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was released", isStateChange: true)
 }
 
 // Parse incoming device messages to generate events
@@ -173,7 +171,7 @@ private parseButtonMessage(description) {
 
 private createButtonEvent() {
 	def timeDif = now() - device.latestState('lastButtonMssg').date.getTime()
-	def holdTimeMillisec = (settings.waittoHeld?:2).toInteger() * 1000
+	def holdTimeMillisec = Math.round((settings.waittoHeld?:2.0) * 1000)
 	def value = "held"
 
 	// compare waittoHeld setting with difference between current time and lastPressed
