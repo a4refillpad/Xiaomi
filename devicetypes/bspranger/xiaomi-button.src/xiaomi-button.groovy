@@ -6,7 +6,7 @@
  *	Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *	in compliance with the License. You may obtain a copy of the License at:
  *
- *			http://www.apache.org/licenses/LICENSE-2.0
+ *	    http://www.apache.org/licenses/LICENSE-2.0
  *
  *	Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *	on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
@@ -24,64 +24,64 @@
  */
 
 metadata {
-		definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
-				capability "Battery"
-				capability "Sensor"
-				capability "Button"
-				capability "Holdable Button"
-				capability "Actuator"
-				capability "Configuration"
-				capability "Health Check"
+	definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
+		capability "Battery"
+		capability "Sensor"
+		capability "Button"
+		capability "Holdable Button"
+		capability "Actuator"
+		capability "Configuration"
+		capability "Health Check"
 
-				attribute "lastCheckin", "string"
-				attribute "lastCheckinDate", "Date"
-				attribute "lastPressed", "string"
-				attribute "lastPressedDate", "string"
-				attribute "lastReleased", "string"
-				attribute "lastReleasedDate", "string"
-				attribute "lastButtonMssg", "string"
-				attribute "batteryRuntime", "string"
+		attribute "lastCheckin", "string"
+		attribute "lastCheckinCoRE", "Date"
+		attribute "lastPressed", "string"
+		attribute "lastPressedCoRE", "string"
+		attribute "lastReleased", "string"
+		attribute "lastReleasedCoRE", "string"
+		attribute "lastButtonMssg", "string"
+		attribute "batteryRuntime", "string"
 
-				fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
 
-				command "resetBatteryRuntime"
-}
+		command "resetBatteryRuntime"
+	}
 
-		simulator {
-					status "Pressed": "on/off: 0"
-					status "Released": "on/off: 1"
+	simulator {
+		status "Pressed": "on/off: 0"
+		status "Released": "on/off: 1"
+	}
+
+	tiles(scale: 2) {
+		multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
+				attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
+				attributeState("held", label:'Held', action: "momentary.push", backgroundColor:"#00a0dc")
+			}
+			tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
+				attributeState "default", label:'Last Pressed: ${currentValue}'
+			}
 		}
-
-		tiles(scale: 2) {
-			multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-				tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-					attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
-					attributeState("held", label:'Held', action: "momentary.push", backgroundColor:"#00a0dc")
-				}
-				tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
-					attributeState "default", label:'Last Pressed: ${currentValue}'
-				}
-			}
-			valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-				state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
-				backgroundColors:[
-					[value: 10, color: "#bc2323"],
-					[value: 26, color: "#f1d801"],
-					[value: 51, color: "#44b621"]
-				]
-			}
-			valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-				state "default", label:'Last Event:\n${currentValue}'
-			}
-			valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
-				state "batteryRuntime", label:'Battery Changed: ${currentValue}'
+		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+			state "battery", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiBattery.png",
+			backgroundColors:[
+				[value: 10, color: "#bc2323"],
+				[value: 26, color: "#f1d801"],
+				[value: 51, color: "#44b621"]
+			]
+		}
+		valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "default", label:'Last Event:\n${currentValue}'
+		}
+		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
 		}
 		main (["button"])
 		details(["button","battery","lastcheckin","batteryRuntime"])
-	 }
-	 preferences {
+	}
+
+	preferences {
 		//Button Config
-		input name: "PressType", type: "enum", options: ["Momentary", "Toggle"], title: "Momentary or Toggle mode? ", defaultValue: "Momentary"
 		input name: "waittoHeld", type: "decimal", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Number of seconds (default = 2.0)", range: "0.1..120"
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
@@ -94,19 +94,17 @@ metadata {
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
 		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
-		}
+	}
 }
 
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	log.debug "Virtual App Button Pressed"
-	def now = formatDate()
-	def nowDate = new Date(now).getTime()
-	sendEvent(name: "lastPressed", value: now, displayed: false)
-	sendEvent(name: "lastPressedDate", value: nowDate, displayed: false)
+	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
+	sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
-	sendEvent(name: "lastReleased", value: now, displayed: false)
-	sendEvent(name: "lastReleasedDate", value: nowDate, displayed: false)
+	sendEvent(name: "lastReleased", value: formatDate(), displayed: false)
+	sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
 }
 
 // Parse incoming device messages to generate events
@@ -114,13 +112,9 @@ def parse(String description) {
 	log.debug "${device.displayName}: Parsing '${description}'"
 	def result = [:]
 
-	// Determine current time and date in the user-selected date format and clock style
-	def now = formatDate()
-	def nowDate = new Date(now).getTime()
 	// Any report - button press & Battery - results in a lastCheckin event and update to Last Checkin tile
-	// However, only a non-parseable report results in lastCheckin being displayed in events log
-	sendEvent(name: "lastCheckin", value: now, displayed: false)
-	sendEvent(name: "lastCheckinDate", value: nowDate, displayed: false)
+	sendEvent(name: "lastCheckin", value: formatDate(), displayed: false)
+	sendEvent(name: "lastCheckinCoRE", value: now(), displayed: false)
 
 	// Send message data to appropriate parsing function based on the type of report
 	if (description?.startsWith('on/off: ')) {
@@ -137,34 +131,20 @@ def parse(String description) {
 private parseButtonMessage(description) {
 	def result = [:]
 	def onOff = (description - "on/off: ")
-	def nowDate = now()
-	def now = formatDate()
 
-	// in toggle mode only toggle when button is pressed
-	if (PressType == "Toggle") {
-		if (onOff == '0') {
-			if (device.currentValue('button') != "pushed")
-				result = getContactResult("pushed")
-			else
-				result = getContactResult("released")
-		}
-	}
-	// momentary mode
-	else {
-		if (onOff == '0') {
-			// on button pressed update lastPressed and lastButtonMssg to current date/time
-			log.debug "${device.displayName}: Button pressed, setting Last Pressed to current date/time"
-			sendEvent(name: "lastPressed", value: now, displayed: false)
-			sendEvent(name: "lastPressedDate", value: nowDate, displayed: false)
-			sendEvent(name: "lastButtonMssg", value: nowDate, displayed: false)
-		} else if (onOff == '1') {
-			// on button released create map for buttton pushed or held event based on held time setting
-			log.debug "${device.displayName}: Button released, setting Last Released to current date/time"
-			sendEvent(name: "lastReleased", value: now, displayed: false)
-			sendEvent(name: "lastReleasedDate", value: nowDate, displayed: false)
-			result = createButtonEvent()
-			sendEvent(name: "lastButtonMssg", value: nowDate, displayed: false)
-		}
+	if (onOff == '0') {
+		// on button pressed update lastPressed and lastButtonMssg to current date/time
+		log.debug "${device.displayName}: Button pressed, setting Last Pressed to current date/time"
+		sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
+		sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
+		sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
+	} else if (onOff == '1') {
+		// on button released create map for buttton pushed or held event based on held time setting
+		log.debug "${device.displayName}: Button released, setting Last Released to current date/time"
+		sendEvent(name: "lastReleased", value: formatDate(), displayed: false)
+		sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
+		result = createButtonEvent()
+		sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
 	}
 	return result
 }
@@ -174,14 +154,15 @@ private createButtonEvent() {
 	def holdTimeMillisec = Math.round((settings.waittoHeld?:2.0) * 1000)
 	def value = "held"
 
-	// compare waittoHeld setting with difference between current time and lastPressed
 	log.debug "${device.displayName}: Comparing time difference between this button release and last button message"
 	log.debug "${device.displayName}: Time difference = $timeDif ms, Hold time setting = $holdTimeMillisec"
+	// If there is an issue with message sequence do not parse this button release
 	if (timeDif < 0)
-		return [:]	// If there is an issue with message sequence do not parse this button release
-	else if (timeDif < holdTimeMillisec) 
+		return [:]
+	// compare waittoHeld setting with difference between current time and lastButtonMssg
+	else if (timeDif < holdTimeMillisec)
 		value = "pushed"
-        
+
 	return [
 		name: 'button',
 		value: value,
@@ -200,30 +181,24 @@ private Map parseReadAttrMessage(String description) {
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 	def model = value.split("01FF")[0]
 	def data = value.split("01FF")[1]
-	log.debug "cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${model}, data:${data}"
 
 	if (data[4..7] == "0121") {
 		def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
 			resultMap = getBatteryResult(BatteryVoltage)
-			log.debug "${device.displayName}: Parse returned $resultMap"
-			createEvent(resultMap)
 	}
 
-		if (cluster == "0000" && attrId == "0005")	{
-				resultMap.name = 'Model'
-				resultMap.value = ""
-				resultMap.descriptionText = "device model"
-				// Parsing the model
-				for (int i = 0; i < model.length(); i+=2)
-				{
-						def str = model.substring(i, i+2);
-						def NextChar = (char)Integer.parseInt(str, 16);
-						resultMap.value = resultMap.value + NextChar
-				}
-				return resultMap
+	if (cluster == "0000" && attrId == "0005")	{
+		def modelName = ""
+		// Parsing the model
+		for (int i = 0; i < model.length(); i+=2) {
+			def str = model.substring(i, i+2);
+			def NextChar = (char)Integer.parseInt(str, 16);
+			modelName = modelName + NextChar
 		}
+		log.debug "${device.displayName} reported: cluster: 0000, attrId: 0005, value: ${value}, model:${modelName}, data:${data}"
+	}
 
-		return [:]
+	return resultMap
 }
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
@@ -257,23 +232,20 @@ private Map getBatteryResult(rawValue) {
 	def maxVolts = voltsmax ? voltsmax : 3.0
 	def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
 	def roundedPct = Math.min(100, Math.round(pct * 100))
-	def result = [
+	log.debug "${device.displayName}: ${result}"
+	return [
 		name: 'battery',
 		value: roundedPct,
 		unit: "%",
 		isStateChange:true,
 		descriptionText : "${device.displayName} Battery at ${roundedPct}% (${rawVolts} Volts)"
 	]
-
-	log.debug "${device.displayName}: ${result}"
-	return createEvent(result)
 }
 
 //Reset the date displayed in Battery Changed tile to current date
 def resetBatteryRuntime(paired) {
-	def now = formatDate(true)
 	def newlyPaired = paired ? " for newly paired sensor" : ""
-	sendEvent(name: "batteryRuntime", value: now)
+	sendEvent(name: "batteryRuntime", value: formatDate(true))
 	log.debug "${device.displayName}: Setting Battery Changed to current date${newlyPaired}"
 }
 
