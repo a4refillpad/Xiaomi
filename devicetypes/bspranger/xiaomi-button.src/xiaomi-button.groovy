@@ -92,14 +92,16 @@ metadata {
 		//Battery Reset Config
 		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
 		input name: "battReset", type: "bool", title: "Battery Changed?"
+		//Advanced Settings
+		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
+		//Battery Voltage Range
+		input description: "", type: "paragraph", element: "paragraph", title: "BATTERY VOLTAGE RANGE"
+		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
+		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
 		//Live Logging Message Display Config
 		input description: "These settings affect the display of messages in the Live Logging tab of the SmartThings IDE.", type: "paragraph", element: "paragraph", title: "LIVE LOGGING"
 		input name: "infoLogging", type: "bool", title: "Display info log messages?", defaultValue: true
 		input name: "debugLogging", type: "bool", title: "Display debug log messages?"
-		//Battery Voltage Offset
-		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
 	}
 }
 
@@ -274,7 +276,7 @@ def installed() {
 	displayInfoLog(": Installing")
 	if (!batteryRuntime)
 		resetBatteryRuntime(true)
-	checkIntervalEvent("installed")
+	checkIntervalEvent("")
 }
 
 // configure() runs after installed() when a sensor is paired
@@ -293,14 +295,15 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	checkIntervalEvent("updated")
+	checkIntervalEvent("preferences updated")
 	displayInfoLog(": Info message logging enabled")
 	displayDebugLog(": Debug message logging enabled")
 }
 
 private checkIntervalEvent(text) {
 		// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
-		displayInfoLog(": Configured health checkInterval when ${text}")
+		if (text)
+			displayInfoLog(": Set health checkInterval when ${text}")
 		sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
