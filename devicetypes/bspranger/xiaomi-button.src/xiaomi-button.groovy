@@ -185,14 +185,12 @@ private createButtonEvent() {
 }
 
 private Map parseReadAttrMessage(String description) {
-	def buttonRaw = (description - "read attr - raw:")
-	Map resultMap = [:]
-
 	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 	def model = value.split("02FF")[0]
 	def data = value.split("02FF")[1]
+	Map resultMap = [:]
 
 	if (data[4..7] == "0121") {
 		def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
