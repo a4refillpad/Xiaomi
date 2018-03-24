@@ -1,5 +1,7 @@
 /**
- *  Xiaomi Aqara Zigbee Button (models WXKG11LM and WXKG12LM)
+ *  Xiaomi Aqara Zigbee Button
+ *  Works with Aqara Button models WXKG11LM / WXKG12LM
+ *  and Aqara Smart Light Switch models WXKG01LM / WXKG02LM
  *  Version 1.2
  *
  *
@@ -15,9 +17,11 @@
  *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
  *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
  *
- *  Notes on capabilities of the two Aqara models:
- *  Model WXKG11LM
+ *  Notes on capabilities of the different models:
+ *  Models WXKG11LM, WXKG01LM, WXKG02LM
  *    - Only single press is supported, sent as button 1 "pushed" event
+ *    - The 2-button Aqara Smart Light Switch model WXKG02LM is only recognized as ONE button.
+ *      This is because the SmartThings API ignores the data that distinguishes between left, right, or both-button presses.
  *  Model WXKG11LM:
  *    - Single click results in button 1 "pushed" event
  *    - Hold for longer than 400ms results in button 1 "held" event
@@ -54,9 +58,15 @@ metadata {
 		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
 
+		// Aqara Button - original revision - model WXKG11LM
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button WXKG11LM"
+		// Aqara Button - new revision - model WXKG12LM
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_switch.aq3", deviceJoinName: "Aqara Button WXKG12LM"
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_swit", deviceJoinName: "Aqara Button WXKG12LM"
+		// Aqara Smart Light Switch - single button - model WXKG01LM
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,0012,FFFF", outClusters: "0000,0003,0004,0005,0019,0012,FFFF", manufacturer: "LUMI", model: "lumi.sensor_86sw1lu", deviceJoinName: "Aqara Switch WXKG01LM"
+		// Aqara Smart Light Switch - dual button - model WXKG02LM
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,0012,FFFF", outClusters: "0000,0003,0004,0005,0019,0012,FFFF", manufacturer: "LUMI", model: "lumi.sensor_86sw2Un", deviceJoinName: "Aqara Switch WXKG02LM"
 
 		command "resetBatteryRuntime"
 	}
@@ -138,7 +148,7 @@ def parse(description) {
 	if (description?.startsWith('on/off: ')) {
 		// Model WXKG11LM only - button press generates pushed event
 		updateLastPressed("pressed")
-		result = buttonEventMap(0)
+		result = mapButtonEvent(0)
 	} else if (description?.startsWith("read attr - raw: ")) {
 		// Parse any model WXKG12LM button messages, or messages on short-press of reset button
 		result = parseReadAttrMessage(description)
@@ -146,7 +156,7 @@ def parse(description) {
 		// Parse battery level from regular hourly announcement messages
 		result = parseCatchAllMessage(description)
 	}
-	if (result != null) {
+	if (result != [:]) {
 		displayDebugLog(": Creating event $result")
 		return createEvent(result)
 	} else
@@ -164,10 +174,10 @@ private Map parseReadAttrMessage(String description) {
 
 	// Process model WXKG12LM button message
 	if (cluster == "0012") {
-		// Values (as integer): 1 = push, 2 = double-click, 11 = hold, 12 = release, 13 = shake
-		value = Integer.parseInt(value[2..3])
-		// Change values 11-13 to 3-5 to use as list for buttonEventMap function
-		data = (value < 3) ? value : (value - 7)
+		// Button message values (as integer): 1 = push, 2 = double-click, 16 = hold, 17 = release, 18 = shake
+		value = Integer.parseInt(value[2..3],16)
+		// Convert values 16-18 to 3-5 to use as list for mapButtonEvent function
+		data = (value < 3) ? value : (value - 13)
 		resultMap = mapButtonEvent(data)
 	}
 
@@ -202,6 +212,7 @@ private mapButtonEvent(value) {
 	if (value == 4) {
 		displayInfoLog(" was released")
 		updateLastPressed("Released")
+        return [:]
 	} else {
 		displayInfoLog(" was ${messageType[value]} (Button ${buttonNum[value]} ${eventType[value]})")
 		updateLastPressed("Pressed")
@@ -304,7 +315,9 @@ def configure() {
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 	displayInfoLog(": Updating preference settings")
-	if (state.prefsSetCount < 2)
+    if (!state.prefsSetCount)
+		state.prefsSetCount = 1
+	else if (state.prefsSetCount < 2)
 		state.prefsSetCount = state.prefsSetCount + 1
 	if (battReset){
 		resetBatteryRuntime()
