@@ -280,7 +280,7 @@ private def displayDebugLog(message) {
 }
 
 private def displayInfoLog(message) {
-	if (infoLogging || state.prefsSetCount < 2)
+	if (infoLogging || state.prefsSetCount < 3)
 		log.info "${device.displayName}${message}"
 }
 
