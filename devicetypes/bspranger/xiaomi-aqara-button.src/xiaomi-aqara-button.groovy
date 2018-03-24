@@ -317,7 +317,7 @@ def updated() {
 	displayInfoLog(": Updating preference settings")
     if (!state.prefsSetCount)
 		state.prefsSetCount = 1
-	else if (state.prefsSetCount < 2)
+	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
 	if (battReset){
 		resetBatteryRuntime()
