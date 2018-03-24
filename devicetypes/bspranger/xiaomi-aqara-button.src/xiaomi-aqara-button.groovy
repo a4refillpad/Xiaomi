@@ -46,7 +46,7 @@ metadata {
 		capability "Health Check"
 
 		attribute "lastCheckin", "string"
-		attribute "lastCheckinCoRE", "Date"
+		attribute "lastCheckinCoRE", "string"
 		attribute "lastPressed", "string"
 		attribute "lastPressedCoRE", "string"
 		attribute "lastReleased", "string"
@@ -54,9 +54,9 @@ metadata {
 		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
 
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button Model WXKG11LM"
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_switch.aq3", deviceJoinName: "Aqara Button Model WXKG12LM"
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_swit", deviceJoinName: "Aqara Button Model WXKG12LM"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button WXKG11LM"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_switch.aq3", deviceJoinName: "Aqara Button WXKG12LM"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_swit", deviceJoinName: "Aqara Button WXKG12LM"
 
 		command "resetBatteryRuntime"
 	}
@@ -84,14 +84,14 @@ metadata {
 				[value: 51, color: "#44b621"]
 			]
 		}
-		valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'Last Event:\n${currentValue}'
+		valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "lastCheckin", label:'Last Event:\n${currentValue}'
 		}
 		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
 			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
 		}
 		main (["button"])
-		details(["button","battery","lastcheckin","batteryRuntime"])
+		details(["button","battery","lastCheckin","batteryRuntime"])
 	}
 
 	preferences {
@@ -126,7 +126,7 @@ def push() {
 }
 
 // Parse incoming device messages to generate events
-def parse(String description) {
+def parse(description) {
 	displayDebugLog(": Parsing '${description}'")
 	def result = [:]
 
@@ -157,36 +157,40 @@ private Map parseReadAttrMessage(String description) {
 	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-	Map resultMap = [:]
+    def data = ""
+    def modelName = ""
+	def model = value
+    Map resultMap = [:]
 
 	// Process model WXKG12LM button message
 	if (cluster == "0012") {
 		// Values (as integer): 1 = push, 2 = double-click, 11 = hold, 12 = release, 13 = shake
 		value = Integer.parseInt(value[2..3])
-		// Change values 16-18 to 3-5 to use as list for buttonEventMap function
-		value = (value < 3) ? value : (value - 7)
-		resultMap = mapButtonEvent(value)
+		// Change values 11-13 to 3-5 to use as list for buttonEventMap function
+		data = (value < 3) ? value : (value - 7)
+		resultMap = mapButtonEvent(data)
 	}
 
 	// Process message on short-button press containing model name and battery voltage report
 	if (cluster == "0000" && attrId == "0005")	{
-		def model = value.split("01FF")[0]
-		def data = value.split("01FF")[1]
-		def modelName = ""
+    	if (value.length() > 45) {
+			model = value.split("01FF")[0]
+			data = value.split("01FF")[1]
+			if (data[4..7] == "0121") {
+				def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
+				resultMap = getBatteryResult(BatteryVoltage)
+			}
+		data = ", data: ${value.split("01FF")[1]}"
+		}
+
 		// Parsing the model name
 		for (int i = 0; i < model.length(); i+=2) {
 			def str = model.substring(i, i+2);
 			def NextChar = (char)Integer.parseInt(str, 16);
 			modelName = modelName + NextChar
 		}
-		displayDebugLog(" reported: cluster: 0000, attrId: 0005, value: ${value}, model:${modelName}, data:${data}")
-
-		if (data[4..7] == "0121") {
-			def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
-				resultMap = getBatteryResult(BatteryVoltage)
-		}
+		displayDebugLog(" reported model: $modelName$data")
 	}
-
 	return resultMap
 }
 
@@ -265,7 +269,7 @@ private def displayDebugLog(message) {
 }
 
 private def displayInfoLog(message) {
-	if (infoLogging)
+	if (infoLogging || state.prefsSetCount < 2)
 		log.info "${device.displayName}${message}"
 }
 
@@ -278,8 +282,9 @@ def resetBatteryRuntime(paired) {
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
+	state.prefsSetCount = 0
 	displayInfoLog(": Installing")
-	if (!batteryRuntime)
+	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	checkIntervalEvent("")
 	sendEvent(name: "numberOfButtons", value: 3)
@@ -288,7 +293,7 @@ def installed() {
 // configure() runs after installed() when a sensor is paired
 def configure() {
 	displayInfoLog(": Configuring")
-	if (!batteryRuntime)
+	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	checkIntervalEvent("configured")
 	sendEvent(name: "numberOfButtons", value: 3)
@@ -299,6 +304,8 @@ def configure() {
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 	displayInfoLog(": Updating preference settings")
+	if (state.prefsSetCount < 2)
+		state.prefsSetCount = state.prefsSetCount + 1
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
