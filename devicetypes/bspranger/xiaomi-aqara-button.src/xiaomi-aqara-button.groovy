@@ -1,5 +1,5 @@
 /**
- *  Xiaomi Aqara Button (models WXKG11LM and WXKG12LM)
+ *  Xiaomi Aqara Zigbee Button (models WXKG11LM and WXKG12LM)
  *  Version 1.2
  *
  *
@@ -35,7 +35,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
+	definition (name: "Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {
 		capability "Battery"
 		capability "Sensor"
 		capability "Button"
@@ -55,7 +55,7 @@ metadata {
 		attribute "batteryRuntime", "string"
 
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button Model WXKG11LM"
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,0012,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq3", deviceJoinName: "Aqara Button Model WXKG12LM"
+		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,0001,0006,0012", outClusters: "0000", manufacturer: "LUMI", model: "lumi.sensor_switch.aq3", deviceJoinName: "Aqara Button Model WXKG12LM"
 
 		command "resetBatteryRuntime"
 	}
@@ -71,8 +71,8 @@ metadata {
 				attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
 				attributeState("held", label:'Held', backgroundColor:"#00a0dc")
 			}
-			tileAttribute("device.lastpressed", key: "SECONDARY_CONTROL") {
-				attributeState "default", label:'Last Pressed: ${currentValue}'
+			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
+				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
 			}
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -96,7 +96,7 @@ metadata {
 	preferences {
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
-		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
 		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
 		//Battery Reset Config
 		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
@@ -105,8 +105,8 @@ metadata {
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		//Battery Voltage Range
 		input description: "", type: "paragraph", element: "paragraph", title: "BATTERY VOLTAGE RANGE"
-		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
+		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3
+		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5
 		//Live Logging Message Display Config
 		input description: "These settings affect the display of messages in the Live Logging tab of the SmartThings IDE.", type: "paragraph", element: "paragraph", title: "LIVE LOGGING"
 		input name: "infoLogging", type: "bool", title: "Display info log messages?", defaultValue: true
@@ -145,7 +145,7 @@ def parse(String description) {
 		// Parse battery level from regular hourly announcement messages
 		result = parseCatchAllMessage(description)
 	}
-	if (result != [:]) {
+	if (result != null) {
 		displayDebugLog(": Creating event $result")
 		return createEvent(result)
 	} else
@@ -157,15 +157,14 @@ private Map parseReadAttrMessage(String description) {
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 	Map resultMap = [:]
-	displayDebugLog(" parsed message: cluster: $cluster, attrId: $attrId, value: $value")
 
 	// Process model WXKG12LM button message
 	if (cluster == "0012") {
-		// Values (as integer): 1 = push, 2 = double-click, 16 = hold, 17 = release, 18 = shake
+		// Values (as integer): 1 = push, 2 = double-click, 11 = hold, 12 = release, 13 = shake
 		value = Integer.parseInt(value[2..3])
 		// Change values 16-18 to 3-5 to use as list for buttonEventMap function
-		value = (value < 3)?:(value - 13)
-		result = mapButtonEvent(value)
+		value = (value < 3) ? value : (value - 7)
+		resultMap = mapButtonEvent(value)
 	}
 
 	// Process message on short-button press containing model name and battery voltage report
@@ -192,20 +191,20 @@ private Map parseReadAttrMessage(String description) {
 
 // Create map of values to be used for button event
 private mapButtonEvent(value) {
-	def messageType = ["pushed", "clicked", "double-clicked", "held", "", "shaken"]
-	def eventType = ["pushed", "pushed", "pushed", "held", "", "shaken"]
+	def messageType = ["pushed", "single-clicked", "double-clicked", "held", "", "shaken"]
+	def eventType = ["pushed", "pushed", "pushed", "held", "", "pushed"]
 	def buttonNum = [1, 1, 2, 1, 0, 3]
 	if (value == 4) {
 		displayInfoLog(" was released")
 		updateLastPressed("Released")
 	} else {
-		displayInfoLog(" was $messageType[value] (Button $buttonNum[value] $eventType[value])")
+		displayInfoLog(" was ${messageType[value]} (Button ${buttonNum[value]} ${eventType[value]})")
 		updateLastPressed("Pressed")
 		return [
 			name: 'button',
-			value: value,
+			value: eventType[value],
 			data: [buttonNumber: buttonNum[value]],
-			descriptionText: "$device.displayName was $value",
+			descriptionText: "$device.displayName ${messageType[value]}",
 			isStateChange: true
 		]
 	}
@@ -213,9 +212,9 @@ private mapButtonEvent(value) {
 
 // on any type of button pressed update lastPressed or lastReleased to current date/time
 def updateLastPressed(pressType) {
-	displayInfoLog(": Setting Last $pressType to current date/time")
-	sendEvent(name: "last{$pressType}", value: formatDate(), displayed: false)
-	sendEvent(name: "last{$pressType}CoRE", value: now(), displayed: false)
+	displayDebugLog(": Setting Last $pressType to current date/time")
+	sendEvent(name: "last${pressType}", value: formatDate(), displayed: false)
+	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
 }
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
