@@ -15,7 +15,7 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
- *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
+ *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, veeceeoh, & xtianpaiva
  *
  *  Notes on capabilities of the different models:
  *  Models WXKG11LM, WXKG01LM, WXKG02LM
@@ -55,7 +55,6 @@ metadata {
 		attribute "lastPressedCoRE", "string"
 		attribute "lastReleased", "string"
 		attribute "lastReleasedCoRE", "string"
-		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
 
 		// Aqara Button - original revision - model WXKG11LM
@@ -167,10 +166,10 @@ private Map parseReadAttrMessage(String description) {
 	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-    def data = ""
-    def modelName = ""
+	def data = ""
+	def modelName = ""
 	def model = value
-    Map resultMap = [:]
+	Map resultMap = [:]
 
 	// Process model WXKG12LM button message
 	if (cluster == "0012") {
@@ -183,7 +182,7 @@ private Map parseReadAttrMessage(String description) {
 
 	// Process message on short-button press containing model name and battery voltage report
 	if (cluster == "0000" && attrId == "0005")	{
-    	if (value.length() > 45) {
+		if (value.length() > 45) {
 			model = value.split("01FF")[0]
 			data = value.split("01FF")[1]
 			if (data[4..7] == "0121") {
@@ -212,7 +211,7 @@ private mapButtonEvent(value) {
 	if (value == 4) {
 		displayInfoLog(" was released")
 		updateLastPressed("Released")
-        return [:]
+		return [:]
 	} else {
 		displayInfoLog(" was ${messageType[value]} (Button ${buttonNum[value]} ${eventType[value]})")
 		updateLastPressed("Pressed")
@@ -220,7 +219,7 @@ private mapButtonEvent(value) {
 			name: 'button',
 			value: eventType[value],
 			data: [buttonNumber: buttonNum[value]],
-			descriptionText: "$device.displayName ${messageType[value]}",
+			descriptionText: "$device.displayName was ${messageType[value]}",
 			isStateChange: true
 		]
 	}
@@ -315,10 +314,12 @@ def configure() {
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 	displayInfoLog(": Updating preference settings")
-    if (!state.prefsSetCount)
+	if (!state.prefsSetCount)
 		state.prefsSetCount = 1
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
+	if (!device.currentState('batteryRuntime')?.value)
+		resetBatteryRuntime(true)
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
