@@ -1,24 +1,24 @@
 /**
- *	Xiaomi Zigbee Button
- *	Version 1.2
+ *  Xiaomi Zigbee Button
+ *  Version 1.2
  *
  *
- *	Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *	in compliance with the License. You may obtain a copy of the License at:
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
  *
  *	    http://www.apache.org/licenses/LICENSE-2.0
  *
- *	Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *	on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *	for the specific language governing permissions and limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
  *
- *	Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
- *	Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
+ *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
+ *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
  *
- *	Known issues:
- *	Xiaomi sensors do not seem to respond to refresh requests
- *	Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
- *	Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub.
+ *  Known issues:
+ *  Xiaomi sensors do not seem to respond to refresh requests
+ *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
+ *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub.
  *
  *
  */
@@ -71,14 +71,14 @@ metadata {
 				[value: 51, color: "#44b621"]
 			]
 		}
-		valueTile("lastcheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
-			state "default", label:'Last Event:\n${currentValue}'
+		valueTile("lastCheckin", "device.lastCheckin", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+			state "lastCheckin", label:'Last Event:\n${currentValue}'
 		}
 		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
 			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
 		}
 		main (["button"])
-		details(["button","battery","lastcheckin","batteryRuntime"])
+		details(["button","battery","lastCheckin","batteryRuntime"])
 	}
 
 	preferences {
@@ -96,8 +96,8 @@ metadata {
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
 		//Battery Voltage Range
 		input description: "", type: "paragraph", element: "paragraph", title: "BATTERY VOLTAGE RANGE"
-		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3, required: false
-		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5, required: false
+		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3
+		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5
 		//Live Logging Message Display Config
 		input description: "These settings affect the display of messages in the Live Logging tab of the SmartThings IDE.", type: "paragraph", element: "paragraph", title: "LIVE LOGGING"
 		input name: "infoLogging", type: "bool", title: "Display info log messages?", defaultValue: true
@@ -125,11 +125,14 @@ def parse(String description) {
 	sendEvent(name: "lastCheckinCoRE", value: now(), displayed: false)
 
 	// Send message data to appropriate parsing function based on the type of report
-	if (description?.startsWith('on/off: ')) {
-		result = parseButtonMessage(description)
+	if (description == 'on/off: 0') {
+		updateLastPressed("Pressed")
+	} else if (description == 'on/off: 1') {
+		result = createButtonEvent()
+		updateLastPressed("Released")
 	} else if (description?.startsWith('catchall:')) {
 		result = parseCatchAllMessage(description)
-	} else if (description?.startsWith("read attr - raw: ")) {
+	} else if (description?.startsWith('read attr - raw: ')) {
 		result = parseReadAttrMessage(description)
 	}
 	if (result != [:]) {
@@ -139,25 +142,14 @@ def parse(String description) {
 		return [:]
 }
 
-private parseButtonMessage(description) {
-	def result = [:]
-	def onOff = (description - "on/off: ")
-
-	if (onOff == '0') {
-		// on button pressed update lastPressed and lastButtonMssg to current date/time
-		displayDebugLog(": Button pressed, setting lastPressed to current date/time")
-		sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
-		sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
-		sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
-	} else if (onOff == '1') {
-		// on button released create event map for buttton pushed or held and update lastPressed and lastButtonMssg to current date/time
-		displayDebugLog(": Button released, setting lastReleased to current date/time")
-		sendEvent(name: "lastReleased", value: formatDate(), displayed: false)
-		sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
-		result = createButtonEvent()
-		sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
-	}
-	return result
+// on any type of button pressed update lastPressed or lastReleased to current date/time
+def updateLastPressed(pressType) {
+	if (pressType == "Pressed")
+		displayInfoLog(": Button press detected")
+	displayDebugLog(": Setting Last $pressType to current date/time")
+	sendEvent(name: "last${pressType}", value: formatDate(), displayed: false)
+	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
+	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
 }
 
 private createButtonEvent() {
@@ -165,21 +157,18 @@ private createButtonEvent() {
 	def holdTimeMillisec = Math.round((settings.waittoHeld?:2.0) * 1000)
 	def value = "held"
 
+	displayInfoLog(": Button release detected")
 	displayDebugLog(": Comparing time difference between this button release and last button message")
 	displayDebugLog(": Time difference = $timeDif ms, Hold time setting = $holdTimeMillisec ms")
-	// If there is an issue with message sequence do not parse this button release
-	if (timeDif < 0)
-		return [:]
 	// compare waittoHeld setting with difference between current time and lastButtonMssg
-	else if (timeDif < holdTimeMillisec || timeDif > holdTimeMillisec + 10000)
+	if (timeDif < holdTimeMillisec || timeDif > holdTimeMillisec + 10000)
 		value = "pushed"
-	displayInfoLog(" was ${value}")
-
+	displayInfoLog(" was $value")
 	return [
 		name: 'button',
 		value: value,
 		data: [buttonNumber: "1"],
-		descriptionText: "${device.displayName} was ${value}",
+		descriptionText: "$device.displayName was $value",
 		isStateChange: true
 	]
 }
@@ -188,26 +177,31 @@ private Map parseReadAttrMessage(String description) {
 	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-	def model = value.split("02FF")[0]
-	def data = value.split("02FF")[1]
+	def data = ""
+	def modelName = ""
+	def model = value
 	Map resultMap = [:]
 
-	if (data[4..7] == "0121") {
-		def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
-			resultMap = getBatteryResult(BatteryVoltage)
-	}
-
+	// Process message on short-button press containing model name and battery voltage report
 	if (cluster == "0000" && attrId == "0005")	{
-		def modelName = ""
-		// Parsing the model
+		if (value.length() > 45) {
+			model = value.split("02FF")[0]
+			data = value.split("02FF")[1]
+			if (data[4..7] == "0121") {
+				def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
+				resultMap = getBatteryResult(BatteryVoltage)
+			}
+		data = ", data: ${value.split("02FF")[1]}"
+		}
+
+		// Parsing the model name
 		for (int i = 0; i < model.length(); i+=2) {
 			def str = model.substring(i, i+2);
 			def NextChar = (char)Integer.parseInt(str, 16);
 			modelName = modelName + NextChar
 		}
-		displayDebugLog(" reported: cluster: 0000, attrId: 0005, value: ${value}, model:${modelName}, data:${data}")
+		displayDebugLog(" reported model: $modelName$data")
 	}
-
 	return resultMap
 }
 
@@ -258,7 +252,7 @@ private def displayDebugLog(message) {
 }
 
 private def displayInfoLog(message) {
-	if (infoLogging)
+	if (infoLogging || state.prefsSetCount < 3)
 		log.info "${device.displayName}${message}"
 }
 
@@ -271,24 +265,34 @@ def resetBatteryRuntime(paired) {
 
 // installed() runs just after a sensor is paired using the "Add a Thing" method in the SmartThings mobile app
 def installed() {
+	state.prefsSetCount = 0
 	displayInfoLog(": Installing")
-	if (!batteryRuntime)
+	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	checkIntervalEvent("")
+	sendEvent(name: "numberOfButtons", value: 1)
 }
 
 // configure() runs after installed() when a sensor is paired
 def configure() {
 	displayInfoLog(": Configuring")
-	if (!batteryRuntime)
+	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	checkIntervalEvent("configured")
+	sendEvent(name: "numberOfButtons", value: 1)
+	displayInfoLog(": Number of buttons = 1")
 	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
 	displayInfoLog(": Updating preference settings")
+    if (!state.prefsSetCount)
+		state.prefsSetCount = 1
+	else if (state.prefsSetCount < 3)
+		state.prefsSetCount = state.prefsSetCount + 1
+	if (!device.currentState('batteryRuntime')?.value)
+		resetBatteryRuntime(true)
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
