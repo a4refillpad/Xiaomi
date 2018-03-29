@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Zigbee Button
- *  Version 1.2
+ *  Version 1.2b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -35,10 +35,9 @@ metadata {
 		capability "Health Check"
 
 		attribute "lastCheckin", "string"
-		attribute "lastCheckinCoRE", "Date"
+		attribute "lastCheckinCoRE", "string"
 		attribute "lastPressed", "string"
 		attribute "lastPressedCoRE", "string"
-		attribute "lastReleased", "string"
 		attribute "lastReleasedCoRE", "string"
 		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
@@ -57,7 +56,7 @@ metadata {
 		multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
 			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
 				attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
-				attributeState("held", label:'Held', backgroundColor:"#00a0dc")
+				attributeState("held", label:'Held', action: "momentary.push", backgroundColor:"#00a0dc")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
@@ -83,8 +82,10 @@ metadata {
 
 	preferences {
 		//Button Config
-		input description: "", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
-		input name: "waittoHeld", type: "decimal", title: "If the button is held, wait how many seconds until sending a 'held' message?", description: "Number of seconds (default = 2.0)", range: "0.1..120"
+		input description: "When the button is clicked a 'button 1 pushed' event is sent, but if it is held for at least 2 seconds then a 'button 1 held' event is sent when released. The settings below allow changes to the minimum time needed for a hold and the type of event sent on hold.", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
+		input name: "waittoHeld", type: "decimal", title: "Minimum hold time required for button held:", description: "Number of seconds (default = 2.0)", range: "0.1..120"
+		input name: "holdIsButton2", type: "bool", title: "On button hold, send 'button 2 pushed' event instead of 'button 1 held'?"
+
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
@@ -111,7 +112,6 @@ def push() {
 	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
 	sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
-	sendEvent(name: "lastReleased", value: formatDate(), displayed: false)
 	sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
 }
 
@@ -142,12 +142,12 @@ def parse(String description) {
 		return [:]
 }
 
-// on any type of button pressed update lastPressed or lastReleased to current date/time
+// on any type of button pressed update lastPressed and lastPressedCoRE or lastReleasedCoRE to current date/time
 def updateLastPressed(pressType) {
 	if (pressType == "Pressed")
 		displayInfoLog(": Button press detected")
 	displayDebugLog(": Setting Last $pressType to current date/time")
-	sendEvent(name: "last${pressType}", value: formatDate(), displayed: false)
+	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
 	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
 	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
 }
@@ -155,20 +155,20 @@ def updateLastPressed(pressType) {
 private createButtonEvent() {
 	def timeDif = now() - device.latestState('lastButtonMssg').date.getTime()
 	def holdTimeMillisec = Math.round((settings.waittoHeld?:2.0) * 1000)
-	def value = "held"
-
 	displayInfoLog(": Button release detected")
 	displayDebugLog(": Comparing time difference between this button release and last button message")
 	displayDebugLog(": Time difference = $timeDif ms, Hold time setting = $holdTimeMillisec ms")
 	// compare waittoHeld setting with difference between current time and lastButtonMssg
-	if (timeDif < holdTimeMillisec || timeDif > holdTimeMillisec + 10000)
-		value = "pushed"
-	displayInfoLog(" was $value")
+	def buttonHeld = (timeDif >= holdTimeMillisec & timeDif < holdTimeMillisec + 10000) ? true : false
+	def eventValue = (buttonHeld & !(holdIsButton2 == true)) ? "held" : "pushed"
+	def buttonNum = (buttonHeld & holdIsButton2 == true) ? 2 : 1
+    def descText = " was ${buttonHeld ? "held" : "pushed"} (button $buttonNum $eventValue)"
+	displayInfoLog(descText)
 	return [
 		name: 'button',
-		value: value,
-		data: [buttonNumber: "1"],
-		descriptionText: "$device.displayName was $value",
+		value: eventValue,
+		data: [buttonNumber: buttonNum],
+		descriptionText: "$device.displayName$descText",
 		isStateChange: true
 	]
 }
@@ -275,19 +275,21 @@ def installed() {
 
 // configure() runs after installed() when a sensor is paired
 def configure() {
+	def numButtons = (holdIsButton2 == true) ? 2 : 1
 	displayInfoLog(": Configuring")
 	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	checkIntervalEvent("configured")
-	sendEvent(name: "numberOfButtons", value: 1)
-	displayInfoLog(": Number of buttons = 1")
+	sendEvent(name: "numberOfButtons", value: numButtons)
+	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
 	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
+	def numButtons = (holdIsButton2 == true) ? 2 : 1
 	displayInfoLog(": Updating preference settings")
-    if (!state.prefsSetCount)
+	if (!state.prefsSetCount)
 		state.prefsSetCount = 1
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
@@ -297,9 +299,11 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	checkIntervalEvent("preferences updated")
+	sendEvent(name: "numberOfButtons", value: numButtons)
+	displayInfoLog(": Number of buttons = $numButtons")
 	displayInfoLog(": Info message logging enabled")
 	displayDebugLog(": Debug message logging enabled")
+	checkIntervalEvent("preferences updated")
 }
 
 private checkIntervalEvent(text) {
