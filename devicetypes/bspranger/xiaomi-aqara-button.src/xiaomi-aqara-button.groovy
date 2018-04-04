@@ -294,20 +294,15 @@ def resetBatteryRuntime(paired) {
 def installed() {
 	state.prefsSetCount = 0
 	displayInfoLog(": Installing")
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
+	init(0)
 	checkIntervalEvent("")
-	sendEvent(name: "numberOfButtons", value: 3)
 }
 
 // configure() runs after installed() when a sensor is paired
 def configure() {
 	displayInfoLog(": Configuring")
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
+	init(1)
 	checkIntervalEvent("configured")
-	sendEvent(name: "numberOfButtons", value: 3)
-	displayInfoLog(": Number of buttons = 3")
 	return
 }
 
@@ -318,8 +313,7 @@ def updated() {
 		state.prefsSetCount = 1
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
+	init(0)
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
@@ -329,6 +323,15 @@ def updated() {
 	displayDebugLog(": Debug message logging enabled")
 }
 
+def init(displayLog) {
+	def modelName = device.getDataValue("deviceJoinName")
+	def numButtons = (modelName == "Aqara Button WXKG12LM") ? 3 : 1
+	sendEvent(name: "numberOfButtons", value: numButtons)
+	if (displayLog) {
+		displayInfoLog(": Model is $modelName")
+		displayInfoLog(": Number of buttons = $numButtons")
+	}
+}
 private checkIntervalEvent(text) {
 	// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
 	if (text)
