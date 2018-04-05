@@ -77,7 +77,7 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: false) {
 			tileAttribute ("device.buttonStatus", key: "PRIMARY_CONTROL") {
 				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
 				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
