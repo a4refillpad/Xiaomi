@@ -56,6 +56,7 @@ metadata {
 		attribute "lastReleased", "string"
 		attribute "lastReleasedCoRE", "string"
 		attribute "batteryRuntime", "string"
+		attribute "buttonStatus", "enum", ["pushed", "held", "single-clicked", "double-clicked", "shaken", "released"]
 
 		// Aqara Button - original revision - model WXKG11LM
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button WXKG11LM"
@@ -76,10 +77,15 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-				attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
-				attributeState("held", label:'Held', backgroundColor:"#00a0dc")
+		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+			tileAttribute ("device.buttonStatus", key: "PRIMARY_CONTROL") {
+				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("single-clicked", label:'Single-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("double-clicked", label:'Double-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("shaken", label:'Shaken', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-released-icn.png")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
@@ -99,8 +105,8 @@ metadata {
 		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
 			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
 		}
-		main (["button"])
-		details(["button","battery","lastCheckin","batteryRuntime"])
+		main (["buttonStatus"])
+		details(["buttonStatus","battery","lastCheckin","batteryRuntime"])
 	}
 
 	preferences {
@@ -127,11 +133,8 @@ metadata {
 //adds functionality to press the centre tile as a virtualApp Button
 def push() {
 	displayInfoLog(": Virtual App Button Pressed")
-	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
-	sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
-	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
-	sendEvent(name: "lastReleased", value: formatDate(), displayed: false)
-	sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
+	sendEvent(mapButtonEvent(0))
+	runIn(1, clearButtonStatus)
 }
 
 // Parse incoming device messages to generate events
@@ -211,10 +214,14 @@ private mapButtonEvent(value) {
 	if (value == 4) {
 		displayInfoLog(" was released")
 		updateLastPressed("Released")
+		sendEvent(name: "buttonStatus", value: "released", isStateChange: true, displayed: false)
 		return [:]
 	} else {
 		displayInfoLog(" was ${messageType[value]} (Button ${buttonNum[value]} ${eventType[value]})")
 		updateLastPressed("Pressed")
+		sendEvent(name: "buttonStatus", value: messageType[value], isStateChange: true, displayed: false)
+		if (value != 3)
+			runIn(1, clearButtonStatus)
 		return [
 			name: 'button',
 			value: eventType[value],
@@ -230,6 +237,10 @@ def updateLastPressed(pressType) {
 	displayDebugLog(": Setting Last $pressType to current date/time")
 	sendEvent(name: "last${pressType}", value: formatDate(), displayed: false)
 	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
+}
+
+def clearButtonStatus() {
+	sendEvent(name: "buttonStatus", value: "released", isStateChange: true, displayed: false)	
 }
 
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
@@ -332,6 +343,7 @@ def init(displayLog) {
 		displayInfoLog(": Number of buttons = $numButtons")
 	}
 }
+
 private checkIntervalEvent(text) {
 	// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
 	if (text)
