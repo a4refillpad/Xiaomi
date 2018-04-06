@@ -22,7 +22,7 @@
  *    - Only single press is supported, sent as button 1 "pushed" event
  *    - The 2-button Aqara Smart Light Switch model WXKG02LM is only recognized as ONE button.
  *      This is because the SmartThings API ignores the data that distinguishes between left, right, or both-button presses.
- *  Model WXKG11LM:
+ *  Model WXKG12LM:
  *    - Single click results in button 1 "pushed" event
  *    - Hold for longer than 400ms results in button 1 "held" event
  *    - Double click results in button 2 "pushed" event
