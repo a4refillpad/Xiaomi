@@ -56,10 +56,10 @@ metadata {
 	tiles(scale: 2) {
 		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: false) {
 			tileAttribute ("device.buttonStatus", key: "PRIMARY_CONTROL") {
-				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-released-icn.png")
+				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
@@ -85,7 +85,7 @@ metadata {
 
 	preferences {
 		//Button Config
-		input description: "When the button is clicked a 'button 1 pushed' event is sent, but if it is held for at least 2 seconds then a 'button 1 held' event is sent when released. The settings below allow changes to the minimum time needed for a hold and the type of event sent on hold.", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
+		input description: "A button click always sends a 'button 1 pushed' event, but as a default if it is held for at least 2 seconds, a 'button 1 held' event is sent when released. The settings below allow changes to the minimum time needed for held and what type of event should be sent.", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
 		input name: "waittoHeld", type: "decimal", title: "Minimum hold time required for button held:", description: "Number of seconds (default = 2.0)", range: "0.1..120"
 		input name: "holdIsButton2", type: "bool", title: "On button hold, send 'button 2 pushed' event instead of 'button 1 held'?"
 
