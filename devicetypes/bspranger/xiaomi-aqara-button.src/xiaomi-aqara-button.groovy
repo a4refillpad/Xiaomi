@@ -79,13 +79,13 @@ metadata {
 	tiles(scale: 2) {
 		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: false) {
 			tileAttribute ("device.buttonStatus", key: "PRIMARY_CONTROL") {
-				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("single-clicked", label:'Single-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("double-clicked", label:'Double-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("shaken", label:'Shaken', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
-				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-released-icn.png")
+				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("single-clicked", label:'Single-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("double-clicked", label:'Double-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("shaken", label:'Shaken', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
