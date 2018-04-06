@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Zigbee Button
- *  Version 1.2b
+ *  Version 1.2
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -41,6 +41,7 @@ metadata {
 		attribute "lastReleasedCoRE", "string"
 		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
+		attribute "buttonStatus", "enum", ["pushed", "held", "released"]
 
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
 
@@ -53,10 +54,12 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name:"button", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute ("device.button", key: "PRIMARY_CONTROL") {
-				attributeState("pushed", label:'Pushed', action: "momentary.push", backgroundColor:"#00a0dc")
-				attributeState("held", label:'Held', action: "momentary.push", backgroundColor:"#00a0dc")
+		multiAttributeTile(name:"buttonStatus", type: "lighting", width: 6, height: 4, canChangeIcon: false) {
+			tileAttribute ("device.buttonStatus", key: "PRIMARY_CONTROL") {
+				attributeState("default", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-pushed-icn.png")
+				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/veeceeoh/Xiaomi/master/images/button-released-icn.png")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
@@ -76,8 +79,8 @@ metadata {
 		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
 			state "batteryRuntime", label:'Battery Changed: ${currentValue}'
 		}
-		main (["button"])
-		details(["button","battery","lastCheckin","batteryRuntime"])
+		main (["buttonStatus"])
+		details(["buttonStatus","battery","lastCheckin","batteryRuntime"])
 	}
 
 	preferences {
@@ -113,6 +116,7 @@ def push() {
 	sendEvent(name: "lastPressedCoRE", value: now(), displayed: false)
 	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], descriptionText: "$device.displayName app button was pushed", isStateChange: true)
 	sendEvent(name: "lastReleasedCoRE", value: now(), displayed: false)
+	runIn(1, clearButtonStatus)
 }
 
 // Parse incoming device messages to generate events
@@ -146,8 +150,8 @@ def parse(String description) {
 def updateLastPressed(pressType) {
 	if (pressType == "Pressed")
 		displayInfoLog(": Button press detected")
-	displayDebugLog(": Setting Last $pressType to current date/time")
 	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
+	displayDebugLog(": Setting Last $pressType to current date/time")
 	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
 	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
 }
@@ -162,7 +166,10 @@ private createButtonEvent() {
 	def buttonHeld = (timeDif >= holdTimeMillisec & timeDif < holdTimeMillisec + 10000) ? true : false
 	def eventValue = (buttonHeld & !(holdIsButton2 == true)) ? "held" : "pushed"
 	def buttonNum = (buttonHeld & holdIsButton2 == true) ? 2 : 1
-    def descText = " was ${buttonHeld ? "held" : "pushed"} (button $buttonNum $eventValue)"
+	def pressType = buttonHeld ? "held" : "pushed"
+    def descText = " was $pressType (button $buttonNum $eventValue)"
+	sendEvent(name: "buttonStatus", value: pressType, isStateChange: true, displayed: false)
+	runIn(1, clearButtonStatus)
 	displayInfoLog(descText)
 	return [
 		name: 'button',
@@ -171,6 +178,10 @@ private createButtonEvent() {
 		descriptionText: "$device.displayName$descText",
 		isStateChange: true
 	]
+}
+
+def clearButtonStatus() {
+	sendEvent(name: "buttonStatus", value: "released", isStateChange: true, displayed: false)	
 }
 
 private Map parseReadAttrMessage(String description) {
@@ -279,6 +290,7 @@ def configure() {
 	displayInfoLog(": Configuring")
 	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
+	clearButtonStatus()
 	checkIntervalEvent("configured")
 	sendEvent(name: "numberOfButtons", value: numButtons)
 	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
@@ -294,11 +306,12 @@ def updated() {
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
 	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
+		resetBatteryRuntime()
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
+	clearButtonStatus()
 	sendEvent(name: "numberOfButtons", value: numButtons)
 	displayInfoLog(": Number of buttons = $numButtons")
 	displayInfoLog(": Info message logging enabled")
