@@ -2,7 +2,7 @@
  *  Xiaomi Aqara Zigbee Button
  *  Works with Aqara Button models WXKG11LM / WXKG12LM
  *  and Aqara Smart Light Switch models WXKG01LM / WXKG02LM
- *  Version 1.2
+ *  Version 1.2.1
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -134,7 +134,6 @@ metadata {
 def push() {
 	displayInfoLog(": Virtual App Button Pressed")
 	sendEvent(mapButtonEvent(0))
-	runIn(1, clearButtonStatus)
 }
 
 // Parse incoming device messages to generate events
@@ -335,13 +334,14 @@ def updated() {
 }
 
 def init(displayLog) {
-	def modelName = device.getDataValue("deviceJoinName")
-	def numButtons = (modelName == "Aqara Button WXKG12LM") ? 3 : 1
+	def modelName = device.getDataValue("model")
+	def numButtons = (modelName == "lumi.sensor_switch.aq3" || modelName == "lumi.sensor_swit") ? 3 : 1
+	clearButtonStatus()
+	if (!device.currentState('batteryRuntime')?.value)
+		resetBatteryRuntime(true)
 	sendEvent(name: "numberOfButtons", value: numButtons)
-	if (displayLog) {
-		displayInfoLog(": Model is $modelName")
+	if (displayLog)
 		displayInfoLog(": Number of buttons = $numButtons")
-	}
 }
 
 private checkIntervalEvent(text) {
