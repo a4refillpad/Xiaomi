@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Zigbee Button
  *  Works with Aqara Button models WXKG11LM / WXKG12LM
- *  and Aqara Smart Light Switch models WXKG01LM / WXKG02LM
+ *  and Aqara Smart Light Switch models WXKG02LM / WXKG03LM
  *  Version 1.2.1
  *
  *
@@ -18,7 +18,7 @@
  *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, veeceeoh, & xtianpaiva
  *
  *  Notes on capabilities of the different models:
- *  Models WXKG11LM, WXKG01LM, WXKG02LM
+ *  Models WXKG11LM, WXKG02LM, WXKG03LM
  *    - Only single press is supported, sent as button 1 "pushed" event
  *    - The 2-button Aqara Smart Light Switch model WXKG02LM is only recognized as ONE button.
  *      This is because the SmartThings API ignores the data that distinguishes between left, right, or both-button presses.
