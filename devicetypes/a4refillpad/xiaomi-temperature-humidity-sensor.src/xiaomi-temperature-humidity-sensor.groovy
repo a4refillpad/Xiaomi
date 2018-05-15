@@ -152,6 +152,9 @@ private String parseValue(String description) {
 	if (description?.startsWith("temperature: ")) {
 		def value = ((description - "temperature: ").trim()) as Float 
         
+	if (value >= 100) {
+        	value = 100 - value
+        }
         if (getTemperatureScale() == "C") {
         	if (tempOffset) {
 				return (Math.round(value * 10))/ 10 + tempOffset as Float
