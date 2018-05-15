@@ -47,7 +47,7 @@ metadata {
                 attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.light.off", backgroundColor:"#ffffff", nextState:"turningOn"
             }
            	tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+    			attributeState("default", label:'Last Update:\n ${currentValue}',icon: "st.Health & Wellness.health9")
 		   	}
         }
         valueTile("temperature", "device.temperature", width: 2, height: 2) {
@@ -68,6 +68,13 @@ metadata {
         }
         main (["switch", "temperature"])
         details(["switch", "temperature", "refresh"])
+    }
+    
+    preferences {
+		//Date & Time Config
+		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"    
+		input name: "dateformat", type: "enum", title: "Set Date Format\n US (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
+		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
     }
 }
 
@@ -93,7 +100,7 @@ def parse(String description) {
 
 	log.debug "Parse returned $map"
     //  send event for heartbeat    
-    def now = new Date()
+    def now = formatDate()
     sendEvent(name: "lastCheckin", value: now)
     
 	def results = map ? createEvent(map) : null
@@ -175,4 +182,28 @@ private Map parseCustomMessage(String description) {
 
 private Integer convertHexToInt(hex) {
 	Integer.parseInt(hex,16)
+}
+
+def formatDate() {
+    def correctedTimezone = ""
+    def timeString = clockformat ? "HH:mm:ss" : "h:mm:ss aa"
+
+	// If user's hub timezone is not set, display error messages in log and events log, and set timezone to GMT to avoid errors
+    if (!(location.timeZone)) {
+        correctedTimezone = TimeZone.getTimeZone("GMT")
+        log.error "${device.displayName}: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app."
+        sendEvent(name: "error", value: "", descriptionText: "ERROR: Time Zone not set, so GMT was used. Please set up your location in the SmartThings mobile app.")
+    }
+    else {
+        correctedTimezone = location.timeZone
+    }
+    if (dateformat == "US" || dateformat == "" || dateformat == null) {
+        return new Date().format("EEE MMM dd yyyy ${timeString}", correctedTimezone)
+    }
+    else if (dateformat == "UK") {
+        return new Date().format("EEE dd MMM yyyy ${timeString}", correctedTimezone)
+    }
+    else {
+        return new Date().format("EEE yyyy MMM dd ${timeString}", correctedTimezone)
+    }
 }
