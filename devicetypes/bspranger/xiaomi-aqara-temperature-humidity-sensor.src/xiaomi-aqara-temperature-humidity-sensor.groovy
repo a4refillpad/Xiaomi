@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Aqara Temperature Humidity Sensor
- *  Version 1.1
+ *  Version 1.2
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -196,9 +196,7 @@ def parse(String description) {
 		map.translatable = true
 		updateMinMaxTemps(map.value)
 	} else if (map.name == "humidity") {
-		if (humidityOffset) {
-			map.value = (int) map.value + (int) humidityOffset
-		}
+		map.value = humidOffset ? (int) map.value + (int) humidOffset : (int) map.value
 		updateMinMaxHumidity(map.value)
 	} else if (description?.startsWith('catchall:')) {
 		map = parseCatchAllMessage(description)
