@@ -23,6 +23,8 @@ metadata {
         capability "Refresh"
         capability "Switch"
         capability "Temperature Measurement"
+        capability "Sensor"
+        capability "Power Meter"
         
         attribute "lastCheckin", "string"
     }
@@ -63,11 +65,17 @@ metadata {
 				]
 			)
 		}
+        valueTile("power", "device.power", width: 2, height: 2) {
+			state("power", label:'${currentValue}W', backgroundColors:[
+					[value: 0, color: "#ffffff"],
+					[value: 1, color: "#00a0dc"]
+				])
+		}
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        main (["switch", "temperature"])
-        details(["switch", "temperature", "refresh"])
+        main (["switch", "power"])
+        details(["switch", "power", "temperature", "refresh"])
     }
     
     preferences {
@@ -142,6 +150,13 @@ private Map parseReportAttributeMessage(String description) {
     else if (descMap.cluster == "0008" && descMap.attrId == "0000") {
     	resultMap = createEvent(name: "switch", value: "off")
     } 
+    else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "02") {
+    	def wattage_int = Long.parseLong(descMap.value, 16)
+     	def wattage = Float.intBitsToFloat(wattage_int.intValue())
+        wattage = Math.round(wattage)
+        resultMap = createEvent(name: "power", value: wattage, unit: 'W', display: true)
+        log.debug "Wattage: ${wattage}W"
+    }
 	return resultMap
 }
 
