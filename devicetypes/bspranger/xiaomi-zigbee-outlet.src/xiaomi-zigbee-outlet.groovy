@@ -166,7 +166,7 @@ private Map parseReportAttributeMessage(String description) {
      	def energy = Float.intBitsToFloat(energy_int.intValue())
         energy = Math.round(energy * 100) * 0.01
         resultMap = createEvent(name: "energy", value: energy, unit: 'kWh')
-        log.debug "Energy Meter: ${wattage}kWh"
+        log.debug "Energy Meter: ${energy}kWh"
     }
 	return resultMap
 }
