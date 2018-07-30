@@ -25,6 +25,7 @@ metadata {
         capability "Temperature Measurement"
         capability "Sensor"
         capability "Power Meter"
+        capability "Energy Meter"
         
         attribute "lastCheckin", "string"
     }
@@ -71,11 +72,14 @@ metadata {
 					[value: 1, color: "#00a0dc"]
 				])
 		}
+        valueTile("energy", "device.energy", width: 2, height: 2) {
+			state("energy", label:'${currentValue}kWh')
+		}
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
         main (["switch", "power"])
-        details(["switch", "power", "temperature", "refresh"])
+        details(["switch", "power", "energy", "temperature", "refresh"])
     }
     
     preferences {
@@ -153,9 +157,16 @@ private Map parseReportAttributeMessage(String description) {
     else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "02") {
     	def wattage_int = Long.parseLong(descMap.value, 16)
      	def wattage = Float.intBitsToFloat(wattage_int.intValue())
-        wattage = Math.round(wattage)
-        resultMap = createEvent(name: "power", value: wattage, unit: 'W', display: true)
+        wattage = Math.round(wattage * 10) * 0.1
+        resultMap = createEvent(name: "power", value: wattage, unit: 'W')
         log.debug "Wattage: ${wattage}W"
+    }
+    else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "03") {
+    	def energy_int = Long.parseLong(descMap.value, 16)
+     	def energy = Float.intBitsToFloat(energy_int.intValue())
+        energy = Math.round(energy * 100) * 0.01
+        resultMap = createEvent(name: "energy", value: energy, unit: 'kWh')
+        log.debug "Energy Meter: ${wattage}kWh"
     }
 	return resultMap
 }
@@ -179,7 +190,9 @@ def refresh() {
         "st rattr 0x${device.deviceNetworkId} 1 6 0", "delay 250",
         "st rattr 0x${device.deviceNetworkId} 1 2 0", "delay 250",
         "st rattr 0x${device.deviceNetworkId} 1 1 0", "delay 250",
-        "st rattr 0x${device.deviceNetworkId} 1 0 0"
+        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 250",
+        "st rattr 0x${device.deviceNetworkId} 2 0x000C 0x0055", "delay 250",
+        "st rattr 0x${device.deviceNetworkId} 3 0x000C 0x0055"
     ]
 }
 
