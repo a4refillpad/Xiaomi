@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Temperature Humidity Sensor
- *  Version 1.2
+ *  Version 1.3
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,7 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  *  Original device handler code by a4refillpad
- *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
+ *  Additional contributions to code by alecm, alixjg, bspranger, cscheiene, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
  *
  *  Known issues:
  *  Xiaomi sensors do not seem to respond to refresh requests
