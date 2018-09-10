@@ -61,23 +61,14 @@ metadata {
             tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
                 attributeState("temperature", label:'${currentValue}°',
                     backgroundColors:[
-                        // Fahrenheit color set
-                        [value: 0, color: "#153591"],
-                        [value: 5, color: "#1e9cbb"],
-                        [value: 10, color: "#90d2a7"],
-                        [value: 15, color: "#44b621"],
-                        [value: 20, color: "#f1d801"],
-                        [value: 25, color: "#d04e00"],
-                        [value: 30, color: "#bc2323"],
-                        [value: 44, color: "#1e9cbb"],
-                        [value: 59, color: "#90d2a7"],
-                        [value: 74, color: "#44b621"],
-                        [value: 84, color: "#f1d801"],
-                        [value: 95, color: "#d04e00"],
-                        [value: 96, color: "#bc2323"]
-						// Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
-                        //[value: 0, color: "#153591"], [value: 7, color: "#1e9cbb"], [value: 15, color: "#90d2a7"], [value: 23, color: "#44b621"], [value: 28, color: "#f1d801"], [value: 35, color: "#d04e00"], [value: 37, color: "#bc2323"]
-                    ]
+ 				[value: 31, color: "#153591"],
+ 				[value: 44, color: "#1e9cbb"],
+ 				[value: 59, color: "#90d2a7"],
+ 				[value: 74, color: "#44b621"],
+ 				[value: 84, color: "#f1d801"],
+ 				[value: 95, color: "#d04e00"],
+ 				[value: 96, color: "#bc2323"]
+ 				]
                 )
             }
             tileAttribute("device.multiAttributesReport", key: "SECONDARY_CONTROL") {
@@ -87,24 +78,15 @@ metadata {
         }
         valueTile("temperature2", "device.temperature", inactiveLabel: false) {
             state "temperature", label:'${currentValue}°', icon:"st.Weather.weather2",
-            backgroundColors:[
-                // Fahrenheit color set
-                [value: 0, color: "#153591"],
-                [value: 5, color: "#1e9cbb"],
-                [value: 10, color: "#90d2a7"],
-                [value: 15, color: "#44b621"],
-                [value: 20, color: "#f1d801"],
-                [value: 25, color: "#d04e00"],
-                [value: 30, color: "#bc2323"],
-                [value: 44, color: "#1e9cbb"],
-                [value: 59, color: "#90d2a7"],
-                [value: 74, color: "#44b621"],
-                [value: 84, color: "#f1d801"],
-                [value: 95, color: "#d04e00"],
-                [value: 96, color: "#bc2323"]
-                // Celsius color set (to switch, delete the 13 lines above anmd remove the two slashes at the beginning of the line below)
-                //[value: 0, color: "#153591"], [value: 7, color: "#1e9cbb"], [value: 15, color: "#90d2a7"], [value: 23, color: "#44b621"], [value: 28, color: "#f1d801"], [value: 35, color: "#d04e00"], [value: 37, color: "#bc2323"]
-            ]
+                backgroundColors:[
+ 		    [value: 31, color: "#153591"],
+ 		    [value: 44, color: "#1e9cbb"],
+ 		    [value: 59, color: "#90d2a7"],
+ 		    [value: 74, color: "#44b621"],
+ 		    [value: 84, color: "#f1d801"],
+ 		    [value: 95, color: "#d04e00"],
+ 		    [value: 96, color: "#bc2323"]
+                ]
         }
         valueTile("humidity", "device.humidity", inactiveLabel: false, width: 2, height: 2) {
             state "humidity", label:'${currentValue}%', unit:"%", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/XiaomiHumidity.png",
