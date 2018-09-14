@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.5b
+ *  Version 0.51b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -144,30 +144,25 @@ metadata {
 
 // Parse incoming device messages to generate events
 def parse(String description) {
-	displayDebugLog(": Parsing description: ${description}")
-	def result = zigbee.getEvent(description)
+	displayDebugLog(": Parsing '${description}'")
+	def result = [:]
 
-	// Determine current time and date in the user-selected date format and clock style
-	def now = formatDate()
-	def nowDate = new Date(now).getTime()
-	// Any report - contact sensor & Battery - results in a lastCheckin event and update to Last Checkin tile
-	// However, only a non-parseable report results in lastCheckin being displayed in events log
-	sendEvent(name: "lastCheckin", value: now, displayed: false)
-	sendEvent(name: "lastCheckinCoRE", value: nowDate, displayed: false)
-
-	Map map = [:]
+	// Any report - button press & Battery - results in a lastCheckin event and update to Last Checkin tile
+	sendEvent(name: "lastCheckin", value: formatDate(), displayed: false)
+	sendEvent(name: "lastCheckinCoRE", value: now(), displayed: false)
 
 	// Send message data to appropriate parsing function based on the type of report
-	if (result) {
-		displayDebugLog(": Event = ${result}")
-		if (description?.startsWith('catchall:')) {
-			map = parseCatchAllMessage(description)
-		} else if (description?.startsWith('read attr - raw:')) {
-			map = parseReadAttr(description)
-		}
-		displayDebugLog(": Parse returned ${map}")
-		def results = map ? createEvent(map) : null
-		return results
+	if (description?.startsWith("read attr - raw: ")) {
+		result = parseReadAttrMessage(description)
+	}  else if (description?.startsWith('catchall:')) {
+		result = parseCatchAllMessage(description)
+	}
+	if (result != [:]) {
+		displayDebugLog(": Creating event $result")
+		return createEvent(result)
+	} else {
+		displayDebugLog(": Unable to parse unrecognized message")
+		return [:]
 	}
 }
 
@@ -194,11 +189,11 @@ private Map parseCatchAllMessage(String description) {
 }
 
 // Parse read attr - raw messages (includes all sensor event messages and reset button press, and )
-private Map parseReadAttr(String description) {
-		Map resultMap = [:]
+private Map parseReadAttrMessage(String description) {
 		def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 		def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 		def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+		Map resultMap = [:]
 
 		if (cluster == "0101") {
 			// Handles vibration (value 01), tilt (value 02), and drop (value 03) event messages
