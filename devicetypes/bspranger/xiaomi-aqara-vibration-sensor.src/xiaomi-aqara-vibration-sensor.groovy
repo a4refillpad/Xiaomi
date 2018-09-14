@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.6b
+ *  Version 0.52b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -32,6 +32,7 @@ metadata {
 		capability "Sensor"
 		capability "Three Axis"
 
+		attribute "accelSensitivity", "String"
 		attribute "batteryRuntime", "String"
 		attribute "lastCheckin", "String"
 		attribute "lastCheckinCoRE", "Date"
@@ -98,16 +99,19 @@ metadata {
 		valueTile("threeAxis", "device.threeAxis", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "default", label:'3-Axis:\n${currentValue}'
 		}
+		valueTile("accelSensitivity", "device.accelSensitivity", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+			state "default", label:'Sensitivity:\n${currentValue}'
+		}
 		valueTile("lastVibration", "device.lastVibration", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Vibration Event:\n${currentValue}'
 		}
-		valueTile("lastTilt", "device.lastTilt", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+		valueTile("lastTilt", "device.lastTilt", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Tilt Event:\n${currentValue}'
 		}
 		valueTile("lastDropped", "device.lastDropped", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Drop Event:\n${currentValue}'
 		}
-		valueTile("batteryRuntime", "device.batteryRuntime", inactiveLabel: false, decoration: "flat", width: 4, height: 1) {
+		valueTile("batteryRuntime", "device.batteryRuntime", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "batteryRuntime", label:'Battery Changed:\n ${currentValue}'
 		}
 		valueTile("spacer", "spacer", decoration: "flat", inactiveLabel: false, width: 1, height: 1) {
@@ -118,24 +122,27 @@ metadata {
 		}
 
 	main (["sensorStatus"])
-	details(["sensorStatus","tiltAngle","threeAxis","battery","lastVibration","lastTilt","lastDropped","batteryRuntime"])
+	details(["sensorStatus","tiltAngle","threeAxis","battery","accelSensitivity","lastVibration","lastTilt","lastDropped","batteryRuntime"])
 	}
 
 	preferences {
-		//Date & Time Config
+		// Accelerometer sensitivity level Config
+		input description: "", type: "paragraph", element: "paragraph", title: "DEVICE SETTINGS"
+		input name: "sensLevel", type: "enum", title: "Set sensitivity level", description: "Select Level", options:["1": "High", "2": "Medium", "3": "Low"]
+		// Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
 		input name: "clockformat", type: "bool", title: "Use 24 hour clock?"
-		//Battery Reset Config
+		// Battery Reset Config
 		input description: "If you have installed a new battery, the toggle below will reset the Changed Battery date to help remember when it was changed.", type: "paragraph", element: "paragraph", title: "CHANGED BATTERY DATE RESET"
 		input name: "battReset", type: "bool", title: "Battery Changed?"
-		//Advanced Settings
+		// Advanced Settings
 		input description: "Only change the settings below if you know what you're doing.", type: "paragraph", element: "paragraph", title: "ADVANCED SETTINGS"
-		//Battery Voltage Range
+		// Battery Voltage Range
 		input description: "", type: "paragraph", element: "paragraph", title: "BATTERY VOLTAGE RANGE"
 		input name: "voltsmax", type: "decimal", title: "Max Volts\nA battery is at 100% at __ volts\nRange 2.8 to 3.4", range: "2.8..3.4", defaultValue: 3
 		input name: "voltsmin", type: "decimal", title: "Min Volts\nA battery is at 0% (needs replacing) at __ volts\nRange 2.0 to 2.7", range: "2..2.7", defaultValue: 2.5
-		//Live Logging Message Display Config
+		// Live Logging Message Display Config
 		input description: "These settings affect the display of messages in the Live Logging tab of the SmartThings IDE.", type: "paragraph", element: "paragraph", title: "LIVE LOGGING"
 		input name: "infoLogging", type: "bool", title: "Display info log messages?", defaultValue: true
 		input name: "debugLogging", type: "bool", title: "Display debug log messages?"
@@ -198,21 +205,13 @@ private Map parseReadAttrMessage(String description) {
 		if (cluster == "0101") {
 			// Handles vibration (value 01), tilt (value 02), and drop (value 03) event messages
 			if (attrId == "0055") {
-				def eventType = Integer.parseInt(value,16)
+				if (value?.endsWith('0002')) {
+					def eventType = 2
+					parseTiltAngle(value[0..3])
+				} else {
+					def eventType = Integer.parseInt(value,16)
+				}
 				resultMap = mapSensorEvent(eventType)
-			}
-			// Handles tilt angle change messages
-			else if (attrId == "0503") {
-				def angle = Integer.parseInt(value,16)
-				def descText = " tilt angle changed by $angle°"
-				displayInfoLog(descText)
-				resultMap = [
-					name: 'tiltAngle',
-					value: angle,
-					// unit: "°",  // Need to check whether this works or is needed at all
-					isStateChange:true,
-					descriptionText : "$device.displayName$descText"
-				]
 			}
 			// Handles XYZ Accelerometer value messages (NEEDS FURTHER DEVELOPMENT)
 			else if (attrId == "0508") {
@@ -284,6 +283,20 @@ private Map mapSensorEvent(value) {
 	}
 }
 
+// Handles tilt angle change message and posts event to update UI tile display
+private parseTiltAngle(value) {
+	def angle = Integer.parseInt(value,16)
+	def descText = ": tilt angle changed by $angle°"
+	sendEvent(
+		name: 'tiltAngle',
+		value: angle,
+		// unit: "°",  // Need to check whether this works or is needed at all
+		isStateChange:true,
+		descriptionText : "$device.displayName$descText"
+	)
+	displayInfoLog(descText)
+}
+
 // This function adapted from SmartSense Multisensor device handler by SmartThings
 // NOT YET USED
 private List<Map> parseAxis(List<Map> attrData) {
@@ -326,12 +339,12 @@ private Map getBatteryResult(rawValue) {
 		def minVolts
 		def maxVolts
 
-		if(voltsmin == null || voltsmin == "")
+		if (voltsmin == null || voltsmin == "")
 			minVolts = 2.5
 		else
 		 minVolts = voltsmin
 
-		if(voltsmax == null || voltsmax == "")
+		if (voltsmax == null || voltsmax == "")
 			maxVolts = 3.0
 		else
 	maxVolts = voltsmax
@@ -392,10 +405,14 @@ def updated() {
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
 	init(0)
-	if (battReset){
+	if (battReset) {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
+	if (!sensLevel)
+		state.sensitivity = 0
+	else if (sensLevel != state.sensitivity)
+		changeSensitivity(sensLevel)
 	checkIntervalEvent("preferences updated")
 	displayInfoLog(": Info message logging enabled")
 	displayDebugLog(": Debug message logging enabled")
@@ -424,6 +441,17 @@ private checkIntervalEvent(text) {
 	if (text)
 		displayInfoLog(": Set health checkInterval when ${text}")
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+}
+
+def changeSensitivity(value) {
+	state.sensitivity = value
+	def level = Integer.parseInt(value)
+	def attrValue = ["", "0x01", "0x0B", "0x15"]
+	def levelText = ["", "High", "Medium", "Low"]
+	def descText = ": Sensitivity level set to ${levelText[level]}"
+	sendHubCommand(zigbee.writeAttribute(0x0000, 0xFF0D, 0x20, attrValue[level], [mfgCode: 0x115F]).collect { new physicalgraph.device.HubAction(it) }, 0)
+	sendEvent(name: "accelSensitivity", value: levelText[level], isStateChange: true, descriptionText: descText)
+	displayInfoLog(descText)
 }
 
 def formatDate(batteryReset) {
