@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.51b
+ *  Version 0.52b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -233,7 +233,7 @@ private Map parseReadAttrMessage(String description) {
 			}
 			// Handles Vibration level messages (NEEDS TESTING TO VERIFY)
 			else if (attrId == "0505") {
-				def level = Integer.parseInt(value,16)
+				def level = Integer.parseInt(value[0..3],16)
 				def descText = ": Vibration level reported at $level"
 				displayInfoLog(descText)
 				resultMap = [
