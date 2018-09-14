@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.52b
+ *  Version 0.6b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
