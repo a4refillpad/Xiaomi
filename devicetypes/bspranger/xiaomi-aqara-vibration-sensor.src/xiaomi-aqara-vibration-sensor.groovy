@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.6b
+ *  Version 0.65b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -36,8 +36,8 @@ metadata {
 		attribute "batteryRuntime", "String"
 		attribute "lastCheckin", "String"
 		attribute "lastCheckinCoRE", "Date"
-		attribute "lastDropped", "String"
-		attribute "lastDroppedCoRE", "Date"
+		attribute "lastDrop", "String"
+		attribute "lastDropCoRE", "Date"
 		attribute "lastStationary", "String"
 		attribute "lastStationaryCoRE", "Date"
 		attribute "lastTilt", "String"
@@ -100,7 +100,7 @@ metadata {
 			state "default", label:'3-Axis:\n${currentValue}'
 		}
 		valueTile("accelSensitivity", "device.accelSensitivity", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "default", label:'Sensitivity:\n${currentValue}'
+			state "default", label:'Sensitivity\nLevel:\n${currentValue}'
 		}
 		valueTile("lastVibration", "device.lastVibration", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Vibration Event:\n${currentValue}'
@@ -108,7 +108,7 @@ metadata {
 		valueTile("lastTilt", "device.lastTilt", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Tilt Event:\n${currentValue}'
 		}
-		valueTile("lastDropped", "device.lastDropped", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
+		valueTile("lastDrop", "device.lastDrop", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Drop Event:\n${currentValue}'
 		}
 		valueTile("batteryRuntime", "device.batteryRuntime", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
@@ -200,24 +200,25 @@ private Map parseReadAttrMessage(String description) {
 		def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 		def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
 		def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
+		def eventType
 		Map resultMap = [:]
 
 		if (cluster == "0101") {
 			// Handles vibration (value 01), tilt (value 02), and drop (value 03) event messages
 			if (attrId == "0055") {
 				if (value?.endsWith('0002')) {
-					def eventType = 2
+					eventType = 2
 					parseTiltAngle(value[0..3])
 				} else {
-					def eventType = Integer.parseInt(value,16)
+					eventType = Integer.parseInt(value,16)
 				}
 				resultMap = mapSensorEvent(eventType)
 			}
 			// Handles XYZ Accelerometer value messages (NEEDS FURTHER DEVELOPMENT)
 			else if (attrId == "0508") {
-				def x = (short)Integer.parseInt(value[9..11],2)
-				def y = (short)Integer.parseInt(value[5..7],2)
-				def z = (short)Integer.parseInt(value[1..3],2)
+				int x = Integer.valueOf(value[8..11],16).shortValue()
+				int y = Integer.valueOf(value[4..7],16).shortValue()
+				int z = Integer.valueOf(value[0..3],16).shortValue()
 				def axisValues = "${x},${y},${z}"
 				def descText = ": Accelerometer axis values = $axisValues"
 				displayInfoLog(descText)
@@ -263,21 +264,22 @@ private Map parseReadAttrMessage(String description) {
 
 // Create map of values to be used for vibration, tilt, or drop event
 private Map mapSensorEvent(value) {
-	def eventName = ["motion", "acceleration", "button", ""]
-	def eventType = ["active", "active", "pushed", "Stationary"]
-	def messageType = ["was vibrating or moving", "was tilted", "was dropped", "is stationary"]
-	updateLastMovementEvent(eventType[value])
+	def eventName = ["", "motion", "acceleration", "button"]
+	def eventType = ["", "active", "active", "pushed"]
+	def lastEvent = ["Stationary", "Vibration", "Tilt", "Drop"]
+	def messageType = ["is stationary", "was vibrating or moving", "was tilted", "was dropped"]
+	updateLastMovementEvent(lastEvent[value])
 	sendEvent(name: "sensorStatus", value: messageType[value], isStateChange: true, displayed: false)
 	displayInfoLog(messageType[value])
-	if (value == 4) {
-		return [:]
+	if (value == 0) {
+		return
 	} else {
 		runIn(61, clearsensorStatus)
 		return [
 			name: eventName[value],
 			value: eventType[value],
 			// data: [buttonNumber: 1],  (Need to check if this is actually needed if only 1 button)
-			descriptionText: "$device.displayName ${messageType[value]}",
+			descriptionText: "${device.displayName} ${messageType[value]}",
 			isStateChange: true
 		]
 	}
@@ -425,7 +427,7 @@ def init(displayLog) {
 	sendEvent(name: "numberOfButtons", value: 1)
 }
 
-// on any type of button pressed update lastPressed or lastReleased to current date/time
+// update lastStationary, lastVibration, lastTilt, or lastDrop to current date/time
 def updateLastMovementEvent(pressType) {
 	displayDebugLog(": Setting Last $pressType to current date/time")
 	sendEvent(name: "last${pressType}", value: formatDate(), displayed: false)
@@ -433,7 +435,7 @@ def updateLastMovementEvent(pressType) {
 }
 
 def clearsensorStatus() {
-	sendEvent(name: "sensorStatus", value: "-", isStateChange: true, displayed: false)
+	mapSensorEvent(0)
 }
 
 private checkIntervalEvent(text) {
