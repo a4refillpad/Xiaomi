@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.65b
+ *  Version 0.7b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -22,6 +22,7 @@
  *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub. See
  *
  */
+
 metadata {
 	definition (name: "Xiaomi Aqara Vibration Sensor", namespace: "bspranger", author: "bspranger") {
 		capability "Acceleration Sensor"
@@ -45,12 +46,13 @@ metadata {
 		attribute "lastVibration", "String"
 		attribute "lastVibrationCoRE", "Date"
 		attribute "tiltAngle", "String"
-		attribute "sensorStatus", "enum", ["vibrating", "tilted", "dropped", "-"]
+		attribute "sensorStatus", "enum", ["vibrating", "tilted", "dropped", "Stationary"]
 		attribute "vibrationLevel", "String"
 
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "000A", inClusters: "0000,0003,0019,0101", outClusters: "0000,0004,0003,0005,0019,0101", manufacturer: "LUMI", model: "lumi.vibration.aq1", deviceJoinName: "Xiaomi Aqara Vibration Sensor"
 
 		command "resetBatteryRuntime"
+		command "changeSensitivity"
 	}
 
 	simulator {
@@ -58,16 +60,16 @@ metadata {
 
 	tiles(scale: 2) {
 		// Motion used for sensor vibration/shake events
-		multiAttributeTile(name:"sensorStatus", type: "generic", width: 6, height: 4) {
+		multiAttributeTile(name:"sensorStatus", type: "lighting", width: 6, height: 4) {
 			tileAttribute("device.sensorStatus", key: "PRIMARY_CONTROL") {
-				attributeState "default", label:'Vibration Detected', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-				attributeState "vibrating", label:'Vibration Detected', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-				attributeState "tilted", label:'Tilt Detected', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-				attributeState "dropped", label:'Drop Detected', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
-				attributeState "-", label:'', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
+				attributeState "default", label:'Stationary', icon:"st.motion.motion.active", backgroundColor:"#ffffff"
+				attributeState "Vibration", label:'Vibration/Shock', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+				attributeState "Tilt", label:'Tilt', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+				attributeState "Drop", label:'Drop', icon:"st.motion.motion.active", backgroundColor:"#00a0dc"
+				attributeState "Stationary", label:'Stationary', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
 			}
-			tileAttribute("device.vibrationLevel", key: "SECONDARY_CONTROL") {
-				attributeState("vibrationLevel", label:'Last Vibration Level: ${currentValue}')
+			tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+				attributeState("lastCheckin", label:'Last Event: ${currentValue}')
 			}
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -93,14 +95,17 @@ metadata {
 			state("default", label: '-', backgroundColor: "#ffffff")
 			state("pushed", label: 'Drop Detected', backgroundColor: "#00a0dc")
 		}
-		valueTile("tiltAngle", "device.tiltAngle", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "default", label:'Last Angle Change:\n${currentValue}°'
+		valueTile("vibrationLevel", "device.vibrationLevel", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+			state "default", label:'Vibration Level:\n${currentValue}'
 		}
-		valueTile("threeAxis", "device.threeAxis", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+		valueTile("tiltAngle", "device.tiltAngle", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+			state "default", label:'Angle Change:\n${currentValue}°'
+		}
+		valueTile("threeAxis", "device.threeAxis", decoration: "flat", inactiveLabel: false, width: 4, height: 2) {
 			state "default", label:'3-Axis:\n${currentValue}'
 		}
 		valueTile("accelSensitivity", "device.accelSensitivity", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "default", label:'Sensitivity\nLevel:\n${currentValue}'
+			state "default", action: "changeSensitivity", label:'Sensitivity\nLevel:\n${currentValue}'
 		}
 		valueTile("lastVibration", "device.lastVibration", decoration: "flat", inactiveLabel: false, width: 4, height: 1) {
 			state "default", label:'Last Vibration Event:\n${currentValue}'
@@ -122,13 +127,13 @@ metadata {
 		}
 
 	main (["sensorStatus"])
-	details(["sensorStatus","tiltAngle","threeAxis","battery","accelSensitivity","lastVibration","lastTilt","lastDropped","batteryRuntime"])
+	details(["sensorStatus","threeAxis","battery","tiltAngle","vibrationLevel","accelSensitivity","spacer","batteryRuntime","spacer"])
 	}
 
 	preferences {
-		// Accelerometer sensitivity level Config
-		input description: "", type: "paragraph", element: "paragraph", title: "DEVICE SETTINGS"
-		input name: "sensLevel", type: "enum", title: "Set sensitivity level", description: "Select Level", options:["1": "High", "2": "Medium", "3": "Low"]
+		//Reset to No Motion Config
+		input description: "This setting changes how long MOTION ACTIVE is reported in SmartThings when the sensor detects vibration/shock. NOTE: The hardware waits about 60 seconds between vibration/shock detections.", type: "paragraph", element: "paragraph", title: "MOTION RESET"
+		input "motionreset", "number", title: "", description: "Number of seconds (default = 65)", range: "1..7200"
 		// Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
 		input name: "dateformat", type: "enum", title: "Set Date Format\nUS (MDY) - UK (DMY) - Other (YMD)", description: "Date Format", options:["US","UK","Other"]
@@ -216,17 +221,17 @@ private Map parseReadAttrMessage(String description) {
 			}
 			// Handles XYZ Accelerometer value messages (NEEDS FURTHER DEVELOPMENT)
 			else if (attrId == "0508") {
-				int x = Integer.valueOf(value[8..11],16).shortValue()
-				int y = Integer.valueOf(value[4..7],16).shortValue()
-				int z = Integer.valueOf(value[0..3],16).shortValue()
-				def axisValues = "${x},${y},${z}"
+				short x = (short)Integer.parseInt(value[8..11],16)
+				short y = (short)Integer.parseInt(value[4..7], 16)
+				short z = (short)Integer.parseInt(value[0..3], 16)
+				def axisValues = "$x,$y,$z"
 				def descText = ": Accelerometer axis values = $axisValues"
 				displayInfoLog(descText)
 				resultMap = [
 					name: 'threeAxis',
 					value: axisValues,
 					linkText: getLinkText(device),
-					handlerName: name,
+					// handlerName: name,
 					isStateChange: isStateChange(device, "threeAxis", axisValues),
 					descriptionText: "$device.displayName$descText",
 				]
@@ -244,45 +249,46 @@ private Map parseReadAttrMessage(String description) {
 			}
 		}
 		else if (cluster == "0000" && attrId == "0005")	{
-				displayDebugLog(": reset button press detected")
-				def model = value.split("01FF")[0]
-				def data = value.split("01FF")[1]
+				displayInfoLog(": reset button short press detected")
 				def modelName = ""
 				// Parsing the model
-				for (int i = 0; i < model.length(); i+=2) {
-						def str = model.substring(i, i+2);
+				for (int i = 0; i < value.length(); i+=2) {
+						def str = value.substring(i, i+2);
 						def NextChar = (char)Integer.parseInt(str, 16);
 						modelName = modelName + NextChar
 				}
-				displayDebugLog(" reported: cluster: ${cluster}, attrId: ${attrId}, value: ${value}, model:${modelName}, data:${data}")
-				if (data[4..7] == "0121") {
-						resultMap = getBatteryResult(Integer.parseInt((data[10..11] + data[8..9]),16))
-				}
+				displayDebugLog(" reported model name:${modelName}")
 		}
 		return resultMap
 }
 
 // Create map of values to be used for vibration, tilt, or drop event
 private Map mapSensorEvent(value) {
-	def eventName = ["", "motion", "acceleration", "button"]
-	def eventType = ["", "active", "active", "pushed"]
-	def lastEvent = ["Stationary", "Vibration", "Tilt", "Drop"]
-	def messageType = ["is stationary", "was vibrating or moving", "was tilted", "was dropped"]
-	updateLastMovementEvent(lastEvent[value])
-	sendEvent(name: "sensorStatus", value: messageType[value], isStateChange: true, displayed: false)
-	displayInfoLog(messageType[value])
-	if (value == 0) {
+	def seconds = (value == 1 || 4) ? (motionreset ? motionreset : 65) : 2
+    def time = new Date(now() + (seconds * 1000))
+	def statusType = ["Stationary", "Vibration", "Tilt", "Drop", "", ""]
+	def eventName = ["", "motion", "acceleration", "button", "motion", "acceleration"]
+	def eventType = ["", "active", "active", "pushed", "inactive", "inactive"]
+	def eventMessage = [" is stationary", " was vibrating or moving (Motion active)", " was tilted (Acceleration active)", " was dropped (Button pushed)", ": Motion reset to inactive after $seconds seconds", ": Acceleration reset to inactive"]
+	updateLastMovementEvent(statusType[value])
+	if (value < 4)
+		sendEvent(name: "sensorStatus", value: statusType[value], descriptionText: "$device.displayName${eventMessage[value]}", isStateChange: true, displayed: (value == 0) ? true : false)
+	displayInfoLog("${eventMessage[value]}")
+	if (value == 0)
 		return
-	} else {
-		runIn(61, clearsensorStatus)
-		return [
-			name: eventName[value],
-			value: eventType[value],
-			// data: [buttonNumber: 1],  (Need to check if this is actually needed if only 1 button)
-			descriptionText: "${device.displayName} ${messageType[value]}",
-			isStateChange: true
-		]
-	}
+	else if (value == 1)
+		runOnce(time, clearmotionEvent)
+	else if (value == 2)
+		runOnce(time, clearaccelEvent)
+	else if (value == 3)
+		runOnce(time, cleardropEvent)
+	return [
+		name: eventName[value],
+		value: eventType[value],
+		descriptionText: "$device.displayName${eventMessage[value]}",
+		isStateChange: true,
+        displayed: true
+	]
 }
 
 // Handles tilt angle change message and posts event to update UI tile display
@@ -293,8 +299,10 @@ private parseTiltAngle(value) {
 		name: 'tiltAngle',
 		value: angle,
 		// unit: "°",  // Need to check whether this works or is needed at all
+		descriptionText : "$device.displayName$descText",
 		isStateChange:true,
-		descriptionText : "$device.displayName$descText"
+		displayed: true
+		
 	)
 	displayInfoLog(descText)
 }
@@ -344,25 +352,26 @@ private Map getBatteryResult(rawValue) {
 		if (voltsmin == null || voltsmin == "")
 			minVolts = 2.5
 		else
-		 minVolts = voltsmin
+			minVolts = voltsmin
 
 		if (voltsmax == null || voltsmax == "")
 			maxVolts = 3.0
 		else
-	maxVolts = voltsmax
+			maxVolts = voltsmax
 
 		def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
 		def roundedPct = Math.min(100, Math.round(pct * 100))
 
+		def descText = ": Battery at ${roundedPct}% (${rawVolts} Volts)"
 		def result = [
 				name: 'battery',
 				value: roundedPct,
 				unit: "%",
 				isStateChange:true,
-				descriptionText : "${device.displayName} Battery at ${roundedPct}% (${rawVolts} Volts)"
+				descriptionText : "$device.displayName$descText"
 		]
 
-		displayDebugLog(": ${result}")
+		displayInfoLog(descText)
 		return result
 }
 
@@ -394,6 +403,8 @@ def installed() {
 // configure() runs after installed() when a sensor is paired
 def configure() {
 	displayInfoLog(": Configuring")
+	if (!state.sensitivity)
+		changeSensitivity()
 	init(1)
 	checkIntervalEvent("configured")
 	return
@@ -411,17 +422,15 @@ def updated() {
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	if (!sensLevel)
-		state.sensitivity = 0
-	else if (sensLevel != state.sensitivity)
-		changeSensitivity(sensLevel)
+	if (!state.sensitivity)
+		changeSensitivity()
 	checkIntervalEvent("preferences updated")
 	displayInfoLog(": Info message logging enabled")
 	displayDebugLog(": Debug message logging enabled")
 }
 
 def init(displayLog) {
-	clearsensorStatus()
+	mapSensorEvent(0)
 	if (!device.currentState('batteryRuntime')?.value)
 		resetBatteryRuntime(true)
 	sendEvent(name: "numberOfButtons", value: 1)
@@ -434,25 +443,50 @@ def updateLastMovementEvent(pressType) {
 	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
 }
 
-def clearsensorStatus() {
-	mapSensorEvent(0)
+def clearmotionEvent() {
+	def result = [:]
+	if (device.currentState('sensorStatus')?.value == "Vibration")
+		mapSensorEvent(0)
+	result = mapSensorEvent(4)
+	displayDebugLog(": Sending event $result")
+	sendEvent(result)
+}
+
+def clearaccelEvent() {
+	def result = [:]
+	if (device.currentState('sensorStatus')?.value == "Tilt")
+		mapSensorEvent(0)
+	result = mapSensorEvent(5)
+	displayDebugLog(": Sending event $result")
+	sendEvent(result)
+}
+
+def cleardropEvent() {
+	if (device.currentState('sensorStatus')?.value == "Drop")
+		mapSensorEvent(0)
 }
 
 private checkIntervalEvent(text) {
 	// Device wakes up every 1 hours, this interval allows us to miss one wakeup notification before marking offline
 	if (text)
 		displayInfoLog(": Set health checkInterval when ${text}")
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	sendEvent(name: "checkInterval", value: 3 * 60 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 }
 
-def changeSensitivity(value) {
-	state.sensitivity = value
-	def level = Integer.parseInt(value)
-	def attrValue = ["", "0x01", "0x0B", "0x15"]
-	def levelText = ["", "High", "Medium", "Low"]
-	def descText = ": Sensitivity level set to ${levelText[level]}"
-	sendHubCommand(zigbee.writeAttribute(0x0000, 0xFF0D, 0x20, attrValue[level], [mfgCode: 0x115F]).collect { new physicalgraph.device.HubAction(it) }, 0)
-	sendEvent(name: "accelSensitivity", value: levelText[level], isStateChange: true, descriptionText: descText)
+def changeSensitivity() {
+	state.sensitivity = (state.sensitivity > 1 || state.sensitivity == null) ? 0 : state.sensitivity + 1
+	def attrValue = [0x15, 0x0B, 0x01]
+	def levelText = ["Low", "Medium", "High"]
+	def descText = ": Sensitivity level set to ${levelText[state.sensitivity]}"
+	zigbee.writeAttribute(0x0000, 0xFF0D, 0x20, attrValue[state.sensitivity], [mfgCode: 0x115F])
+	zigbee.readAttribute(0x0000, 0xFF0D, [mfgCode: 0x115F])
+/**  ALTERNATE METHOD FOR WRITE & READ ATTRUBUTE COMMANDS
+	def cmds = zigbee.writeAttribute(0x0000, 0xFF0D, 0x20, attrValue[level], [mfgCode: 0x115F]) + zigbee.readAttribute(0x0000, 0xFF0D, [mfgCode: 0x115F])
+	for (String cmdString : commands) {
+		sendHubCommand([cmdString].collect {new physicalgraph.device.HubAction(it)}, 0)
+	}
+*/
+	sendEvent(name: "accelSensitivity", value: levelText[state.sensitivity], isStateChange: true, descriptionText: descText)
 	displayInfoLog(descText)
 }
 
