@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.7b
+ *  Version 0.71b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -30,6 +30,7 @@ metadata {
 		capability "Button"
 		capability "Configuration"
 		capability "Health Check"
+		capability "Motion Sensor"
 		capability "Sensor"
 		capability "Three Axis"
 
@@ -166,7 +167,7 @@ def parse(String description) {
 	// Send message data to appropriate parsing function based on the type of report
 	if (description?.startsWith("read attr - raw: ")) {
 		result = parseReadAttrMessage(description)
-	}  else if (description?.startsWith('catchall:')) {
+	} else if (description?.startsWith('catchall:')) {
 		result = parseCatchAllMessage(description)
 	}
 	if (result != [:]) {
@@ -265,7 +266,7 @@ private Map parseReadAttrMessage(String description) {
 // Create map of values to be used for vibration, tilt, or drop event
 private Map mapSensorEvent(value) {
 	def seconds = (value == 1 || 4) ? (motionreset ? motionreset : 65) : 2
-    def time = new Date(now() + (seconds * 1000))
+	def time = new Date(now() + (seconds * 1000))
 	def statusType = ["Stationary", "Vibration", "Tilt", "Drop", "", ""]
 	def eventName = ["", "motion", "acceleration", "button", "motion", "acceleration"]
 	def eventType = ["", "active", "active", "pushed", "inactive", "inactive"]
@@ -287,7 +288,7 @@ private Map mapSensorEvent(value) {
 		value: eventType[value],
 		descriptionText: "$device.displayName${eventMessage[value]}",
 		isStateChange: true,
-        displayed: true
+		displayed: true
 	]
 }
 
@@ -302,7 +303,7 @@ private parseTiltAngle(value) {
 		descriptionText : "$device.displayName$descText",
 		isStateChange:true,
 		displayed: true
-		
+
 	)
 	displayInfoLog(descText)
 }
