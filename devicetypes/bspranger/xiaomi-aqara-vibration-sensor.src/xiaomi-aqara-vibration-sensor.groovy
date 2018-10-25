@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Aqara Vibration Sensor
  *  Model DJT11LM
- *  Version 0.9b
+ *  Version 0.91b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -535,8 +535,12 @@ def displayInfoLog(String message) {
 
 def refresh() {
 	displayInfoLog(": Refreshing UI display")
-	if (!state.sensitivity)
+	if (!state.sensitivity) {
+		state.sensitivity = 0
 		changeSensitivity()
+	}
+	if (device.currentValue('battery') == null)
+		sendEvent(name: 'battery', value: "--", isStateChange: true, displayed: false)
 	if (device.currentValue('tiltAngle') == null)
 		sendEvent(name: 'tiltAngle', value: "--", isStateChange: true, displayed: false)
 	if (device.currentValue('activityLevel') == null)
