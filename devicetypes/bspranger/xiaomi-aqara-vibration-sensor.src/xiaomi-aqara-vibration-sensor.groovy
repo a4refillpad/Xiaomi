@@ -539,8 +539,6 @@ def refresh() {
 		state.sensitivity = 0
 		changeSensitivity()
 	}
-	if (device.currentValue('battery') == null)
-		sendEvent(name: 'battery', value: "--", isStateChange: true, displayed: false)
 	if (device.currentValue('tiltAngle') == null)
 		sendEvent(name: 'tiltAngle', value: "--", isStateChange: true, displayed: false)
 	if (device.currentValue('activityLevel') == null)
