@@ -19,19 +19,17 @@ These devices are not easy to pair initially. More information and help is avail
 
 ## Supported Xiaomi Devices
 
-|||
-|---|---|
-|![Xiaomi Button](images/button.jpg)|![Xiaomi Aqara Button](images/aqarabutton.jpg)|
-|**Xiaomi Button**|**Xiaomi Aqara Button**|
-|![Xiaomi Door/Window Sensor](images/door.jpg)|![Xiaomi Aqara Door/Window Sensor](images/aqaradoor.jpg)|
-|**Xiaomi Door/Window Sensor**|**Xiaomi Aqara Door/Window Sensor**|
-|![Xiaomi Motion Sensor](images/motion.jpg)|![Xiaomi Aqara Motion Sensor](images/aqaramotion.jpg)|
-|**Xiaomi Motion Sensor**|**Xiaomi Aqara Motion Sensor**|
-|![Xiaomi Temperature Humidity Sensor](images/temp.jpg)|![Xiaomi Aqara Temperature Humidity Sensor](images/aqaratemp.jpg)|
-|**Xiaomi Temperature Humidity Sensor**|**Xiaomi Aqara Temperature Humidity Sensor**|
-|![Xiaomi mijia Honeywell Fire Alarm Detector](images/smoke.jpg)|![Xiaomi Aqara Leak Sensor](images/aqarawater.jpg)|
-|**Xiaomi mijia Honeywell Fire Alarm Detector**|**Xiaomi Aqara Leak Sensor**|
-|![Xiaomi Zigbee Outlet](images/outlet.jpg)||
-|**Xiaomi Zigbee Outlet**||
-
-**We do not recommend the Xiaomi Zigbee outlet as they may make SmartThings less stable.**
+| | |
+| --- | --- |
+| [![Xiaomi Button](images/button.jpg)](./devicetypes/bspranger/xiaomi-button.src) | [![Xiaomi Aqara Button](images/aqarabutton.jpg)](./devicetypes/bspranger/xiaomi-aqara-button.src) |
+| **Xiaomi Button** | **Xiaomi Aqara Button** |
+| [![Xiaomi Door/Window Sensor](images/door.jpg)](./devicetypes/bspranger/xiaomi-door-window-sensor.src) | [![Xiaomi Aqara Door/Window Sensor](images/aqaradoor.jpg)](./devicetypes/bspranger/xiaomi-aqara-door-window-sensor.src) |
+| **Xiaomi Door/Window Sensor** | **Xiaomi Aqara Door/Window Sensor** |
+| [![Xiaomi Motion Sensor](images/motion.jpg)](./devicetypes/bspranger/xiaomi-motion-sensor.src) | [![Xiaomi Aqara Motion Sensor](images/aqaramotion.jpg)](./devicetypes/bspranger/xiaomi-aqara-motion-sensor.src) |
+| **Xiaomi Motion Sensor** | **Xiaomi Aqara Motion Sensor** |
+| [![Xiaomi Temperature Humidity Sensor](images/temp.jpg)](./devicetypes/bspranger/xiaomi-temperature-humidity-sensor.src) | [![Xiaomi Aqara Temperature Humidity Sensor](images/aqaratemp.jpg)](./devicetypes/bspranger/xiaomi-aqara-temperature-humidity-sensor.src) |
+| **Xiaomi Temperature Humidity Sensor** | **Xiaomi Aqara Temperature Humidity Sensor** |
+| [![Xiaomi mijia Honeywell Fire Alarm Detector](images/smoke.jpg)](./devicetypes/bspranger/xiaomi-mijia-honeywell-fire-detector.src) | [![Xiaomi Aqara Leak Sensor](images/aqarawater.jpg)](./devicetypes/bspranger/xiaomi-aqara-leak-sensor.src) |
+| **Xiaomi mijia Honeywell Fire Alarm Detector** | **Xiaomi Aqara Leak Sensor** |
+| [![Xiaomi Zigbee Outlet](images/outlet.jpg)](./devicetypes/bspranger/xiaomi-zigbee-outlet.src) | |
+| **Xiaomi Zigbee Outlet**<br>**Note:** We do not recommend this outlet as they may make SmartThings less stable. | |
