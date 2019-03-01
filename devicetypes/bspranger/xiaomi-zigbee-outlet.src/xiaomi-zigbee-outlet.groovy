@@ -1,4 +1,7 @@
 /**
+ *  Xiaomi Smart Plug - model ZNCZ02LM
+ *  Device Handler for SmartThings
+ *  Version 1.1
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -14,6 +17,7 @@
  *  02/2017 added heartbeat to monitor connectivity health of outlet
  *  02/2017 added multiattribute tile
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
+ *  07/2018 - mike-debney: added wattage power metering support
  */
 
 metadata {
@@ -23,6 +27,9 @@ metadata {
         capability "Refresh"
         capability "Switch"
         capability "Temperature Measurement"
+        capability "Sensor"
+        capability "Power Meter"
+        capability "Energy Meter"
         
         attribute "lastCheckin", "string"
     }
@@ -63,11 +70,20 @@ metadata {
 				]
 			)
 		}
+        valueTile("power", "device.power", width: 2, height: 2) {
+			state("power", label:'${currentValue}W', backgroundColors:[
+					[value: 0, color: "#ffffff"],
+					[value: 1, color: "#00a0dc"]
+				])
+		}
+        valueTile("energy", "device.energy", width: 2, height: 2) {
+			state("energy", label:'${currentValue}kWh')
+		}
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        main (["switch", "temperature"])
-        details(["switch", "temperature", "refresh"])
+        main (["switch", "power"])
+        details(["switch", "power", "energy", "temperature", "refresh"])
     }
     
     preferences {
@@ -142,6 +158,20 @@ private Map parseReportAttributeMessage(String description) {
     else if (descMap.cluster == "0008" && descMap.attrId == "0000") {
     	resultMap = createEvent(name: "switch", value: "off")
     } 
+    else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "02") {
+    	def wattage_int = Long.parseLong(descMap.value, 16)
+     	def wattage = Float.intBitsToFloat(wattage_int.intValue())
+        wattage = Math.round(wattage * 10) * 0.1
+        resultMap = createEvent(name: "power", value: wattage, unit: 'W')
+        log.debug "Wattage: ${wattage}W"
+    }
+    else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "03") {
+    	def energy_int = Long.parseLong(descMap.value, 16)
+     	def energy = Float.intBitsToFloat(energy_int.intValue())
+        energy = Math.round(energy * 100) * 0.01
+        resultMap = createEvent(name: "energy", value: energy, unit: 'kWh')
+        log.debug "Energy Meter: ${energy}kWh"
+    }
 	return resultMap
 }
 
@@ -164,7 +194,9 @@ def refresh() {
         "st rattr 0x${device.deviceNetworkId} 1 6 0", "delay 250",
         "st rattr 0x${device.deviceNetworkId} 1 2 0", "delay 250",
         "st rattr 0x${device.deviceNetworkId} 1 1 0", "delay 250",
-        "st rattr 0x${device.deviceNetworkId} 1 0 0"
+        "st rattr 0x${device.deviceNetworkId} 1 0 0", "delay 250",
+        "st rattr 0x${device.deviceNetworkId} 2 0x000C 0x0055", "delay 250",
+        "st rattr 0x${device.deviceNetworkId} 3 0x000C 0x0055"
     ]
 }
 
