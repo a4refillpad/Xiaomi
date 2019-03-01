@@ -1,4 +1,7 @@
 /**
+ *  Xiaomi Smart Plug - model ZNCZ02LM
+ *  Device Handler for SmartThings
+ *  Version 1.1
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -14,6 +17,7 @@
  *  02/2017 added heartbeat to monitor connectivity health of outlet
  *  02/2017 added multiattribute tile
  *  bspranger - renamed to bspranger to remove confusion of a4refillpad
+ *  07/2018 - mike-debney: added wattage power metering support
  */
 
 metadata {
