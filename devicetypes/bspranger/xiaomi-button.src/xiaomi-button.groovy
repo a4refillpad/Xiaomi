@@ -1,7 +1,10 @@
 /**
- *  Xiaomi Zigbee Button
- *  Version 1.2
+ *  Xiaomi Zigbee Button - model WXKG01LM
+ *  Device Handler for SmartThings - Firmware version 25.20 and newer ONLY
+ *  Version 1.3
  *
+ *  NOTE: Do NOT use this device handler on any SmartThings hub running Firmware 24.x and older
+ *        Instead use the xiaomi-button-old-firmware device handler
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -12,27 +15,33 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger
+ *  Original device handler code by a4refillpad, adapted for use with Aqara model by bspranger, updated for changes in firmware 25.20 by veeceeoh
  *  Additional contributions to code by alecm, alixjg, bspranger, gn0st1c, foz333, jmagnuson, rinkek, ronvandegraaf, snalee, tmleafs, twonk, & veeceeoh
  *
  *  Known issues:
- *  Xiaomi sensors do not seem to respond to refresh requests
- *  Inconsistent rendering of user interface text/graphics between iOS and Android devices - This is due to SmartThings, not this device handler
- *  Pairing Xiaomi sensors can be difficult as they were not designed to use with a SmartThings hub.
- *
+ *  + As of March 2019, the SmartThings Samsung Connect mobile app does NOT support custom device handlers such as this one
+ *  + The SmartThings Classic mobile app UI text/graphics is rendered differently on iOS vs Android devices - This is due to SmartThings, not this device handler
+ *  + Pairing Xiaomi/Aqara devices can be difficult as they were not designed to use with a SmartThings hub.
+ *  + The battery level is not reported at pairing. Wait for the first status report, 50-60 minutes after pairing.
+ *  + Xiaomi devices do not respond to refresh requests
+ *  + Most ZigBee repeater devices (generally mains-powered ZigBee devices) are NOT compatible with Xiaomi/Aqara devices, causing them to drop off the network.
+ *  + Only XBee ZigBee modules, the IKEA Tradfri Outlet / Tradfri Bulb, and ST user @iharyadi's custom multi-sensor ZigBee repeater device are confirmed to be compatible.
  *
  */
 
+ import groovy.json.JsonOutput
+ import physicalgraph.zigbee.zcl.DataType
+
 metadata {
-	definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
-		capability "Battery"
-		capability "Sensor"
-		capability "Button"
-		capability "Holdable Button"
+	definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
 		capability "Actuator"
-		capability "Momentary"
+		capability "Battery"
+		capability "Button"
 		capability "Configuration"
 		capability "Health Check"
+		capability "Holdable Button"
+		capability "Momentary"
+		capability "Sensor"
 
 		attribute "lastCheckin", "string"
 		attribute "lastCheckinCoRE", "string"
@@ -41,9 +50,9 @@ metadata {
 		attribute "lastReleasedCoRE", "string"
 		attribute "lastButtonMssg", "string"
 		attribute "batteryRuntime", "string"
-		attribute "buttonStatus", "enum", ["pushed", "held", "released"]
+		attribute "buttonStatus", "enum", ["pushed", "held", "released", "double", "triple", "quadruple", "shizzle"]
 
-		fingerprint endpointId: "01", profileId: "0104", deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
+		fingerprint deviceId: "0104", inClusters: "0000,0003,FFFF,0019", outClusters: "0000,0004,0003,0006,0008,0005,0019", manufacturer: "LUMI", model: "lumi.sensor_switch", deviceJoinName: "Original Xiaomi Button"
 
 		command "resetBatteryRuntime"
 	}
@@ -60,6 +69,10 @@ metadata {
 				attributeState("pushed", label:'Pushed', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png")
+				attributeState("double", label:'Double-Clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("triple", label:'Triple-Clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("quadruple", label:'Quadruple-Clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("shizzle", label:'Shizzle-Clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 			}
 			tileAttribute("device.lastPressed", key: "SECONDARY_CONTROL") {
 				attributeState "lastPressed", label:'Last Pressed: ${currentValue}'
@@ -85,9 +98,8 @@ metadata {
 
 	preferences {
 		//Button Config
-		input description: "A button click always sends a 'button 1 pushed' event, but as a default if it is held for at least 2 seconds, a 'button 1 held' event is sent when released. The settings below allow changes to the minimum time needed for held and what type of event should be sent.", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
+		input description: "As a default if the button is held for at least 2 seconds, a 'button 1 held' event is sent when released. The settings below allow changes to the minimum time needed for held.", type: "paragraph", element: "paragraph", title: "BUTTON CONFIGURATION"
 		input name: "waittoHeld", type: "decimal", title: "Minimum hold time required for button held:", description: "Number of seconds (default = 2.0)", range: "0.1..120"
-		input name: "holdIsButton2", type: "bool", title: "On button hold, send 'button 2 pushed' event instead of 'button 1 held'?"
 
 		//Date & Time Config
 		input description: "", type: "paragraph", element: "paragraph", title: "DATE & CLOCK"
@@ -134,10 +146,10 @@ def parse(String description) {
 	} else if (description == 'on/off: 1') {
 		result = createButtonEvent()
 		updateLastPressed("Released")
-	} else if (description?.startsWith('catchall:')) {
-		result = parseCatchAllMessage(description)
 	} else if (description?.startsWith('read attr - raw: ')) {
 		result = parseReadAttrMessage(description)
+	} else if (description?.startsWith('catchall:')) {
+		result = parseCatchAllMessage(description)
 	}
 	if (result != [:]) {
 		displayDebugLog(": Creating event $result")
@@ -149,7 +161,7 @@ def parse(String description) {
 // on any type of button pressed update lastPressed and lastPressedCoRE or lastReleasedCoRE to current date/time
 def updateLastPressed(pressType) {
 	if (pressType == "Pressed")
-		displayInfoLog(": Button press detected")
+		displayInfoLog(": Single button press detected")
 	sendEvent(name: "lastPressed", value: formatDate(), displayed: false)
 	displayDebugLog(": Setting Last $pressType to current date/time")
 	sendEvent(name: "last${pressType}CoRE", value: now(), displayed: false)
@@ -164,47 +176,60 @@ private createButtonEvent() {
 	displayDebugLog(": Time difference = $timeDif ms, Hold time setting = $holdTimeMillisec ms")
 	// compare waittoHeld setting with difference between current time and lastButtonMssg
 	def buttonHeld = (timeDif >= holdTimeMillisec & timeDif < holdTimeMillisec + 10000) ? true : false
-	def eventValue = (buttonHeld & !(holdIsButton2 == true)) ? "held" : "pushed"
-	def buttonNum = (buttonHeld & holdIsButton2 == true) ? 2 : 1
 	def pressType = buttonHeld ? "held" : "pushed"
-    def descText = " was $pressType (button $buttonNum $eventValue)"
+	def descText = " was $pressType (button 1 $pressType)"
 	sendEvent(name: "buttonStatus", value: pressType, isStateChange: true, displayed: false)
 	runIn(1, clearButtonStatus)
 	displayInfoLog(descText)
 	return [
 		name: 'button',
-		value: eventValue,
-		data: [buttonNumber: buttonNum],
+		value: pressType,
+		data: [buttonNumber: 1],
 		descriptionText: "$device.displayName$descText",
 		isStateChange: true
 	]
 }
 
 def clearButtonStatus() {
-	sendEvent(name: "buttonStatus", value: "released", isStateChange: true, displayed: false)	
+	sendEvent(name: "buttonStatus", value: "released", isStateChange: true, displayed: false)
 }
 
 private Map parseReadAttrMessage(String description) {
 	def cluster = description.split(",").find {it.split(":")[0].trim() == "cluster"}?.split(":")[1].trim()
 	def attrId = description.split(",").find {it.split(":")[0].trim() == "attrId"}?.split(":")[1].trim()
-	def value = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
-	def data = ""
-	def modelName = ""
-	def model = value
+	def valueHex = description.split(",").find {it.split(":")[0].trim() == "value"}?.split(":")[1].trim()
 	Map resultMap = [:]
 
+	// Process message for double-click, triple-click, quadruple-click, and 5 or more-click
+	if (cluster == "0006" && attrId == "8000") {
+		def buttonNum = (valueHex == "80") ? 5 : Integer.parseInt(valueHex, 16)
+		def clickType = [2: "double", 3: "triple", 4: "quadruple", 5: "shizzle"]
+		def descText = " was ${clickType[buttonNum]}-clicked (Button $buttonNum pushed)"
+		sendEvent(name: "buttonStatus", value: clickType[buttonNum], isStateChange: true, displayed: false)
+		runIn(1, clearButtonStatus)
+		displayInfoLog(descText)
+		resultMap = [
+			name: 'button',
+			value: 'pushed',
+			data: [buttonNumber: buttonNum],
+			descriptionText: "$device.displayName$descText",
+			isStateChange: true
+		]
+	}
 	// Process message on short-button press containing model name and battery voltage report
-	if (cluster == "0000" && attrId == "0005")	{
-		if (value.length() > 45) {
-			model = value.split("02FF")[0]
-			data = value.split("02FF")[1]
+	else if (cluster == "0000" && attrId == "0005")	{
+		def data = ""
+		def modelName = ""
+		def model = valueHex
+		if (valueHex.length() > 45) {
+			model = valueHex.split("02FF")[0]
+			data = valueHex.split("02FF")[1]
 			if (data[4..7] == "0121") {
-				def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]),16))
+				def BatteryVoltage = (Integer.parseInt((data[10..11] + data[8..9]), 16))
 				resultMap = getBatteryResult(BatteryVoltage)
 			}
-		data = ", data: ${value.split("02FF")[1]}"
+		data = ", data: ${valueHex.split("02FF")[1]}"
 		}
-
 		// Parsing the model name
 		for (int i = 0; i < model.length(); i+=2) {
 			def str = model.substring(i, i+2);
@@ -253,7 +278,7 @@ private Map getBatteryResult(rawValue) {
 		value: roundedPct,
 		unit: "%",
 		isStateChange:true,
-		descriptionText : "$device.displayName $descText"
+		descriptionText : "$descText"
 	]
 }
 
@@ -278,45 +303,53 @@ def resetBatteryRuntime(paired) {
 def installed() {
 	state.prefsSetCount = 0
 	displayInfoLog(": Installing")
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
+	// initialize battery replaced date
+	initialize(true)
+	// initialize default button states
+	sendEvent(name: "button", value: "pushed", data: [buttonNumber: 1], displayed: false)
 	checkIntervalEvent("")
-	sendEvent(name: "numberOfButtons", value: 1)
 }
 
 // configure() runs after installed() when a sensor is paired
 def configure() {
-	def numButtons = (holdIsButton2 == true) ? 2 : 1
 	displayInfoLog(": Configuring")
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime(true)
-	clearButtonStatus()
-	checkIntervalEvent("configured")
-	sendEvent(name: "numberOfButtons", value: numButtons)
+	initialize(false)
+	device.currentValue("numberOfButtons")?.times {
+		sendEvent(name: "button", value: "pushed", data: [buttonNumber: it+1], displayed: false)
+	}
 	sendEvent(name: "lastButtonMssg", value: now(), displayed: false)
+	checkIntervalEvent("configured")
 	return
 }
 
 // updated() will run twice every time user presses save in preference settings page
 def updated() {
-	def numButtons = (holdIsButton2 == true) ? 2 : 1
 	displayInfoLog(": Updating preference settings")
 	if (!state.prefsSetCount)
 		state.prefsSetCount = 1
 	else if (state.prefsSetCount < 3)
 		state.prefsSetCount = state.prefsSetCount + 1
-	if (!device.currentState('batteryRuntime')?.value)
-		resetBatteryRuntime()
+	initialize(false)
+	// set battery replaced date if user toggled preference setting
 	if (battReset){
 		resetBatteryRuntime()
 		device.updateSetting("battReset", false)
 	}
-	clearButtonStatus()
-	sendEvent(name: "numberOfButtons", value: numButtons)
-	displayInfoLog(": Number of buttons = $numButtons")
 	displayInfoLog(": Info message logging enabled")
 	displayDebugLog(": Debug message logging enabled")
 	checkIntervalEvent("preferences updated")
+}
+
+def initialize (paired) {
+	sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
+	// initialize battery replaced date if not yet set
+	if (!device.currentState('batteryRuntime')?.value)
+		resetBatteryRuntime(paired)
+	clearButtonStatus()
+	if (device.currentValue("numberOfButtons") != 5) {
+		sendEvent(name: "numberOfButtons", value: 5, displayed: false)
+		displayInfoLog(": Number of buttons set to 5")
+	}
 }
 
 private checkIntervalEvent(text) {
