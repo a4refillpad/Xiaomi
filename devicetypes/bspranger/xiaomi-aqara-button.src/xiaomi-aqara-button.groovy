@@ -1,7 +1,7 @@
 /**
  *  Aqara Button - models WXKG11LM (original & new revision) / WXKG12LM
  *  Device Handler for SmartThings - Firmware version 25.20 and newer ONLY
- *  Version 1.4b
+ *  Version 1.4.1b
  *
  *  NOTE: Do NOT use this device handler on any SmartThings hub running Firmware 24.x and older
  *        Instead use the xiaomi-aqara-button-old-firmware device handler
@@ -173,10 +173,10 @@ def parse(String description) {
 		log.warn "This device handler is NOT compatible with firmware 24.x or earlier"
 		log.warn "Please switch to the xiaomi-aqara-button-old-firmware device handler"
 	} else if (description?.startsWith("read attr - raw: ")) {
-		// Parse button messages of other models, or messages on short-press of reset button
+		// Parse messages received on button press actions or on short-press of reset button
 		result = parseReadAttrMessage(description)
 	} else if (description?.startsWith('catchall:')) {
-		// Parse battery level from regular hourly announcement messages
+		// Parse catchall message to check for battery voltage report
 		result = parseCatchAllMessage(description)
 	}
 	if (result != [:]) {
@@ -228,7 +228,7 @@ private Map parseReadAttrMessage(String description) {
 private parse11LMMessage(attrId, value) {
 	def messageType = [1: "single-clicked", 2: "double-clicked", 3: "triple-clicked", 4: "quadruple-clicked"]
 	def result = [:]
-	value = ((attrId == "0000") && (value == 1001 || value == 1000)) ? 1 : value
+	value = (attrId == "0000") ? 1 : value
 	if (value <= 4) {
 		def descText = " was ${messageType[value]} (Button $value pushed)"
 		updateLastPressed("Pressed")
@@ -349,7 +349,6 @@ def resetBatteryRuntime(paired) {
 def installed() {
 	state.prefsSetCount = 0
 	displayInfoLog(": Installing")
-	initialize()
 	checkIntervalEvent("")
 }
 
@@ -405,7 +404,7 @@ def setNumButtons() {
 		displayInfoLog(": Number of buttons set to ${state.numButtons}.")
 		sendEvent(name: "numberOfButtons", value: state.numButtons)
 	} else {
-		displayInfoLog("Model is unknown, so number of buttons is set to default of 4.")
+		displayInfoLog(": Model is unknown, so number of buttons is set to default of 4.")
 		sendEvent(name: "numberOfButtons", value: 4)
 	}
 }
