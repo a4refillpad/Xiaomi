@@ -1,7 +1,7 @@
 /**
  *  Aqara Button - models WXKG11LM (original & new revision) / WXKG12LM
  *  Device Handler for SmartThings - Firmware version 25.20 and newer ONLY
- *  Version 1.4.1b
+ *  Version 1.4.2b
  *
  *  NOTE: Do NOT use this device handler on any SmartThings hub running Firmware 24.x and older
  *        Instead use the xiaomi-aqara-button-old-firmware device handler
@@ -77,7 +77,7 @@ metadata {
 		attribute "lastReleased", "string"
 		attribute "lastReleasedCoRE", "string"
 		attribute "batteryRuntime", "string"
-		attribute "buttonStatus", "enum", ["pushed", "held", "single-clicked", "double-clicked", "shaken", "released"]
+		attribute "buttonStatus", "enum", ["pushed", "held", "single-clicked", "double-clicked", "triple-clicked", "quadruple-clicked", "shaken", "released"]
 
 		// Aqara Button - model WXKG11LM (original revision)
 		fingerprint deviceId: "5F01", inClusters: "0000,FFFF,0006", outClusters: "0000,0004,FFFF", manufacturer: "LUMI", model: "lumi.sensor_switch.aq2", deviceJoinName: "Aqara Button WXKG11LM"
@@ -102,6 +102,8 @@ metadata {
 				attributeState("held", label:'Held', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("single-clicked", label:'Single-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("double-clicked", label:'Double-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("triple-clicked", label:'Triple-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
+				attributeState("quadruple-clicked", label:'Quadruple-clicked', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("shaken", label:'Shaken', backgroundColor:"#00a0dc", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png")
 				attributeState("released", label:'Released', action: "momentary.push", backgroundColor:"#ffffff", icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png")
 			}
@@ -194,7 +196,7 @@ private Map parseReadAttrMessage(String description) {
 
 	if (cluster == "0006")
 		// Process model WXKG11LM (original revision)
-		resultMap = parse11LMMessage(attrId, Integer.parseInt(valueHex))
+		resultMap = parse11LMMessage(attrId, Integer.parseInt(valueHex[0..1],16))
 	else if (cluster == "0012")
 		// Process model WXKG11LM (new revision) or WXKG12LM button messages
 		resultMap = mapButtonEvent(Integer.parseInt(valueHex[2..3],16))
@@ -229,14 +231,17 @@ private parse11LMMessage(attrId, value) {
 	def messageType = [1: "single-clicked", 2: "double-clicked", 3: "triple-clicked", 4: "quadruple-clicked"]
 	def result = [:]
 	value = (attrId == "0000") ? 1 : value
+	displayDebugLog(": attrID =  $attrId, value = $value")
 	if (value <= 4) {
 		def descText = " was ${messageType[value]} (Button $value pushed)"
-		updateLastPressed("Pressed")
+		sendEvent(name: "buttonStatus", value: messageType[value], isStateChange: true, displayed: false)
 		runIn(1, clearButtonStatus)
+		updateLastPressed("Pressed")
 		displayInfoLog(descText)
 		result = [
-			name: 'pushed',
-			value: value,
+			name: 'button',
+			value: "pushed",
+			data: [buttonNumber: value],
 			isStateChange: true,
 			descriptionText: "$device.displayName$descText"
 		]
