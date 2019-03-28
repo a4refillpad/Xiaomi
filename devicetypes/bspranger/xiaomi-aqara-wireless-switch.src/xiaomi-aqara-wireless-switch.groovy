@@ -1,13 +1,13 @@
 /**
  *  Aqara Wireless Smart Light Switch models WXKG02LM / WXKG03LM (2016 & 2018 revisions)
  *  Device Handler for SmartThings
- *  Version 0.9b
+ *  Version 0.9.1b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
  *
- *	    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
@@ -231,8 +231,8 @@ private Map parseReadAttrMessage(String description) {
 private mapButtonEvent(buttonValue, actionValue) {
 	// buttonValue (message endpoint) 1 = left, 2 = right, 3 = both (and 0 = virtual app button)
 	// actionValue (message value) 0 = hold, 1 = push, 2 = double-click (hold & double-click on 2018 revision only)
-	def whichButtonText = ["Virtual button was", ((state.numButtons == 1) ? "Button was" : "Left button was"), "Right button was", "Both buttons were"]
-	def statusButton = ["", ((state.numButtons == 1) ? "" : "left"), "right", "both"]
+	def whichButtonText = ["Virtual button was", ((state.numButtons < 3) ? "Button was" : "Left button was"), "Right button was", "Both buttons were"]
+	def statusButton = ["", ((state.numButtons < 3) ? "" : "left"), "right", "both"]
 	def pressType = ["held", "pushed", "double-clicked"]
 	def eventType = (actionValue == 0) ? "held" : "pushed"
 	def lastPressType = (actionValue == 0) ? "Held" : "Pressed"
