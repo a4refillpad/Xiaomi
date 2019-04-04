@@ -1,7 +1,7 @@
 /**
  *  Aqara Wireless Smart Light Switch models WXKG02LM / WXKG03LM (2016 & 2018 revisions)
  *  Device Handler for SmartThings
- *  Version 0.9.2b
+ *  Version 0.9.2
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
