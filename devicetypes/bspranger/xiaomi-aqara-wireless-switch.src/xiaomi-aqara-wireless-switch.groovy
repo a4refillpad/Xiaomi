@@ -1,7 +1,7 @@
 /**
  *  Aqara Wireless Smart Light Switch models WXKG02LM / WXKG03LM (2016 & 2018 revisions)
  *  Device Handler for SmartThings
- *  Version 0.9.1b
+ *  Version 0.9.2b
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -54,7 +54,7 @@
  import physicalgraph.zigbee.zcl.DataType
 
  metadata {
-	definition (name: "Xiaomi Aqara Wireless Light Switch", namespace: "bspranger", author: "bspranger", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
+	definition (name: "Xiaomi Aqara Wireless Switch", namespace: "bspranger", author: "bspranger", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
 		capability "Battery"
 		capability "Sensor"
 		capability "Button"
