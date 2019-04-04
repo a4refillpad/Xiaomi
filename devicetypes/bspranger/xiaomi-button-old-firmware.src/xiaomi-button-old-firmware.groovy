@@ -1,7 +1,7 @@
 /**
  *  Xiaomi Zigbee Button - model WXKG01LM
  *  OLD Device Handler for SmartThings - Firmware versions 24.x and older ONLY
- *  Version 1.2
+ *  Version 1.2.1
  *
  *  NOTE: Do NOT use this device handler on a SmartThings v2/v3 hub with firmware 25.20 or newer
  *        Instead use the xiaomi-button.groovy device driver
@@ -27,7 +27,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Button", namespace: "bspranger", author: "bspranger") {
+	definition (name: "Xiaomi Button Old Firmware", namespace: "bspranger", author: "bspranger") {
 		capability "Battery"
 		capability "Sensor"
 		capability "Button"
