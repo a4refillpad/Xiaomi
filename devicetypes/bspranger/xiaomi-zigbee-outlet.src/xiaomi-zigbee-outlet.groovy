@@ -172,7 +172,7 @@ private Map parseReportAttributeMessage(String description) {
 	else if (descMap.cluster == "000C" && descMap.attrId == "0055" && descMap.endpoint == "03") {
 		def energy_int = Long.parseLong(descMap.value, 16)
 		def energy = Float.intBitsToFloat(energy_int.intValue())
-		energy = Math.round(energy * 100) * 0.001
+		energy = Math.round(energy * 100) * 0.0001
 		resultMap = createEvent(name: "energy", value: energy, unit: 'kWh')
 		log.debug "${device.displayName}: Reported energy usage is ${energy}kWh"
 	}
