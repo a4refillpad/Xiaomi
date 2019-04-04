@@ -3,7 +3,7 @@
  *  OLD Device Handler for SmartThings - Firmware versions 24.x and older ONLY
  *  for Aqara Button models WXKG11LM (original & new revision) / WXKG12LM
  *  and Aqara Wireless Smart Light Switch models WXKG02LM / WXKG03LM (original & new revision)
- *  Version 1.3.5
+ *  Version 1.3.6
  *
  *  NOTE: Do NOT use this device handler on a SmartThings v2/v3 hub with firmware 25.20 or newer
  *        Instead use either xiaomi-aqara-button.groovy for Aqara Button models WXKG11LM / WXKG12LM
@@ -66,7 +66,7 @@
  */
 
 metadata {
-	definition (name: "Xiaomi Aqara Button", namespace: "bspranger", author: "bspranger") {
+	definition (name: "Xiaomi Aqara Button Old Firmware", namespace: "bspranger", author: "bspranger") {
 		capability "Battery"
 		capability "Sensor"
 		capability "Button"
