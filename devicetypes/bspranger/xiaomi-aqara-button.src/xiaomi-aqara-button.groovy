@@ -1,7 +1,7 @@
 /**
  *  Aqara Button - models WXKG11LM (original & new revision) / WXKG12LM
  *  Device Handler for SmartThings - Firmware version 25.20 and newer ONLY
- *  Version 1.4.2b
+ *  Version 1.4.3
  *
  *  NOTE: Do NOT use this device handler on any SmartThings hub running Firmware 24.x and older
  *        Instead use the xiaomi-aqara-button-old-firmware device handler
@@ -295,21 +295,20 @@ def clearButtonStatus() {
 // Check catchall for battery voltage data to pass to getBatteryResult for conversion to percentage report
 private Map parseCatchAllMessage(String description) {
 	Map resultMap = [:]
-	def catchall = zigbee.parse(description)
-
-	if (catchall.clusterId == 0x0000) {
-		def MsgLength = catchall.data.size()
-		// Xiaomi CatchAll does not have identifiers, first UINT16 is Battery
-		if ((catchall.data.get(0) == 0x01 || catchall.data.get(0) == 0x02) && (catchall.data.get(1) == 0xFF)) {
-			for (int i = 4; i < (MsgLength-3); i++) {
-				if (catchall.data.get(i) == 0x21) { // check the data ID and data type
-					// next two bytes are the battery voltage
-					resultMap = getBatteryResult((catchall.data.get(i+2)<<8) + catchall.data.get(i+1))
-					break
-				}
-			}
-		}
+	def catchall = zigbee.parseDescriptionAsMap(description)
+	//displayDebugLog(": Zigbee parse of catchall = $catchall")
+	//displayDebugLog(": Length of data payload = ${catchall.value.size()}")
+	// Parse battery voltage data from catchall messages with payload value data larger than 10 bytes
+	if ((catchall.attrId == "0005" || catchall.attrId == "FF01") && catchall.value.size() > 20) {
+    // Battery voltage value is sent as INT16 in two bytes, #6 & #7, in large-endian (reverse) order
+		def batteryString = catchall.data[7] + catchall.data[6]
+		if (catchall.additionalAttrs && catchall.additionalAttrs.attrId[0] == "ff01")
+			batteryString = catchall.unparsedData[7] + catchall.unparsedData[6]
+		displayDebugLog(": Parsing battery voltage string $batteryString")
+		resultMap = getBatteryResult(Integer.parseInt(batteryString,16))
 	}
+    else
+    	displayDebugLog(": Catchall message does not contain usable data, no action taken")
 	return resultMap
 }
 
