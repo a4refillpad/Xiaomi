@@ -1,5 +1,5 @@
 /**
- *  Xiaomi Temperature Humidity Sensor
+ *  Xiaomi Temperature Humidity Sensor - model WSDCGQ01LM
  *  Version 1.3.1
  *
  *
