@@ -1,6 +1,6 @@
 /**
  *  Xiaomi Temperature Humidity Sensor
- *  Version 1.3
+ *  Version 1.3.1
  *
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -40,9 +40,11 @@ metadata {
 	attribute "currentDay", "String"
 	attribute "batteryRuntime", "String"
 
-	fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0009,0402,0405"
-	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF"
-	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019, FFFF", manufacturer: "LUMI", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019,FFFF", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF", outClusters: "0000,0003,0019,FFFF", manufacturer: "LUMI", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF,0012", outClusters: "0000,0004,0003,0005,0019,FFFF,0012", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF,0012", outClusters: "0000,0004,0003,0005,0019,FFFF,0012", model: "lumi.sens", deviceJoinName: "Xiaomi Temp Sensor"
+	fingerprint profileId: "0104", deviceId: "5F01", inClusters: "0000,0003,0019,FFFF,0012", outClusters: "0000,0004,0003,0005,0019,FFFF,0012", model: "lumi.sensor_ht", deviceJoinName: "Xiaomi Temp Sensor"
 
 	command "resetBatteryRuntime"
 }
